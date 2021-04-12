@@ -1,0 +1,18 @@
+{
+"PID": "enter the PID of the datasheet",
+"type": "enter the type of the component e.g. pump/valve/pipe",
+"manufacturer": "enter the manufacturer of the component",
+"product Name": "enter the product name of the component",  
+"internet link": "enter the an optional internet link to the datasheet of the component",
+"insert category (e.g. hydraulic data for a pump)":[
+    {"description": "enter description of the paramater",
+    "value": "enter value of the parameter",
+    "unit": "enter unit of the parameter"},
+    {"description": "enter description of the paramater",
+    "value": "enter value of the parameter",
+    "unit": "enter unit of the parameter"}],
+"insert a different category(e.g. motor data for a pump)":[
+    {"description": "enter description of the paramater",
+    "value": "enter value of the parameter",
+    "unit": "enter unit of the parameter"}]
+}
