@@ -7,7 +7,7 @@ Diese Checkliste liefert Empfehlungen zur Software-Entwicklung bei studentischen
 
 * Gibt es derzeit keinen Verbesserungsbedarf und die Empfehlung ist prinzipiell passend adressiert? Status: **ok**
 * Gibt es Verbesserungspotential, welches in nächster Zeit umgesetzt werden kann bzw. sollte? Status: **todo**, Verbesserungsbedarf unter Bemerkungen festhalten
-* Ist die Empfehlung derzeit noch nicht relevant, könnte aber in einer spÃ¤teren Entwicklungsphase hilfreich sein? Status: **future**
+* Ist die Empfehlung derzeit noch nicht relevant, könnte aber in einer späteren Entwicklungsphase hilfreich sein? Status: **future**
 * Ist die Empfehlung im Entwicklungskontext nicht sinnvoll umsetzbar? Status: **n.a.** (not applicable, nicht zutreffend), Grund unter Bemerkungen erläutern
 
 > Den Status zwischen `**[]**` vermerken. Die Bemerkungen unterhalb der Empfehlung als Liste (z.B. `* Repository einrichten`) erfassen.
@@ -18,7 +18,14 @@ Die Software erreicht Anwendungsklasse [1, 2 oder 3].
 Der Schwerpunkt zukünftiger Verbesserungen liegt auf:
 
 ## Inhaltsverzeichnis
-[[Qualifizierung](#qualifizierung)] [[Anforderungsmanagement](#anforderungsmanagement)] [[Software-Architektur](#software-architektur)] [[Änderungsmanagement](#aenderungsmanagement)] [[Design und Implementierung](#design-implementierung)] [[Software-Test](#software-test)] [[Release-Management](#release-management)] [[Automatisierung und AbhÃ¤ngigkeitsmanagement](#automatisierung-abhaengigkeiten)] 
+[Qualifizierung](#qualifizierung)<br>
+[Anforderungsmanagement](#anforderungsmanagement)<br>
+[Software-Architektur](#software-architektur)<br> 
+[Änderungsmanagement](#aenderungsmanagement)<br>
+[Design und Implementierung](#design-implementierung)<br>
+[Software-Test](#software-test)<br> 
+[Release-Management](#release-management)<br>
+[Automatisierung und Abhängigkeitsmanagement](#automatisierung-abhaengigkeiten) 
 
 
 ## Qualifizierung <a name="qualifizierung"></a>
