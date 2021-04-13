@@ -11,7 +11,7 @@ Diese Checkliste liefert Empfehlungen zur Software-Entwicklung bei studentischen
 * Ist die Empfehlung im Entwicklungskontext nicht sinnvoll umsetzbar? Status: **n.a.** (not applicable, nicht zutreffend), Grund unter Bemerkungen erläutern
 
 > Den Status zwischen `**[]**` vermerken. Die Bemerkungen unterhalb der Empfehlung als Liste (z.B. `* Repository einrichten`) erfassen.
-
+---
 ## Zusammenfassung der Ergebnisse
 Die Software erreicht Anwendungsklasse [1, 2 oder 3].
 
@@ -27,7 +27,7 @@ Der Schwerpunkt zukünftiger Verbesserungen liegt auf:
 [Release-Management](#release-management)<br>
 [Automatisierung und Abhängigkeitsmanagement](#automatisierung-abhaengigkeiten) 
 
-
+---
 ## Qualifizierung <a name="qualifizierung"></a>
 **[]** Der Software-Verantwortliche kennt die verschiedenen Anwendungsklassen und weiß, welche für seine Software anzustreben ist. *(EQA.1)*
 
@@ -37,17 +37,32 @@ Der Schwerpunkt zukünftiger Verbesserungen liegt auf:
 
 **[]** Den an der Entwicklung Beteiligten stehen die für ihre Aufgaben benötigten Werkzeuge zur Verfügung und sie sind geschult in deren Benutzung. *(EQA.4)*
 
-
+---
 ## Anforderungsmanagement <a name="anforderungsmanagement"></a>
+
+>Eine Anforderung beschreibt eine zu erfüllende Eigenschaft in der Software. Es existieren verschiedene Anforderungstypen:
+- **Funktionale Anforderungen** beschreiben gewünschte Funktionen der Software.
+- **Qualitätsanforderungen** beschreiben erwartete qualitative Eigenschaften der Software
+(z.B. Nutzbarkeit, Sicherheit, Effizienz, vgl. ISO/IEC 25010).
+- **Randbedingungen** beschreiben Beschränkungen, die bei der Entwicklung und Auslegung
+der Software zu beachten sind.
+
 **[]** Die Aufgabenstellung ist mit allen Beteiligten abgestimmt und dokumentiert. Sie beschreibt in knapper, verständlicher Form die Ziele, den Zweck der Software, die wesentlichen Anforderungen und die angestrebte Anwendungsklasse. *(EAM.1)*
 
 
-**[]** Die Randbedingungen (zu verwendete Programmiersprache, Frameworks, etc) sind erfasst. *(EAM.3)*
+**[]** Die Randbedingungen (zu verwendete Programmiersprache, Frameworks, etc) sind erfasst. *(EAM.3)* 
 
+---
 ## Software-Architektur <a name="software-architektur"></a>
-**[]** Wesentliche Architekturkonzepte und damit zusammenhängende Entscheidungen sind zumindest in knapper Form dokumentiert. *(ESA.2)*
+>Die **Software-Architektur** beschreibt die grundlegenden Komponenten und deren Zusammenspiel innerhalb eines Softwaresystems.
 
+**[]** Wesentliche Architekturkonzepte und damit zusammenhängende Entscheidungen sind zumindest in knapper Form dokumentiert. (z.B.: Warum wird eine bestimmte Bibliothek zur Anbindung eines Fremdsystems
+genutzt?; Darstellung der Architektur in einem Diagramm) *(ESA.2)*
+
+---
 ## Änderungsmanagement <a name="aenderungsmanagement"></a>
+>Gegenstand des **Änderungsmanagements** ist, systematisch und nachvollziehbar Änderungen an der Software durchzuführen. Eine wichtige Aufgabe des Änderungsmanagements besteht darin, die Ergebnisse der Entwicklungsarbeit sicher und nachvollziehbar zu verwalten. Die Ergebnisse werden tyischerweise in einem Repository abgelegt. Zur Verwaltung der Verzeichnisse und Dateien eines Repository wird ein Versionskontrollsystem (z.B. Git) eingesetzt. Es stellt sicher, dass jede Änderung des Repository (Commit) mit einer Beschreibung protokolliert (Commit Message) und über eine Versionshistorie einsehbar ist.
+
 **[]** Die wichtigsten Informationen, um zur Entwicklung beitragen zu können, sind an einer zentralen Stelle abgelegt. Es werden die grundlegenden Schritte beschrieben, um mit der Entwicklung beginnen zu können. Häufig befinden sich diese Informationen im Repository bspw. in der README Datei. (Wichtig falls, nach der stutenischen Arbeit von neuen Entwicklern an der Software weitergearbeitet werden soll) *(EÄM.2)*
 
 **[]** Bekannte Fehler, wichtige ausstehende Aufgaben und Ideen sind zumindest stichpunktartig in einer Liste festgehalten und zentral abgelegt. Diese Informationen können ebenfalls im README festegehalten werden. *(EÄM.5)*
@@ -56,7 +71,10 @@ Der Schwerpunkt zukünftiger Verbesserungen liegt auf:
 
 **[]** Jede Änderung des Repository dient möglichst einem spezifischen Zweck, enthält eine verständliche Beschreibung und hinterlässt die Software möglichst in einem konsistenten, funktionierenden Zustand. *(EÄM.8)*
 
+---
 ## Design und Implementierung <a name="design-implementierung"></a>
+>Zu Beginn der Entwicklung entsteht häufig eine erste Idee der groben Softwarestruktur. Diese beschreibt eine geeignete Zerlegung der Software nach fachlichen und technischen Gesichtspunkten. Dabei ist häufig gewünscht, dass die Softwarestruktur verständlich, leicht änderbar und erweiterbar ist. Konkrete Anhaltspunkte für eine angemessene Umsetzung liefern Designprinzipien und Entwurfsmuster.
+
 **[]** Es werden die üblichen Konstrukte und Lösungsansätze der gewählten Programmiersprache eingesetzt sowie ein Regelsatz hinsichtlich des Programmierstils konsequent angewendet. Der Regelsatz bezieht sich zumindest auf die Formatierung und Kommentierung. Ein Beispiel für ein solchen Regelsatz für verschiedene Programmiersprachen kann hier entnommen werden: [Google Style Guides](https://google.github.io/styleguide/) *(EDI.1)*
 
 **[]** Die Software ist möglichst modular strukturiert. Die Module sind lose gekoppelt, d.h., ein einzelnes Modul hängt möglichst gering von anderen Modulen ab. *(EDI.2)*
@@ -65,12 +83,18 @@ Der Schwerpunkt zukünftiger Verbesserungen liegt auf:
 
 **[]** Es werden einfache, verständliche Lösungen bevorzugt eingesetzt.  ("Keep it simple and stupid."). *(EDI.10)*
 
+---
 ## Software-Test <a name="software-test"></a>
+>Beim Testen führt man die Software aus und analysiert diese, um Fehler zu finden. Ein Fehler ist eine Abweichung des tatsächlichen vom erforderlichen Zustand. 
+
 **[]** Die grundlegenden Funktionen und Eigenschaften der Software werden in einer möglichst betriebsnahen Umgebung getestet. Es ist sinnvoll einen Test nach folgenden Teststufen zu klassifizieren: Modultest, Integrationstest, Systemtest, Abnahmetest. Eine Definition dieser Klassifikationen findet sich unter Kapitel 4.6. Dabei ist es ausreichend die Tests manuell durchzuführen. *(EST.4)*
 
 **[]** Das Repository enthält möglichst alle für den Test der Software erforderlichen Artefakte. *(EST.10)*
 
+---
 ## Release-Management <a name="release-management"></a>
+>Bei einem Release handelt es sich um eine stabile Version der Software, die an die Nutzer (z.B. dem betreuenden WiMi) weitergegeben wird.
+
 **[]** Das Release-Paket enthält oder verweist auf die Nutzer-Dokumentation. Sie besteht zumindest aus Installations-, Nutzungs- und Kontaktinformationen sowie den Release Notes. Im Fall der Weitergabe des Release-Pakets an Dritte außerhalb des FST, sind die Lizenzbedingungen beizulegen. *(ERM.2)*
 
 Die folgenden Punkte sind müssen bei studentische Arbeiten in der Regel nicht erfüllt werden.
@@ -83,6 +107,7 @@ Die folgenden Punkte sind müssen bei studentische Arbeiten in der Regel nicht e
 
 **[]** Vor der Weitergabe des Release-Pakets an Dritte außerhalb des FST ist sicherzustellen, dass die Regelungen zur Exportkontrolle eingehalten werden. *(ERM.10)*
 
+---
 ## Automatisierung und Abhängigkeitsmanagement <a name="automatisierung-abhaengigkeiten"></a>
 **[]** Der einfache Build-Prozess läuft grundlegend automatisiert ab und notwendige manuelle Schritte sind beschrieben. Zudem sind ausreichend Informationen zur Betriebs- und Entwicklungsumgebung vorhanden. *(EAA.1)*
 
