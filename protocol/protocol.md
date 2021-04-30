@@ -11,3 +11,6 @@
 - Lesen von DLR Guidelines
 - Code durchgehen
 - Gedanken über verbesserte Struktur &rarr; UML Diagramm
+
+## Protokoll 13.04.2021 - 03.05.2021
+- Lizenz Probleme
