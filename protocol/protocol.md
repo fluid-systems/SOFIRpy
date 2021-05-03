@@ -15,10 +15,10 @@
 ## Protokoll 13.04.2021 - 03.05.2021
 - Lizenz Probleme
 - [dlr guidelines für studentische Arbeiten](https://git.rwth-aachen.de/fst-tuda/projects/digitalization/fair_sim/fair_sim_release/-/blob/master/dlr%20guidelines/requirements_class_1.md)
-- Überarbeitet Struktur des Datenimport und FMU Export 
+- Überarbeitete Struktur des Datenimport und FMU Export 
     - Schnittstelle zu OpenModelica --> FMU Export möglich, aber Datenimport noch nicht
     - Zuordnung von PIDs wurde entfernt --> wird später in einem anderen Modul implementiert --> Gewährleistung der Modularität
-    - Arbeiten an zusätzlichen Feature --> checken ob importierte Parameters im Modell vorhanden sind (bisher kam es zu keiner Fehlermeldung)
+    - Arbeiten an zusätzlichen Feature --> checken ob importierte Parameter im Modell vorhanden sind (bisher kam es zu keiner Fehlermeldung)
 - Struktur des Simulations Modul am Überarbeiten, Ziel:
     - mehrere FMU simulieren 
     - beliebige MAS simulieren
