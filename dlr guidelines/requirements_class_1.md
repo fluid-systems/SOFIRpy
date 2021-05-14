@@ -75,7 +75,7 @@ genutzt?; Darstellung der Architektur in einem Diagramm) *(ESA.2)*
 ## Design und Implementierung <a name="design-implementierung"></a>
 >Zu Beginn der Entwicklung entsteht häufig eine erste Idee der groben Softwarestruktur. Diese beschreibt eine geeignete Zerlegung der Software nach fachlichen und technischen Gesichtspunkten. Dabei ist häufig gewünscht, dass die Softwarestruktur verständlich, leicht änderbar und erweiterbar ist. Konkrete Anhaltspunkte für eine angemessene Umsetzung liefern Designprinzipien und Entwurfsmuster.
 
-**[]** Es werden die üblichen Konstrukte und Lösungsansätze der gewählten Programmiersprache eingesetzt sowie ein Regelsatz hinsichtlich des Programmierstils konsequent angewendet. Der Regelsatz bezieht sich zumindest auf die Formatierung und Kommentierung. Ein Beispiel für ein solchen Regelsatz für verschiedene Programmiersprachen kann hier entnommen werden: [Google Style Guides](https://google.github.io/styleguide/) *(EDI.1)*
+**[]** Es werden die üblichen Konstrukte und Lösungsansätze der gewählten Programmiersprache eingesetzt sowie ein Regelsatz hinsichtlich des Programmierstils konsequent angewendet. Der Regelsatz bezieht sich zumindest auf die Formatierung und Kommentierung. Ein Beispiel für ein solchen Regelsatz für verschiedene Programmiersprachen kann hier entnommen werden: [Google Style Guides(ohne Matlab)](https://google.github.io/styleguide/), [Matlab Style Guides](http://www.datatool.com/downloads/matlab_style_guidelines.pdf) *(EDI.1)*
 
 **[]** Die Software ist möglichst modular strukturiert. Die Module sind lose gekoppelt, d.h., ein einzelnes Modul hängt möglichst gering von anderen Modulen ab. *(EDI.2)*
 
