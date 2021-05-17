@@ -16,9 +16,9 @@
 - Lizenz Probleme
 - [dlr guidelines für studentische Arbeiten](https://git.rwth-aachen.de/fst-tuda/projects/digitalization/fair_sim/fair_sim_release/-/blob/master/dlr%20guidelines/requirements_class_1.md)
 - Überarbeitete Struktur des Datenimport und FMU Export 
-    - Schnittstelle zu OpenModelica --> FMU Export möglich, aber Datenimport noch nicht
-    - Zuordnung von PIDs wurde entfernt --> wird später in einem anderen Modul implementiert --> Gewährleistung der Modularität
-    - Arbeiten an zusätzlichen Feature --> checken ob importierte Parameter im Modell vorhanden sind (bisher kam es zu keiner Fehlermeldung)
+    - Schnittstelle zu OpenModelica &rarr FMU Export möglich, aber Datenimport noch nicht
+    - Zuordnung von PIDs wurde entfernt &rarr wird später in einem anderen Modul implementiert &rarr Gewährleistung der Modularität
+    - Arbeiten an zusätzlichen Feature &rarr checken ob importierte Parameter im Modell vorhanden sind (bisher kam es zu keiner Fehlermeldung)
 - Struktur des Simulations Modul am Überarbeiten, Ziel:
     - mehrere FMU simulieren 
     - beliebige MAS simulieren
@@ -27,5 +27,5 @@
 Beim überarbeiten der Module stest im Hinterkopf, Modul sollte als alleinstehdes Modul nutzbar sein.
 
 ## Protokoll 04.05.2021 - 17.05.2021
-- Guidelines update --> Matlab Style-Guide
+- Guidelines update &rarr Matlab Style-Guide
 - Code Demo
