@@ -1,22 +1,18 @@
-# %%
 from fmpy import read_model_description, extract
 from fmpy.fmi2 import FMU2Slave
 import numpy as np
 import copy
-
+import sys
+from alive_progress import alive_bar
 
 
 class FMU():
 
-    def __init__(self, model_name, fmu_directory, inputs, outputs):
+    def __init__(self, model_name, fmu_directory):
         self.model_name = model_name
         self.fmu_path = fmu_directory + model_name +".fmu"
         self.model_vars = {}
-        self.output_refnums = []
-        self.input_refnums = []
-        self.inputs = inputs
-        self.outputs = outputs
-        self.output_values = [0]*len(self.outputs)
+        
        
     def init_fmu(self):
 
@@ -36,39 +32,15 @@ class FMU():
         self.fmu.enterInitializationMode()
         self.fmu.exitInitializationMode()
         print(f'FMU {self.model_name} initialized.')
-        
-    def get_refnum(self):
-
-        for out in self.outputs:
-            if out in self.model_vars:
-                self.output_refnums.append(self.model_vars[out])
-            else: 
-                print(f"The fmu {self.model_name} doesn't has an output called {out}")
-
-        for inp in self.inputs:
-            if inp in self.model_vars:
-                self.input_refnums.append(self.model_vars[inp])
-            else:
-                print(f"The fmu {self.model_name} doesn't has an input called {inp}")
-
-    def get_fmu_output(self):
-
-        for out_num, i in zip(self.output_refnums, range(len(self.output_values))):
-            self.output_values[i] = self.fmu.getReal([out_num])[0] 
             
-    def _set_fmu_input(self, value, input_name):
-        pass
-
-    def _get_fmu_output(self, output_name):
-        pass
-
-       
-    def set_fmu_input(self, values):
+    def set_input(self,input_name, input_value):
         
-        for val, inp_num in zip(values, self.input_refnums): 
-            self.fmu.setReal([inp_num], [val])
-            
-    
+        self.fmu.setReal([self.model_vars[input_name]], [input_value])
+
+    def get_output(self, output_name):
+        
+        return self.fmu.getReal([self.model_vars[output_name]])[0]
+         
     def do_step(self, time, step_size):
 
         self.fmu.doStep(currentCommunicationPoint=time,communicationStepSize=step_size)
@@ -87,106 +59,142 @@ class FMU():
 
 class Simulation():
     
-    def __init__(self, fmu_dic, stop_time, step_size, var_dict, agents):
+    def __init__(self, fmu_dic, controls, stop_time, step_size, var_dict):
 
-        self.model_names = list(fmu_dic.keys())
+        self.fmu_model_names = list(fmu_dic.keys())
         self.fmu_directorys = [sub["directory"] for sub in list(fmu_dic.values())]
-        self.fmu_input_names = [sub["inputs"] for sub in list(fmu_dic.values())]
-        self.fmu_output_names = [sub["outputs"] for sub in list(fmu_dic.values())]
-        self.fmu_connect_to = [sub["input_connect_to_output"] for sub in list(fmu_dic.values())]
-        self.class_fmu = []
+        self.fmu_connections = [sub["inputs"] for sub in list(fmu_dic.values())]
+        self.fmu_dic = copy.deepcopy(fmu_dic)
+        self.fmu_classes_dic= copy.deepcopy(fmu_dic)
+        for name in self.fmu_classes_dic.keys():
+            self.fmu_classes_dic[name] = ""
+        for name, con in zip(fmu_dic.keys(), self.fmu_connections):
+            self.fmu_dic[name] = con   
+        
+
+        self.control_connections = [sub["inputs"] for sub in list(controls.values())]
+        self.control_dic = copy.deepcopy(controls)
+        for name, con in zip(self.control_dic, self.control_connections):
+            self.control_dic[name] = con 
+
+        self.control_classes_dic = copy.deepcopy(controls)
+        self.control_classes = [sub["class"] for sub in list(controls.values())]
+        for name, _class in zip(self.control_classes_dic.keys(), self.control_classes):
+            self.control_classes_dic[name] = _class
+        
         self.time_series = np.arange(0, stop_time + step_size, step_size)
         self.step_size = step_size
         self.stop_time = stop_time
         self.var_dict = var_dict
         self.result_dict = copy.deepcopy(var_dict)
-        self.agents = agents
-        self.agent_outputs = []*len(agents)
+
+    def check_control_class(self):
         
+        must_contain_methods = ["set_input", "generate_output", "get_output"]
+        for _class in self.control_classes:
+            method_missing = []
+            for meth in must_contain_methods:
+                if not getattr(_class, meth, None):
+                    method_missing.append(meth)
+                    
+
+            if method_missing:
+                s = ""
+                for mis in method_missing:
+                    s +=  "\n" + mis
+                
+                sys.exit(f"The class '{type(_class).__name__}' is missing the following methodes:" + s)     
+
+            else:
+                print(f"The class '{type(_class).__name__}' contains all the necessary methods.")        
 
 
-    def initialise(self):
+    def initialise_fmus(self):
 
-        for name, direc, inp, out in zip(self.model_names, self.fmu_directorys, self.fmu_input_names, self.fmu_output_names):
-            fmu = FMU(name, direc, inp, out)
+        print("Initialise FMUs...")
+        for name, direc in zip(self.fmu_model_names, self.fmu_directorys):
+            fmu = FMU(name, direc)
             fmu.init_fmu()
-            fmu.get_refnum()
-            self.class_fmu.append(fmu)      
+            self.fmu_classes_dic[name] = fmu   
 
+        print("FMUs initialised.")
 
     def connect_systems(self):
-        pass
-
-
-    def get_fmu_outputs(self):
-
-        for fmu in self.class_fmu:
-            fmu.get_fmu_output()
         
-    def send_agents_inputs(self):
-        pass
+        print("Connecting Systems...")
+        self.all_system_classes = self.fmu_classes_dic.copy()
+        self.all_system_classes.update(self.control_classes_dic)
+        
+        
+        for name in self.control_dic:
+            for con, i in zip(self.control_dic[name], range(len(self.control_dic[name]))):
+                system_name = con[1]
+                self.control_dic[name][i][1] = self.all_system_classes[system_name]
 
-    def get_agents_outputs(self):
+        for name in self.fmu_dic:
+            for con, i in zip(self.fmu_dic[name], range(len(self.fmu_dic[name]))):
+                system_name = con[1]
+                self.fmu_dic[name][i][1] = self.all_system_classes[system_name]
+        
+        print("All systems connected.")
 
-        for (agent, i) in zip(self.agents, range(len(self.agents))):
-            self.agent_ouputs[i] = agent.get_agent_output()
-            
-    def set_fmu_inputs(self):
+
+    def set_control_inputs(self):
+        
+        for name in self.control_dic:
+            for inp in self.control_dic[name]:
+                self.control_classes_dic[name].set_input(inp[0],inp[1].get_output(inp[2]))
+
     
-
-        for fmu,con in zip(self.class_fmu, self.fmu_connect_to):
-            values = [0]*len(con)
-            for inp, i in zip(con, range(len(values))):
-                fmu_name = inp.split(".")[0]
-                output_name = inp.split(".")[1]
-                # get corresponding index of model_names list
-                index_model_name = self.model_names.index(fmu_name)
-                _fmu = self.class_fmu[index_model_name]
-                index_output = _fmu.outputs.index(output_name)
-                values[i] = _fmu.output_values[index_output]
-            fmu.set_fmu_input(values)
-
+    def generate_control_output(self):
+        
+        for con in self.control_classes:
+            con.generate_output()
+    
+    def set_fmu_inputs(self):
+        
+        for name in self.fmu_dic:
+            for inp in self.fmu_dic[name]:
+                self.fmu_classes_dic[name].set_input(inp[0],inp[1].get_output(inp[2]))
 
     def simulate(self):
 
-        
+        print("Starting Simulation.")
 
-        for time_step, time in enumerate(self.time_series):
-            self.get_fmu_outputs()
-            #if self.agents:
-                #self.send_agents_inputs()
-                #mas.agent_routine()
-                #self.get_agents_outputs()
-            self.set_fmu_inputs()
-            self.record_values(time_step, time)
-            for fmu in self.class_fmu:
-                fmu.do_step(time, self.step_size)
-            
-            
-        for fmu in self.class_fmu:
+        with alive_bar(len(self.time_series), bar= 'classic', spinner='classic') as bar:
+            for time_step, time in enumerate(self.time_series):
+
+                self.set_control_inputs()
+                self.generate_control_output()
+                self.set_fmu_inputs()
+                self.record_values(time_step, time)
+                for fmu in self.fmu_classes_dic.values():
+                    fmu.do_step(time, self.step_size)
+                
+                bar()
+
+        for fmu in self.fmu_classes_dic.values():
             fmu.conclude_simulation_process()
 
         return  self.result_dict
         
     def create_result_dict(self):
         
-        
-        for  fmu_names in self.result_dict.keys():
+        for  system in self.result_dict.keys():
             
-            for i in range(len(self.result_dict[fmu_names])):         
-                self.result_dict[fmu_names][i] = np.zeros((len(self.time_series), 2))   
+            for i in range(len(self.result_dict[system])):         
+                self.result_dict[system][i] = np.zeros((len(self.time_series), 2))   
                 
         
     def record_values(self,time_step, time):
         
-        for fmu_name, var_list in zip(list(self.var_dict.keys()), list(self.var_dict.values())):
-            
-            index_model_name = self.model_names.index(fmu_name)
-            fmu = self.class_fmu[index_model_name]
-            for var, i in zip(var_list, range(len(var_list))):
-                value = fmu.get_any_value(var)
-                self.result_dict[fmu_name][i][time_step] = [time, value]
-                
+        for system_name in self.var_dict:
+            for var,i in zip(self.var_dict[system_name], range(len(self.var_dict[system_name]))):
+                value = self.all_system_classes[system_name].get_output(var)
+                self.result_dict[system_name][i][time_step] = [time, value]
+
+
+        
 
         
 

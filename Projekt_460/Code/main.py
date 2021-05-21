@@ -23,37 +23,34 @@ additional_parameters = {
 packages = []
 
 # %%
-fs.fmu_export(create_new_fmu, "dymola", model_name, model_directory, datasheet_directory, datasheets, 
-                additional_parameters, output_directory, dymola_path, packages)
+#fs.fmu_export(create_new_fmu, "dymola", model_name, model_directory, datasheet_directory, datasheets, 
+                #additional_parameters, output_directory, dymola_path, packages)
 
-
-
-
-# %%
-fmus = {"nummer1": {"directory": "asfafa", "inputs": ["sdf", "asdfsd", "ikhv"],"input_connect_to_output": ["tiefhaus.klo", "tiefhaus.223", "mittelhaus.aöööö"] , "outputs": ["bla"]},
-        "nummer2": {"directory": "kkkkk", "inputs": ["kla"],"input_connect_to_output": ["Hochhaus.bla"] , "outputs": ["klo", "223", "fff"]},
-        "mittelhaus": {"directory": "asd", "inputs": ["ggh"],"input_connect_to_output": ["Hochhaus.fff"] , "outputs": ["aöööö"]}}
 
 #%%
-import numpy as np
-from simulate import Simulation
-from Agent import Agent
-import matplotlib.pyplot as plt
 
+from simulate import Simulation
+import matplotlib.pyplot as plt
+from control import Control
+from mas import MAS
+ 
 nummer1_dir = r"C:/Users/Daniele/Desktop/"
 nummer2_dir = r"C:/Users/Daniele/Desktop/"
-fmus = {"nummer1": {"directory": nummer1_dir, "inputs": ["u_in"],"input_connect_to_output": ["nummer2.y_out"] , "outputs": []},
-        "nummer2": {"directory": nummer2_dir, "inputs": [],"input_connect_to_output": [] , "outputs": ["y_out"]}}
 
-#fmus = {"fmutest": {"directory": nummer1_dir, "inputs": [],"input_connect_to_output": [] , "outputs": []}}
+fmus = {"nummer1": {"directory": nummer1_dir, "inputs": [["u_in", "nummer2", "y_out"], ["u_in2", "MAS", "agent1.y_out"]]},
+        "nummer2": {"directory": nummer2_dir, "inputs": []}}
+con = Control()
+mas = MAS()
+controls = {"MAS":{"class": mas, "inputs" : [["agent1.u_in1", "nummer1", "y_out"]]}, 
+           "Control": {"class": con, "inputs" : [],  "input_connect_to_output": []}}
 time = 5
 step_size = 1e-04
-ag = Agent("lw", ["nummer1.u_in2"], ["nummer1.y_out"])
-agents = [ag]
-record = {"nummer1": ["inductor.i", "inductor.v"], "nummer2":["sine.y"]}
-
-sim = Simulation(fmus, time, step_size, record, agents)
-sim.initialise()
+record = {"nummer1": ["inductor.i", "inductor.v", "u_in2"], "nummer2":["sine.y"]}
+# %%
+sim = Simulation(fmus,controls, time, step_size, record)
+sim.check_control_class()
+sim.initialise_fmus()
+sim.connect_systems()
 sim.create_result_dict()
 
 
@@ -68,10 +65,18 @@ connect = {"nummer1": {"directory": nummer1_dir, "inputs": ["u_in"],"input_conne
 
 # %%
 
+x = result["nummer1"][2][:,0]
+y = result["nummer1"][2][:,1]
+plt.plot(x,y)
+plt.show()
+# %%
 x = result["nummer1"][1][:,0]
 y = result["nummer1"][1][:,1]
 plt.plot(x,y)
 plt.show()
 # %%
+fmus = {"nummer1": {"directory": nummer1_dir, "inputs": ["u_in"],"input_connect_to_output": ["nummer2.y_out", "MAS.agent1.y_out1"] , "outputs": []},
+        "nummer2": {"directory": nummer2_dir, "inputs": [],"input_connect_to_output": [] , "outputs": ["y_out"]}}
 
-# %%
+
+   
