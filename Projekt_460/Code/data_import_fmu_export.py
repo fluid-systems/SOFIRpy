@@ -8,7 +8,8 @@ import shutil
 import sys
 
 class DataManagement():
-    def __init__(self, model_name, model_directory, datasheet_directory, datasheets, additional_parameters, output_directory):
+    def __init__(self, model_name, model_directory, output_directory, 
+                    datasheet_directory, datasheets ,additional_parameters):
                 
         self.model_name = model_name
         self.model_directory = model_directory
@@ -46,6 +47,7 @@ class DataManagement():
             print('The FMU Export was successful!')
             return True
         else:
+            print("The FMU was not exported.")
             return False
 
     def show_possible_faults(self):
@@ -60,7 +62,6 @@ class DataManagement():
              'Possible faults:\n'
              'Model specific error.\n'
              'No active Dymola License.\n'
-             'Parameters are imported that do not exist.\n'
              'The model name or model path is not correct.\n'
              'The model name was changed in the explorer, but not in Dymola\n'
              'Packages needed in the model are not imported.\n'
@@ -86,7 +87,7 @@ class DataManagement():
 
     def move_files_to_outputdirectory(self):
         
-        print("Moving files...")
+        print("Moving files to the output directory...")
 
         filLis = ["simulator.log", self.model_name+'.fmu']
 
@@ -111,7 +112,7 @@ class DataManagement():
 
         print('Model copied.')
 
-    def rename_files(self, project_owner, project_number, run_name):
+    def rename_files(self, project_owner, project_number, run_name): #move to data module
         pass
 
     def files_management(self):
@@ -122,12 +123,11 @@ class DataManagement():
 
 class Dymola(Simulator, DataManagement):
  
-    def __init__(self,model_name, simulator, model_directory,
-                    datasheet_directory, datasheets, additional_parameters,
-                    output_directory, dymola_path, packages):
+    def __init__(self, model_name,dymola_path, model_directory, output_directory ,
+                    datasheet_directory, datasheets, additional_parameters, packages):
 
-        Simulator.__init__(self, model_name, simulator, output_directory)
-        DataManagement.__init__(self,model_name, model_directory, datasheet_directory, datasheets, additional_parameters, output_directory)
+        Simulator.__init__(self, model_name, "dymola", output_directory)
+        DataManagement.__init__(self, model_name, model_directory, output_directory, datasheet_directory, datasheets ,additional_parameters)
         self.dymola_path = dymola_path
         self.packages = packages
         self.modeling_environment = "dymola"
@@ -156,6 +156,7 @@ class Dymola(Simulator, DataManagement):
         for value, component_symbol in zip(self.added_parameter_values, self.added_parameter_names):
             self.addParameters({component_symbol: value})   # function inherited from Simulator
         
+
         print('Parameters from datasheets added')
     
 
@@ -346,14 +347,13 @@ translateModelFMU(modelInstance, false, "", "2", "all", false, 2);
 
         success = self.check_fmu_export()
 
-        filLis = ["_simulator.log", self.model_name+'.fmu']
-
-        for fil in filLis:
-            file_path = self.model_directory + fil
-            if os.path.exists(file_path):
-                os.remove(file_path)
-        if os.path.exists(self._simulateDir_+"/run.mos"):
-            os.remove(self._simulateDir_+"/run.mos")      
+      
+        simulator_path = self.model_directory + "_simulator.log"
+        if os.path.exists(simulator_path):
+            os.remove(simulator_path)
+        run_path = self._simulateDir_+"/run.mos"
+        if os.path.exists(run_path):
+            os.remove(run_path)      
     
         self.delete_unnecessary_files()
 
@@ -373,23 +373,20 @@ translateModelFMU(modelInstance, false, "", "2", "all", false, 2);
         
         
         
-    def check_if_parameters_exist(self):
+    def check_if_parameters_exist(self, added_parameters):
 
         print("Checking...")
         
-        self.export_model_without_added_parameters()
-        self.get_model_parameters()
-        added_parameters = self.getParameters()
         
         for par in added_parameters:
             if par[0] not in self.model_vars:
                 print(f'Make sure the parameter {par[0]} can be added to the model')
+        if os.path.exists(self.model_directory + self.model_name +".fmu"):
+            os.remove(self.model_directory + self.model_name +".fmu")
                 
 
 
-
-
-          
+     
 
 class OpenModelica(ModelicaSystem, DataManagement):
 
