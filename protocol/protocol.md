@@ -29,3 +29,9 @@ Beim überarbeiten der Module stest im Hinterkopf, Modul sollte als alleinstehde
 ## Protokoll 04.05.2021 - 17.05.2021
 - Guidelines update &rarr; Matlab Style-Guide
 - Code Demo
+
+## Protokoll 18.05.2021 - 24.05.2021
+- Meeting mit Jan und Marvin 
+- Simulations Modul implementiert &rarr; Vorgabe von "Control"-Klasse (Simulationsmethode innerhalb Simulations Modul implementiert)
+- Dymola Modell Parametercheck implementiert
+- Nächste Schritte Analyse Modul & "FAIR" Modul &rarr; dafür Anforderungen an diese Module definieren
