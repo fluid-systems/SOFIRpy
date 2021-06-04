@@ -2,8 +2,7 @@
 import numpy as np
 import copy
 import sys
-from alive_progress import alive_bar
-from numpy.core.records import record
+
 
 
 class FMU():
@@ -129,28 +128,10 @@ class Simulation():
 
         print("All systems connected.")
 
-
-    def set_control_inputs(self):
-        
-        for name in self.control_dic:
-            for inp in self.control_dic[name]:
-                self.control_classes_dic[name].set_input(inp[0],inp[1].get_output(inp[2]))
-
-    
-    def generate_control_output(self):
-        
-        for control in self.control_classes:
-            control.generate_output()
-    
-    def set_fmu_inputs(self):
-        
-        for name in self.fmu_dic:
-            for inp in self.fmu_dic[name]:
-                self.fmu_classes_dic[name].set_input(inp[0],inp[1].get_output(inp[2]))
-
     def simulate(self):
 
-        print("Starting Simulation.")
+        from alive_progress import alive_bar
+        print("Starting Simulation...")
 
         with alive_bar(len(self.time_series), bar= 'blocks', spinner='classic') as bar:
             for time_step, time in enumerate(self.time_series):
@@ -169,8 +150,25 @@ class Simulation():
 
         print("Simulation completed.")
 
-        return  self.result_dict
+        return  self.result_dict, self.convert_results_to_pandas()
         
+    def set_control_inputs(self):
+        
+        for name in self.control_dic:
+            for inp in self.control_dic[name]:
+                self.control_classes_dic[name].set_input(inp[0],inp[1].get_output(inp[2]))
+
+    
+    def generate_control_output(self):
+        
+        for control in self.control_classes:
+            control.generate_output()
+    
+    def set_fmu_inputs(self):
+        
+        for name in self.fmu_dic:
+            for inp in self.fmu_dic[name]:
+                self.fmu_classes_dic[name].set_input(inp[0],inp[1].get_output(inp[2]))
     
     def create_result_dict(self):
         
@@ -187,3 +185,14 @@ class Simulation():
                 value = self.all_system_classes[system_name].get_output(var) 
                 self.result_dict[system_name][var][time_step] = [time, value]
             
+    def convert_results_to_pandas(self):
+
+        import pandas as pd
+
+        result_dataframe = pd.DataFrame(self.time_series, columns = ["time"])
+
+        for system_name in self.result_dict:
+            for var in self.result_dict[system_name]:
+                result_dataframe[system_name +"." + var] = self.result_dict[system_name][var][:,1] 
+
+        return result_dataframe
