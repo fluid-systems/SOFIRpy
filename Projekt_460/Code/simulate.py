@@ -10,18 +10,21 @@ class FMU():
     def __init__(self, model_name, fmu_directory):
         self.model_name = model_name
         self.fmu_path = fmu_directory + model_name +".fmu"
-        self.model_vars = {}
+        
         
     
     def init_fmu(self):
         
         from fmpy import read_model_description, extract
         from fmpy.fmi2 import FMU2Slave 
+        from fmpy.util import fmu_info
 
         model_description = read_model_description(self.fmu_path)
 
-        for variable in model_description.modelVariables:
-            self.model_vars[variable.name] = variable.valueReference
+        self.model_vars = {variable.name : variable.valueReference for variable in model_description.modelVariables}
+        
+        self.unit_vars = {variable.name : variable.unit for variable in model_description.modelVariables}
+        
         
         unzipdir = extract(self.fmu_path)
         self.fmu = FMU2Slave(guid=model_description.guid,
@@ -89,7 +92,7 @@ class Simulation():
     
     def check_control_class(self):
         
-        must_contain_methods = ["set_input", "generate_output", "get_output"]  #TODO if no outputs o inputs in control dict, must_contain_methods can be different
+        must_contain_methods = ["set_input", "generate_output", "get_output"]  #TODO if no outputs or inputs in control dict, must_contain_methods can be different
         for _class in self.control_classes: 
             method_missing = [meth for meth in must_contain_methods if not getattr(_class, meth, None)]
             if method_missing:
