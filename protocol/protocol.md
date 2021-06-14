@@ -35,3 +35,7 @@ Beim überarbeiten der Module stest im Hinterkopf, Modul sollte als alleinstehde
 - Simulations Modul implementiert &rarr; Vorgabe von "Control"-Klasse (Simulationsmethode innerhalb Simulations Modul implementiert)
 - Dymola Modell Parametercheck implementiert
 - Nächste Schritte Analyse Modul & "FAIR" Modul &rarr; dafür Anforderungen an diese Module definieren
+
+## Protokoll 25.05.2021 - 14.06.2021
+- Ergebnisse als pandas dataframe
+- "fair" Modul &rarr; speichern von Zeitreihen in hdf5 (mit Tabellenlabel)
