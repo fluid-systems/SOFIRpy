@@ -11,13 +11,10 @@ class FMU():
         self.model_name = model_name
         self.fmu_path = fmu_directory + model_name +".fmu"
         
-        
-    
     def init_fmu(self):
         
         from fmpy import read_model_description, extract
         from fmpy.fmi2 import FMU2Slave 
-        from fmpy.util import fmu_info
 
         model_description = read_model_description(self.fmu_path)
 
@@ -61,7 +58,7 @@ class FMU():
 
 class Simulation():
     
-    def __init__(self, fmu_dic, controls, stop_time, step_size, var_dict):
+    def __init__(self, stop_time, step_size, var_dict = {}, fmu_dic = {}, controls = {}): #TODO check if works with empty dict
 
         self.fmu_model_names = list(fmu_dic.keys())
         self.fmu_directorys = [sub["directory"] for sub in list(fmu_dic.values())]
@@ -159,7 +156,11 @@ class Simulation():
         
         for name in self.control_dic:
             for inp in self.control_dic[name]:
-                self.control_classes_dic[name].set_input(inp[0],inp[1].get_output(inp[2]))
+                input_name = inp[0]
+                connected_system = inp[1]
+                connected_variable = inp[2]
+                input_value = connected_system.get_output(connected_variable)
+                self.control_classes_dic[name].set_input(input_name,input_value)
 
     
     def generate_control_output(self):
@@ -171,7 +172,11 @@ class Simulation():
         
         for name in self.fmu_dic:
             for inp in self.fmu_dic[name]:
-                self.fmu_classes_dic[name].set_input(inp[0],inp[1].get_output(inp[2]))
+                input_name = inp[0]
+                connected_system = inp[1]
+                connected_variable = inp[2]
+                input_value = connected_system.get_output(connected_variable)
+                self.fmu_classes_dic[name].set_input(input_name,input_value)
     
     def create_result_dict(self):
         
@@ -199,3 +204,15 @@ class Simulation():
                 result_dataframe[system_name +"." + var] = self.result_dict[system_name][var][:,1] 
 
         return result_dataframe
+
+    def create_unit_dic(self):
+
+        unit_dic = {}
+        for system_name in self.result_dict:
+            for var in self.result_dict[system_name]:
+                if system_name in self.fmu_classes_dic:
+                    unit = self.fmu_classes_dic[system_name].unit_vars[var]
+                    unit_dic[system_name + "." + var] = unit
+
+
+        return unit_dic
