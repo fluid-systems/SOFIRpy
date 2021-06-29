@@ -39,3 +39,7 @@ Beim überarbeiten der Module stest im Hinterkopf, Modul sollte als alleinstehde
 ## Protokoll 25.05.2021 - 14.06.2021
 - Ergebnisse als pandas dataframe
 - "fair" Modul &rarr; speichern von Zeitreihen in hdf5 (mit Tabellenlabel)
+## Protokoll 15.06.2021 - 29.06.2021
+- FAIR Modul fertiggestellt
+- Probleme mit hdf5 mit pandas
+
