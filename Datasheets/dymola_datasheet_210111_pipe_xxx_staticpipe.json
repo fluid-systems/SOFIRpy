@@ -4,7 +4,7 @@
     "manufacturer": "unknown",
     "product Name": "unknown",  
     "data sheet": "",
-    "Dymola parameters":[{"symbol": "nParallel",
+    "Parameters":[{"symbol": "nParallel",
         "value": "",
         "unit": "-",
         "description": "Number of identical parallel pipes"},

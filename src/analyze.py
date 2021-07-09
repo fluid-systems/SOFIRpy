@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 class Analyze():
     
     @staticmethod
-    def plot_results(style_sheet_path,results ,y, x = "time", x_label = None, y_label = None, title = None ):
+    def plot_results(style_sheet_path,results ,y, x = "time", x_label = None, y_label = None, title = None, legend  = None ):
 
         plt.style.use(style_sheet_path) 
         
@@ -19,7 +19,9 @@ class Analyze():
             ax.set_ylabel(y_label)
         for var in y:
             ax.plot(results[x], results[var])
-        
+        if legend:
+            plt.legend
+
         return ax
 
     

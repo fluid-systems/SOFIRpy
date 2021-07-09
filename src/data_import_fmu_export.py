@@ -112,9 +112,6 @@ class DataManagement():
 
         print('Model copied.')
 
-    def rename_files(self, project_owner, project_number, run_name): #move to data module
-        pass
-
     def files_management(self):
 
         self.delete_unnecessary_files()

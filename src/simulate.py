@@ -2,6 +2,7 @@
 import numpy as np
 import copy
 import sys
+import os
 
 
 
@@ -9,7 +10,7 @@ class FMU():
 
     def __init__(self, model_name, fmu_directory):
         self.model_name = model_name
-        self.fmu_path = fmu_directory + model_name +".fmu"
+        self.fmu_path = os.path.join(fmu_directory, model_name + ".fmu")
         
     def init_fmu(self):
         
@@ -58,17 +59,17 @@ class FMU():
 
 class Simulation():
     
-    def __init__(self, stop_time, step_size, var_dict = {}, fmu_dic = {}, controls = {}): #TODO check if works with empty dict
+    def __init__(self, stop_time, step_size, result_var_dict = {}, fmu_dict = {}, controls = {}): #TODO check if works with empty dict
 
-        self.fmu_model_names = list(fmu_dic.keys())
-        self.fmu_directorys = [sub["directory"] for sub in list(fmu_dic.values())]
-        self.fmu_connections = [sub["inputs"] for sub in list(fmu_dic.values())]
-        self.fmu_dic = copy.deepcopy(fmu_dic)
-        self.fmu_classes_dic= copy.deepcopy(fmu_dic)
+        self.fmu_model_names = list(fmu_dict.keys())
+        self.fmu_directorys = [sub["directory"] for sub in list(fmu_dict.values())]
+        self.fmu_connections = [sub["inputs"] for sub in list(fmu_dict.values())]
+        self.fmu_dict = copy.deepcopy(fmu_dict)
+        self.fmu_classes_dic= copy.deepcopy(fmu_dict)
         for name in self.fmu_classes_dic.keys():
             self.fmu_classes_dic[name] = ""
-        for name, con in zip(fmu_dic.keys(), self.fmu_connections):
-            self.fmu_dic[name] = con   
+        for name, con in zip(fmu_dict.keys(), self.fmu_connections):
+            self.fmu_dict[name] = con   
         
 
         self.control_connections = [sub["inputs"] for sub in list(controls.values())]
@@ -83,11 +84,11 @@ class Simulation():
         self.time_series = np.arange(0, stop_time + step_size, step_size)
         self.step_size = step_size
         self.stop_time = stop_time
-        self.var_dict = var_dict
-        self.result_dict = copy.deepcopy(var_dict)
+        self.result_var_dict = result_var_dict
+        self.result_dict = copy.deepcopy(result_var_dict)
 
     
-    def check_control_class(self):
+    def check_control_class(self): #DONT need this method --> using abstract classes
         
         must_contain_methods = ["set_input", "generate_output", "get_output"]  #TODO if no outputs or inputs in control dict, must_contain_methods can be different
         for _class in self.control_classes: 
@@ -121,8 +122,8 @@ class Simulation():
                 connected_system[1] = self.all_system_classes[connected_system[1]]
         
         
-        for name in self.fmu_dic:
-            for connected_system in self.fmu_dic[name]:
+        for name in self.fmu_dict:
+            for connected_system in self.fmu_dict[name]:
                 connected_system[1] = self.all_system_classes[connected_system[1]] 
             
 
@@ -170,8 +171,8 @@ class Simulation():
     
     def set_fmu_inputs(self):
         
-        for name in self.fmu_dic:
-            for inp in self.fmu_dic[name]:
+        for name in self.fmu_dict:
+            for inp in self.fmu_dict[name]:
                 input_name = inp[0]
                 connected_system = inp[1]
                 connected_variable = inp[2]
@@ -180,9 +181,9 @@ class Simulation():
     
     def create_result_dict(self):
         
-        for system in self.var_dict:
+        for system in self.result_var_dict:
             zero_list = [np.zeros((len(self.time_series), 2)) for i in range(len(self.result_dict[system]))]
-            self.result_dict[system] = {variable_name:zero_array for (variable_name, zero_array) in zip(self.var_dict[system], zero_list)}
+            self.result_dict[system] = {variable_name:zero_array for (variable_name, zero_array) in zip(self.result_var_dict[system], zero_list)}
             
                 
         

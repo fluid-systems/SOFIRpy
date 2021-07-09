@@ -1,5 +1,7 @@
 
-class MAS():
+from abstract_control import Control
+
+class MAS(Control):
     
     def __init__(self):
         pass
@@ -9,3 +11,6 @@ class MAS():
         pass
     def get_output(self, output_name):
         return 1
+
+    def get_unit(self, variable_name):
+        pass
