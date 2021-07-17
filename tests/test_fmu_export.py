@@ -1,8 +1,11 @@
 
 import sys
-sys.path.append('C:/Users/Daniele/Documents/GitLab/fair_sim_release/fair_sim_release')
+from typing import Set, Tuple
+#sys.path.append('C:/Users/Daniele/Documents/GitLab/fair_sim_release/fair_sim_release')
+sys.path.append('/Users/danieleinturri/Documents/Gitlab/fair_sim_release')
 import pytest
 from src.fmu_export import ParameterImport
+from src.fmu_export import ModelModifierFormatError
 import os
 current_dir = os.path.realpath('..')
 
@@ -12,7 +15,7 @@ def data_import():
     
 def test_datasheet_import(data_import):
 
-    datasheet_dir = current_dir +r'\fair_sim_release\tests\test_data\datasheets'
+    datasheet_dir = current_dir +r'/Gitlab/fair_sim_release/tests/test_data/datasheets'
     print(datasheet_dir)
     datasheets = { 'component1' : 'test_datasheet_1'}                
     data_import.read_datasheet(datasheet_dir, datasheets)
@@ -20,3 +23,23 @@ def test_datasheet_import(data_import):
 
     assert data_import.parameters == expected 
 
+@pytest.mark.parametrize('input', ['=234', 'redeclare= ', 'redeclare package medium == abc', 'abc'])
+def test_model_modifiers_setter_raises_format_exception(data_import, input):
+    
+    with pytest.raises(ModelModifierFormatError):
+        data_import.model_modifiers = [input]
+
+
+@pytest.mark.parametrize('input', [{'key' :'value'}, 1, 'string', True, (1,2), {1,2,3}])
+def test_model_moodifiers_setter_raises_type_exception(data_import, input):
+
+    with pytest.raises(TypeError):
+        data_import.model_modifiers = input
+
+
+def test_model_modifiers_setter(data_import, input = ['  redeclare  package  medium =  medium', '  redeclare package medium = fluid   ']):
+
+    data_import.model_modifiers = input
+
+def test_read_data_sheet(data_import):
+    pass
