@@ -5,37 +5,49 @@ from OMPython import ModelicaSystem
 from buildingspy.simulate.Simulator import Simulator
 from abc import ABC, abstractmethod
 import re
+from typing import Union
 
 def fmu_export( modeling_environment, model_name, model_directory, output_directory, 
                 datasheet_directory, datasheets ,additional_parameters):
     pass
 
-class ParameterImport():
+class FmuExport:
+    
+    def __init__(self, FmuExport, FileManagement, ParameterImport = None):
 
-    model_modifier_list: list
-    _parameters: dict
+        fmu_export = FmuExport #class responsible for the export of the fmu
+        parameter_import = ParameterImport #class responsible for import of Parameters
+        file_management = FileManagement #class responsible for file Management
 
-    def __init__(self, model_modifier_list = []):
 
-        self._parameters = {}
+class ParameterImport:
+
+    def __init__(self, model_modifier_list: list = [], parameters_dict: dict = {}) -> None:
+
+        self.parameters = parameters_dict
         self.model_modifiers = model_modifier_list
     
     @property
-    def parameters(self):
+    def parameters(self) -> dict:
         return self._parameters
 
     @parameters.setter
-    def parameters(self, parameter_dic: dict):
-        if type(parameter_dic) is not dict:
-            raise TypeError("'Parameters' has to be a key of the dictionary")
-        self._parameters = parameter_dic
+    def parameters(self, parameter_dict: dict) -> None:
+        if type(parameter_dict) != dict:
+            raise TypeError("'parameters' needs to be a dictonary")
+        self._parameters = {}
+        for comsym, value in parameter_dict.items():
+            if '.' not in comsym: 
+                raise ComponentSymbolFormatError(comsym, "The keys of the dictonary need to be in the following format: 'component_name.symbol_name'.")
+            component, symbol = comsym.split('.',1)
+            self.add_parameter(component, symbol, value)
     
     @property
-    def model_modifiers(self):
+    def model_modifiers(self) -> list:
         return self._model_modifiers
 
     @model_modifiers.setter
-    def model_modifiers(self, model_modifier_list: list):
+    def model_modifiers(self, model_modifier_list: list) -> None:
         if type(model_modifier_list) is not list:
             raise TypeError("'model_modifier_list' has to be a list")
 
@@ -63,16 +75,21 @@ class ParameterImport():
                     symbol = parameter['symbol']
                     value = parameter['value']
                     if value != "":
-                        self._parameters[f'{component}.{symbol}'] = value
-    
+                        self.add_parameter(component, symbol, value)
 
-    def read_additional_parameters(self, additional_parameters: dict) -> None:
+    def add_parameter(self, component: str, symbol: str, value: Union[str, int, float]) -> None:
 
-        for component in additional_parameters:
-            self._parameters[component] = additional_parameters[component]
+        if type(component) != str:
+            raise ComponentSymbolTypeError(component, "'Component' needs to be a string.")
+        if type(symbol) != str:
+            raise ComponentSymbolTypeError(symbol, "'Symbol' needs to be a string.")
+        if type(value) not in (str, float, int):
+            raise ValueTypeError(value, "'Value' needs to be a string, integer or float")
+        
+        self._parameters[f'{component}.{symbol}'] = value
 
 
-class FmuExport(ABC):
+class _FmuExport(ABC):
 
     @abstractmethod
     def add_parameters(self) -> None:
@@ -83,11 +100,11 @@ class FmuExport(ABC):
         pass
 
         
-class DymolaFmuExport(FmuExport, Simulator, ParameterImport):
+class DymolaFmuExport(_FmuExport, Simulator):
     
-    def __init__(self, model_name,model_directory, dymola_path, output_directory, packages = [],  model_modifiers = []):
+    def __init__(self, model_name,model_directory, dymola_path, output_directory, packages = []):
         Simulator.__init__(self, model_name, 'dymola', outputDirectory = output_directory)
-        ParameterImport.__init__(self, model_modifier_list=model_modifiers)
+        #ParameterImport.__init__(self, model_modifier_list=model_modifiers)
         
         self.packages = packages
         self.model_directory = model_directory
@@ -208,7 +225,7 @@ translateModelFMU(modelInstance, false, "", "2", "all", false, 2);
         self._runSimulation(runScriptName, self._simulator_.get('timeout'),
                                                                         worDir)
 
-class OpenModelicaFmuExport(FmuExport, ParameterImport):
+class OpenModelicaFmuExport(_FmuExport, ModelicaSystem):
     
     def fmu_export(self) -> None:
         pass
@@ -216,7 +233,7 @@ class OpenModelicaFmuExport(FmuExport, ParameterImport):
     def add_parameters(self) -> None:
         pass
 
-class DataManagement():
+class FileManagement:
     pass
 
 
@@ -229,6 +246,30 @@ class ModelModifierFormatError(Exception):
         self.value = value
         self.message = message
         super().__init__(message)
+
+class ComponentSymbolTypeError(Exception):
+    """ Custom error that is raised when the component symbol name that is added is not a string."""
+
+    def __init__(self, value, message):
+        self.value = value
+        self.message = message
+        super().__init__(message)
+
+class ValueTypeError(Exception):
+    """ Custom error that is raised when the value that is added is not a string a int or a float."""
+
+    def __init__(self, value, message):
+        self.value = value
+        self.message = message
+        super().__init__(message)
+
+class ComponentSymbolFormatError(Exception):
+
+    def __init__(self, value, message):
+        self.value = value
+        self.message = message
+        super().__init__(message)
+
 #%%
 # %%
 
