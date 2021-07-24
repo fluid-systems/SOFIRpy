@@ -3,6 +3,7 @@ import numpy as np
 import copy
 import sys
 import os
+from abstract_control import Control
 
 
 
@@ -88,18 +89,11 @@ class Simulation():
         self.result_dict = copy.deepcopy(result_var_dict)
 
     
-    def check_control_class(self): #DONT need this method --> using abstract classes
+    def check_control_class(self):
         
-        must_contain_methods = ["set_input", "generate_output", "get_output"]  #TODO if no outputs or inputs in control dict, must_contain_methods can be different
-        for _class in self.control_classes: 
-            method_missing = [meth for meth in must_contain_methods if not getattr(_class, meth, None)]
-            if method_missing:
-                s = ""
-                for mis in method_missing:
-                    s +=  "\n" + mis
-                sys.exit(f"The class '{type(_class).__name__}' is missing the following methodes:" + s)     
-            else:
-                print(f"The class '{type(_class).__name__}' contains all the necessary methods.")        
+        for _class in self.control_classes:
+            if not isinstance(_class, Control):
+                raise ControlClassInheritError(f"The class '{type(_class).__name__}' needs to inherit from the Control class. Import Control from abstract_control to get the class")
 
     def initialise_fmus(self):
 
@@ -141,8 +135,7 @@ class Simulation():
                 self.generate_control_output()
                 self.set_fmu_inputs()
                 self.record_values(time_step, time)
-                for fmu in self.fmu_classes_dic.values():
-                    fmu.do_step(time, self.step_size)
+                self.fmu_do_step(time)
                 
                 bar()
 
@@ -163,7 +156,11 @@ class Simulation():
                 input_value = connected_system.get_output(connected_variable)
                 self.control_classes_dic[name].set_input(input_name,input_value)
 
-    
+    def fmu_do_step(self, time):
+
+        for fmu in self.fmu_classes_dic.values():
+                fmu.do_step(time, self.step_size)
+
     def generate_control_output(self):
         
         for control in self.control_classes:
@@ -217,3 +214,10 @@ class Simulation():
 
 
         return unit_dic
+
+
+class ControlClassInheritError(Exception):
+
+    def __init__(self, message):
+        self.message = message
+        super().__init__(message)
