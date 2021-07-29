@@ -7,25 +7,18 @@ from abc import ABC, abstractmethod
 import re
 from typing import Union
 
-def fmu_export( modeling_environment, model_name, model_directory, output_directory, 
-                datasheet_directory, datasheets ,additional_parameters):
-    pass
-
-class FmuExport:
-    
-    def __init__(self, FmuExport, FileManagement, ParameterImport = None):
-
-        fmu_export = FmuExport #class responsible for the export of the fmu
-        parameter_import = ParameterImport #class responsible for import of Parameters
-        file_management = FileManagement #class responsible for file Management
 
 
 class ParameterImport:
 
-    def __init__(self, model_modifier_list: list = [], parameters_dict: dict = {}) -> None:
+    def __init__(self, model_modifier_list: list = [], parameters_dict: dict = {}, datasheets = None, datasheet_direcotry = None) -> None:
 
         self.parameters = parameters_dict
         self.model_modifiers = model_modifier_list
+        if datasheets:
+            self.datasheet_dict = datasheets
+        if datasheet_direcotry:
+            self.datasheet_directory = datasheet_direcotry
     
     @property
     def parameters(self) -> dict:
@@ -34,10 +27,10 @@ class ParameterImport:
     @parameters.setter
     def parameters(self, parameter_dict: dict) -> None:
         if type(parameter_dict) != dict:
-            raise TypeError("'parameters' needs to be a dictonary")
+            raise TypeError("'parameter_dict' needs to be a dictonary")
         self._parameters = {}
         for comsym, value in parameter_dict.items():
-            if '.' not in comsym: 
+            if '.' not in comsym: #TODO muss es das Format haben?
                 raise ComponentSymbolFormatError(comsym, "The keys of the dictonary need to be in the following format: 'component_name.symbol_name'.")
             component, symbol = comsym.split('.',1)
             self.add_parameter(component, symbol, value)
@@ -51,8 +44,8 @@ class ParameterImport:
         if type(model_modifier_list) is not list:
             raise TypeError("'model_modifier_list' has to be a list")
 
-        r = re.compile('redeclare [A-Za-z]+ [A-Za-z0-9]+ = [A-Za-z0-9.]+') #TODO check end of string
-        for i, modifier in enumerate(model_modifier_list): #TODO maybe overwrite modifier
+        r = re.compile('redeclare [A-Za-z]+ [A-Za-z0-9]+ = [A-Za-z0-9.]+$') 
+        for i, modifier in enumerate(model_modifier_list): 
             modifier_striped = re.sub(' +',  ' ', modifier.strip())
             if not r.match(modifier_striped):
                 raise ModelModifierFormatError(value =  modifier, message="The model modifiers need to be in the following format:e.g. 'redeclare package Medium = Modelica.Media.Water.ConstantPropertyLiquidWater'")
@@ -60,22 +53,26 @@ class ParameterImport:
             
         self._model_modifiers = model_modifier_list    
     
-    def read_datasheet(self, datasheet_directory: str, datasheet_dict: dict) -> None: #TODO what if datasheets all in different dir
+
+
+    def read_datasheet(self) -> None: #TODO what if datasheets all in different dir
 
         import json
+        if not self.datasheet_dict and self.datasheet_dict:
+            raise  DatasheetNameError("The path to the datasheets and the datasheet dictonary need to be defined")
 
-        for component, sheet_name in datasheet_dict.items():
-            with open(os.path.join(datasheet_directory, sheet_name + '.json')) as file:
+        for component, sheet_name in self.datasheet_dict.items():
+            with open(os.path.join(self.datasheet_directory, sheet_name + '.json')) as file:
                 datasheet = json.load(file)
-                try:
-                    parameters = datasheet['Parameters']
-                except KeyError:
-                    print(f"The 'datasheet' {datasheet} in missing the key 'Parameters'.")
-                for parameter in parameters:
+                if 'Parameters' not in datasheet.keys():
+                    raise KeyError(f"The datasheet '{sheet_name}' in missing the key 'Parameters'.")
+                parameters_from_datasheet = datasheet['Parameters']
+                for parameter in parameters_from_datasheet:
                     symbol = parameter['symbol']
                     value = parameter['value']
                     if value != "":
                         self.add_parameter(component, symbol, value)
+
 
     def add_parameter(self, component: str, symbol: str, value: Union[str, int, float]) -> None:
 
@@ -91,8 +88,38 @@ class ParameterImport:
 
 class _FmuExport(ABC):
 
+    def __init__(self, model_name, model_directory):
+
+        self.model_directory = model_directory 
+        self.model_name = model_name
+
+    @property
+    def model_directory(self) -> str:
+        return self._model_directory
+
+    @model_directory.setter
+    def model_directory(self, model_directory) -> None:
+        if not os.path.exists(model_directory):
+            raise DirectoryDoesNotExistError(model_directory, f"The directory '{model_directory}' does not exist.")
+        self._model_directory = model_directory
+
+    @property
+    def model_name(self) -> str:
+        return self._model_name
+
+    @model_name.setter
+    def model_name(self, model_name) -> None:
+        path = os.path.join(self.model_directory,model_name +".mo")
+        if not os.path.exists(path):
+            raise FileNotFoundError(f"Path '{path}' does not exist.")
+        self._model_name = model_name
+        
     @abstractmethod
     def add_parameters(self) -> None:
+        pass
+
+    @abstractmethod
+    def add_model_modifiers(self):
         pass
     
     @abstractmethod
@@ -102,28 +129,32 @@ class _FmuExport(ABC):
         
 class DymolaFmuExport(_FmuExport, Simulator):
     
-    def __init__(self, model_name,model_directory, dymola_path, output_directory, packages = []):
-        Simulator.__init__(self, model_name, 'dymola', outputDirectory = output_directory)
-        #ParameterImport.__init__(self, model_modifier_list=model_modifiers)
-        
+    def __init__(self, model_name,model_directory, dymola_path, packages = []):
+        Simulator.__init__(self, model_name, 'dymola')
+        _FmuExport.__init__(self, model_name, model_directory)
         self.packages = packages
-        self.model_directory = model_directory
         self.dymola_path = dymola_path
+        self.files_to_delete = ['dslog.txt', 'fmiModelIdentifier.h', 'dsmodel.c', 'buildlog.txt',
+                                'dsmodel_fmuconf.h', "~FMUOutput", "dsin.txt"]
+        self.files_to_move = [f'{model_name}.fmu', 'simulator.log']
+        self.additional_file_moves = []
+        self.files_to_delete_no_sucess = ['simulator.log']
 
     def make_dymola_available(self) -> None:
      
         os.environ["PATH"] += os.pathsep + self.dymola_path
 
-    def add_parameters(self) -> None:
-        for component_symbol, value in self.parameters.items():
+    def add_parameters(self, parameters) -> None:
+
+        for component_symbol, value in parameters.items():
             self.addParameters({component_symbol: value})
 
-    def add_model_modifiers(self) -> None:
+    def add_model_modifiers(self, model_modifiers) -> None:
 
-        for modifier in self.model_modifiers:
+        for modifier in model_modifiers:
             self.addModelModifier(modifier) 
 
-    def _get_dymola_commands(self, working_directory, log_file, model_instance, packages) -> str:
+    def _get_dymola_commands(self, working_directory: str, log_file: str, model_instance: str, packages: list) -> str:
         s = """
 // File autogenerated by _get_dymola_commands_customized\n"""
         
@@ -139,7 +170,7 @@ OutputCPUtime:=true;
 """.format(working_directory=working_directory,
            log_file=log_file, 
            model_directory = self.model_directory,
-           model_path = f'{self.model_directory}{self.modelName}.mo')
+           model_path = os.path.join(self.model_directory, self.model_name + '.mo'))
         
 
 
@@ -195,12 +226,14 @@ translateModelFMU(modelInstance, false, "", "2", "all", false, 2);
 
     def fmu_export(self) -> None:
 
-        # function modified from buldingspy
 
+        self.make_dymola_available()
+        # function modified from buldingspy
         # Get directory name. This ensures for example that if the directory is called xx/Buildings
         # then the simulations will be done in tmp??/Buildings
         worDir = self._create_worDir()
         self._simulateDir_ = worDir
+        self.additional_file_moves.append(os.path.join(worDir, "run.mos"))
         # Copy directory
         shutil.copytree(os.path.abspath(self._packagePath), worDir,
                         ignore=shutil.ignore_patterns('*.svn', '*.git'))        
@@ -221,24 +254,173 @@ translateModelFMU(modelInstance, false, "", "2", "all", false, 2);
                 model_instance=mi,
                 packages = self.packages))
         # Run script
-        print('Compiling...')
-        self._runSimulation(runScriptName, self._simulator_.get('timeout'),
-                                                                        worDir)
+        self._runSimulation(runScriptName, self._simulator_.get('timeout'), worDir)
+
+    
 
 class OpenModelicaFmuExport(_FmuExport, ModelicaSystem):
     
-    def fmu_export(self) -> None:
-        pass
+    def __init__(self) -> None:
+        super().__init__()
 
     def add_parameters(self) -> None:
         pass
 
+    def add_model_modifiers(self):
+        pass
+
+    def fmu_export(self) -> None:
+        pass
+
 class FileManagement:
-    pass
+    
+    def __init__(self) -> None:
+        pass
+
+    def delete_unnecessary_files(self, files_to_delete: list, directory: str) -> None:
+
+        for file in files_to_delete:
+            path = os.path.join(directory, file)
+            if os.path.exists(path):
+                if os.path.isdir(path):
+                    shutil.rmtree(path, ignore_errors=True)
+                else:
+                    os.remove(path)
+
+    def move_files(self, files: list, target_dir: str, current_dir: str ,additional_file_moves: list[str] = None) -> None:
+
+        def move_file(current_path, target_path):
+            if os.path.exists(current_path):
+                os.rename(current_path, target_path)
+
+        for file in files: 
+            current_path = os.path.join(current_dir, file)
+            target_path = os.path.join(target_dir, file)
+            move_file(current_path, target_path)
+            
+        for current_path in additional_file_moves:
+            move_file(current_path, os.path.join(target_dir, os.path.basename(current_path)))
 
 
 
 
+class FmuExport:
+    
+    def __init__(self,output_directory, FmuExport: _FmuExport, FileManagement: FileManagement, ParameterImport: ParameterImport = None) -> None:
+
+        self.modeling_env = FmuExport #class responsible for the export of the fmu
+        self.parameter_import = ParameterImport #class responsible for import of Parameters
+        self._file_management = FileManagement #class responsible for file Management
+        self.output_directory = output_directory
+
+
+    def import_parameters(self) -> None:
+        
+        if self.parameter_import:
+            self.parameter_import.read_datasheet()
+            self.modeling_env.add_parameters(self.parameter_import.parameters)
+            self.modeling_env.add_model_modifiers(self.parameter_import.model_modifiers)
+
+    def fmu_export(self) -> bool:
+        
+        self.modeling_env.fmu_export()
+        return self.check_fmu_export()
+        
+    def check_fmu_export(self) -> bool:
+
+        fmu_path = os.path.join(self.modeling_env.model_directory, self.modeling_env.model_name + ".fmu")
+
+        if os.path.exists(fmu_path):
+            return True
+        else:
+            return False
+
+    def file_management(self, files_to_delete: list, files_to_move: list = [], additional_file_moves:list = []) -> None:
+
+        self._file_management.delete_unnecessary_files(files_to_delete, self.modeling_env.model_directory)
+        self._file_management.move_files(files_to_move,self.output_directory,self.modeling_env.model_directory ,additional_file_moves)
+
+
+def initialize( modeling_environment: str, model_name:str, model_directory:str,env_path, output_directory, 
+                datasheet_directory = None, datasheets = None ,additional_parameters = {}, model_modifiers = []) -> FmuExport:
+
+    if modeling_environment.lower().startswith("d"):
+        modeling_env = DymolaFmuExport(model_name, model_directory, env_path)
+    elif modeling_environment.lower().startswith("o"):
+        modeling_env = OpenModelicaFmuExport()
+    else:
+        raise ModelEnvironmentArgumentError("Enter either d for dymola or o for openmodelica as the 'modeling_environment'.")
+
+    if (datasheet_directory and datasheets) or additional_parameters or model_modifiers:
+        parameter_import = ParameterImport( model_modifiers, additional_parameters, 
+                                            datasheet_direcotry= datasheet_directory, datasheets= datasheets)
+    else:
+        parameter_import = None
+
+    _file_management = FileManagement()
+    
+    fmu_export = FmuExport(output_directory,modeling_env, _file_management, parameter_import)
+
+    return fmu_export
+        
+def export_fmu( modeling_environment: str, model_name:str, model_directory:str,env_path, output_directory, 
+                datasheet_directory = None, datasheets = None ,additional_parameters = {}, model_modifiers = []) -> FmuExport:
+    
+    fmu_export = initialize(modeling_environment, model_name, model_directory, env_path, output_directory, 
+                datasheet_directory, datasheets, additional_parameters, model_modifiers)
+
+    fmu_export.import_parameters()
+    succes = fmu_export.fmu_export()
+
+    if succes:
+        fmu_export.file_management(fmu_export.modeling_env.files_to_delete, fmu_export.modeling_env.files_to_move, fmu_export.modeling_env.additional_file_moves)
+        print("The FMU Export was succesful.")
+        return fmu_export
+    else:
+        print("The FMU Export was not succesful. Checking if parameters were added that do not exist...")
+        fmu_export.file_management(fmu_export.modeling_env.files_to_delete_no_sucess)
+        # check if parameter where imported that do not exist
+        # try fmu export without added parameters
+        _fmu_export = initialize(modeling_environment, model_name, model_directory, env_path, output_directory)
+        succes = _fmu_export.fmu_export()
+        if succes:
+            check_paremeters_exist = CheckParametersExist()
+            check_paremeters_exist.read_model_parameters(model_directory, model_name)
+            possibly_non_existiing_parameters = check_paremeters_exist.check(list(fmu_export.parameter_import.parameters.keys()))
+            # files that need to be moved if fmu export was succesful the first time now need to be deleted as well
+            files_to_delete = _fmu_export.modeling_env.files_to_delete + _fmu_export.modeling_env.files_to_move
+            _fmu_export.file_management(files_to_delete)
+            print("The FMU Export without added parameters was succesful.")
+            print("Check if model_modifiers and added parameters exist in the model.")
+            print(f"Possible parameters that do not exist:\n{possibly_non_existiing_parameters}")
+
+        else:
+            print('The FMU Export without added parameters was not succesful.')
+            if modeling_environment == 'd':
+                print('Check if Dymola license is active.')
+            print('Check if model_name, model_directory etc. are correct.')
+            _fmu_export.file_management(_fmu_export.modeling_env.files_to_delete_no_sucess)
+
+    return fmu_export
+
+class CheckParametersExist:
+    
+
+    def read_model_parameters(self, model_directory: str, model_name: str) -> None:
+
+        from fmpy import read_model_description
+        
+        fmu_path = os.path.join(model_directory, model_name + ".fmu")
+        model_description = read_model_description(fmu_path)
+
+        self.variables =  [variable.name for variable in model_description.modelVariables]
+
+    def check(self, parameters: list) -> list:
+
+        return [parameter for parameter in parameters if parameter not in self.variables]
+      
+
+    
 class ModelModifierFormatError(Exception):
     """Custom error that is raised when the 'model modifier' doesn't have the right format."""
 
@@ -269,6 +451,27 @@ class ComponentSymbolFormatError(Exception):
         self.value = value
         self.message = message
         super().__init__(message)
+
+class DirectoryDoesNotExistError(Exception):
+    def __init__(self, value, message):
+        self.value = value
+        self.message = message
+        super().__init__(message)
+
+class DatasheetNameError(Exception):
+
+    def __init__(self, value, message):
+        self.value = value
+        self.message = message
+        super().__init__(message)
+
+class ModelEnvironmentArgumentError(Exception):
+
+    def __init__(self, value, message):
+        self.value = value
+        self.message = message
+        super().__init__(message)
+
 
 #%%
 # %%
