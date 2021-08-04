@@ -1,4 +1,3 @@
-
 import numpy as np
 import pandas as pd
 import copy
@@ -9,13 +8,34 @@ from fmpy.fmi2 import FMU2Slave
 from alive_progress import alive_bar
 
 
-class FMU:
+class Fmu:
 
-    def __init__(self, model_name, fmu_directory):
+    def __init__(self, model_name: str, fmu_directory: str) -> None:
         self.model_name = model_name
         self.fmu_path = os.path.join(fmu_directory, model_name + ".fmu")
 
-    def init_fmu(self, start_time = 0):
+    @property
+    def model_name(self) -> str:
+        return self._model_name
+
+    @model_name.setter
+    def model_name(self, model_name: str) -> None:
+        if type(model_name) != str:
+            raise TypeError("The model name needs to be a string.")
+        self._model_name = model_name
+
+    @property
+    def fmu_path(self) -> str:
+        return self._fmu_path
+
+    @fmu_path.setter
+    def fmu_path(self, fmu_path: str) -> None:
+        
+        if not os.path.exists(fmu_path):
+            raise FileNotFoundError(f"The path '{fmu_path}' does not exist")
+        self._fmu_path = fmu_path
+
+    def initialize_fmu(self, start_time: float) -> None:
 
         self.model_description = read_model_description(self.fmu_path)
         self.create_model_vars_dict()
@@ -32,31 +52,34 @@ class FMU:
         self.fmu.exitInitializationMode()
         print(f'FMU {self.model_name} initialized.')
     
-    def create_model_vars_dict(self):
+    def create_model_vars_dict(self) -> None:
 
         self.model_vars = {variable.name : variable.valueReference for variable in self.model_description.modelVariables}
 
-    def create_unit_vars_dict(self):
+    def create_unit_vars_dict(self) -> None:
 
         self.unit_vars = {variable.name : variable.unit for variable in self.model_description.modelVariables}
-
             
-    def set_input(self,input_name, input_value):
+    def set_input(self,input_name: str, input_value: float) -> None:
         
         self.fmu.setReal([self.model_vars[input_name]], [input_value])
 
-    def get_output(self, variable_name):
+    def get_output(self, variable_name: str) -> float:
         
         return self.fmu.getReal([self.model_vars[variable_name]])[0]
          
-    def do_step(self, time, step_size):
+    def do_step(self, time, step_size: float) -> None:
 
         self.fmu.doStep(currentCommunicationPoint=time,communicationStepSize=step_size)
 
-    def conclude_simulation_process(self):
+    def conclude_simulation_process(self) -> None:
 
         self.fmu.terminate()
         self.fmu.freeInstance()
+
+    def get_unit(self, variable: str) -> str:
+
+        return self.unit_vars[variable]
 
 
 class ConnectSystem:
@@ -68,179 +91,124 @@ class ConnectSystem:
 
     def create_all_system_classes_dict(self) -> None:
 
-        self.all_sytsem_classes_dict = {**self.fmu_classes_dic, **self.control_classes_dic}
-        
+        self.all_system_classes = {**self.fmu_classes, **self.control_classes}
+
     def create_control_classes_dict(self) -> None:
 
-        self.control_classes_dic = {control["control name"]: control["control class"] for control in self.controls}
+        self.control_classes = {control["control name"]: control["control class"] for control in self.controls}
 
-    def initialise_fmus(self, start_time = 0) -> None:
+    def check_control_classes(self) -> None:
 
-        self.fmu_classes_dic = {}
+        for _class in self.control_classes.values():
+            if not isinstance(_class, Control):
+                raise ControlClassInheritError(f"The class '{type(_class).__name__}' needs to inherit from the Control class. Import Control from abstract_control to get the class")
+
+    def initialise_fmus(self, start_time: float) -> None:
+
+        self.fmu_classes = {}
         for fmu in self.fmus:
             model_name = fmu["model name"]
             model_directory = fmu["directory"]
-            fmu_class = FMU(model_name, model_directory)
-            fmu_class.init_fmu(start_time)
-            self.fmu_classes_dic[model_name] = fmu_class
+            fmu_class = Fmu(model_name, model_directory)
+            fmu_class.initialize_fmu(start_time)
+            self.fmu_classes[model_name] = fmu_class
 
-    def connect_systems(self):
+    def initialize_systems(self, start_time: float) -> None:
 
+        self.initialise_fmus(start_time)
+        self.create_control_classes_dict()
+        self.check_control_classes()
+        self.create_all_system_classes_dict()
+   
         for fmu in self.fmus:
             for connection in fmu["connections"]:
                 system_name = connection["connect to system"]
-                connection["connect to system"] = self.all_sytsem_classes_dict[system_name]
+                connection["connect to system"] = self.all_system_classes[system_name]
         
         for control in self.controls:
             for connection in control["connections"]:
                 system_name = connection["connect to system"]
-                connection["connect to system"] = self.all_sytsem_classes_dict[system_name]
-               
-
-
-
-        
-
+                connection["connect to system"] = self.all_system_classes[system_name]
+              
+class Record:... #TODO
 
 class Simulation:
     
-    def __init__(self, result_var_dict = {}, fmu_dict = {}, controls = {}): #TODO check if works with empty dict
+    def __init__(self,systems: ConnectSystem, result_var_dict: dict = {}): #TODO check if works with empty dict
 
-        self.fmu_model_names = list(fmu_dict.keys())
-        self.fmu_directorys = [sub["directory"] for sub in list(fmu_dict.values())]
-        self.fmu_connections = [sub["inputs"] for sub in list(fmu_dict.values())]
-        self.fmu_dict = copy.deepcopy(fmu_dict)
-        self.fmu_classes_dic= copy.deepcopy(fmu_dict)
-        for name in self.fmu_classes_dic.keys():
-            self.fmu_classes_dic[name] = ""
-        for name, con in zip(fmu_dict.keys(), self.fmu_connections):
-            self.fmu_dict[name] = con   
-        
-
-        self.control_connections = [sub["inputs"] for sub in list(controls.values())]
-        self.control_dic = copy.deepcopy(controls)
-        for name, con in zip(self.control_dic, self.control_connections):
-            self.control_dic[name] = con 
-        self.control_classes_dic = copy.deepcopy(controls)
-        self.control_classes = [sub["class"] for sub in list(controls.values())]
-        for name, _class in zip(self.control_classes_dic.keys(), self.control_classes):
-            self.control_classes_dic[name] = _class
+        self.systems = systems
         self.result_var_dict = result_var_dict
         self.result_dict = copy.deepcopy(result_var_dict)
-
-    
-    def check_control_class(self):
-        
-        for _class in self.control_classes:
-            if not isinstance(_class, Control):
-                raise ControlClassInheritError(f"The class '{type(_class).__name__}' needs to inherit from the Control class. Import Control from abstract_control to get the class")
-
-    def initialise_fmus(self, start_time = 0):
-
-        #print("Initialise FMUs...")
-        for name, direc in zip(self.fmu_model_names, self.fmu_directorys):
-            fmu = FMU(name, direc)
-            fmu.init_fmu(start_time)
-            self.fmu_classes_dic[name] = fmu   
-        #print("FMUs initialised.")
-
-    def connect_systems(self):
-        
-
-        self.all_system_classes = self.fmu_classes_dic.copy()
-        self.all_system_classes.update(self.control_classes_dic)
-        
-        for name in self.control_dic:
-            for connected_system in self.control_dic[name]:
-                connected_system[1] = self.all_system_classes[connected_system[1]]
-        
-        
-        for name in self.fmu_dict:
-            for connected_system in self.fmu_dict[name]:
-                connected_system[1] = self.all_system_classes[connected_system[1]] 
-            
+          
     def simulate(self,stop_time, step_size, start_time = 0):
 
+        self.systems.initialize_systems(start_time)
+        self.time_series = np.arange(start_time, stop_time + step_size, step_size)
+        self.create_result_dict()
+
         print("Starting Simulation...")
-        time_series = np.arange(start_time, stop_time + step_size, step_size)
-        #self.create_result_dataframe(time_series)
-        with alive_bar(len(time_series), bar= 'blocks', spinner='classic') as bar:
+        with alive_bar(len(self.time_series), bar= 'blocks', spinner='classic') as bar:
             for time_step, time in enumerate(self.time_series):
 
                 self.set_control_inputs()
                 self.generate_control_output()
                 self.set_fmu_inputs()
                 self.record_values(time_step, time)
-                self.fmu_do_step(time)
-                
+                self.fmu_do_step(time, step_size)
                 bar()
-
-        for fmu in self.fmu_classes_dic.values():
-            fmu.conclude_simulation_process()
-
+                
+        self.conclude_fmu_simulation()
+       
         print("Simulation completed.")
 
         return  self.convert_results_to_pandas()
         
     def set_control_inputs(self):
         
-        for name in self.control_dic:
-            for inp in self.control_dic[name]:
-                input_name = inp[0]
-                connected_system = inp[1]
-                connected_variable = inp[2]
+        for control in self.systems.controls:
+            for connection in control["connections"]:
+                input_name = connection["input name"]
+                connected_system = connection["connect to system"]
+                connected_variable = connection["connect to variable"]
                 input_value = connected_system.get_output(connected_variable)
-                self.control_classes_dic[name].set_input(input_name,input_value)
+                self.systems.control_classes[control["control name"]].set_input(input_name,input_value)
 
-    def fmu_do_step(self, time):
+    def fmu_do_step(self, time, step_size):
 
-        for fmu in self.fmu_classes_dic.values():
-                fmu.do_step(time, self.step_size)
+        for fmu in self.systems.fmu_classes.values():
+                fmu.do_step(time, step_size)
 
     def generate_control_output(self):
         
-        for control in self.control_classes:
+        for control in self.systems.control_classes.values():
             control.generate_output()
     
     def set_fmu_inputs(self):
         
-        for name in self.fmu_dict:
-            for inp in self.fmu_dict[name]:
-                input_name = inp[0]
-                connected_system = inp[1]
-                connected_variable = inp[2]
+        for fmu in self.systems.fmus:
+            for connection in fmu["connections"]:
+                input_name = connection["input name"]
+                connected_system = connection["connect to system"]
+                connected_variable = connection["connect to variable"]
                 input_value = connected_system.get_output(connected_variable)
-                self.fmu_classes_dic[name].set_input(input_name,input_value)
-    
-    def create_result_dataframe(self, time_series):
-        
-        record_var = ["time"]
-        for system in self.result_var_dict:
-            record_var += [system + "." + var for var in self.result_var_dict[system]]
+                self.systems.fmu_classes[fmu["model name"]].set_input(input_name,input_value)
+                
+    def conclude_fmu_simulation(self):
 
-        self.result_dataframe = pd.Dataframe(colums = [record_var], index = [i for i in range(len(time_series))])
+         for fmu in self.systems.fmu_classes.values():
+            fmu.conclude_simulation_process()
 
-    # def record_values(self, time_step, time):
-
-    #     self.result_dataframe.at[time_step, "time"] = time
-    #     for column in self.result_dataframe:
-    #         if column != "time":
-    #             self.result_dataframe.at[time_step, column] = 
-            
-        
     def create_result_dict(self):
         
         for system in self.result_var_dict:
             zero_list = [np.zeros((len(self.time_series), 2)) for i in range(len(self.result_dict[system]))]
             self.result_dict[system] = {variable_name:zero_array for (variable_name, zero_array) in zip(self.result_var_dict[system], zero_list)}
-            
-                
-        
+
     def record_values(self,time_step, time):
         
         for system_name in self.result_dict:
             for var in self.result_dict[system_name]:
-                value = self.all_system_classes[system_name].get_output(var) 
+                value = self.systems.all_system_classes[system_name].get_output(var) 
                 self.result_dict[system_name][var][time_step] = [time, value]
             
     def convert_results_to_pandas(self):
@@ -253,21 +221,37 @@ class Simulation:
 
         return result_dataframe
 
-    def create_unit_dic(self):
+    def get_units(self):
 
-        unit_dic = {}
+        units = {}
         for system_name in self.result_dict:
             for var in self.result_dict[system_name]:
-                if system_name in self.fmu_classes_dic:
-                    unit = self.fmu_classes_dic[system_name].unit_vars[var]
-                    unit_dic[system_name + "." + var] = unit
+                unit = self.systems.all_system_classes[system_name].get_unit(var)
+                units[system_name + "." + var] = unit
 
+        return units
 
-        return unit_dic
+def simulate(stop_time, step_size, fmus: list = [], controls: list = [], result_var: dict = {}, start_time = 0, get_units = False):
 
+    if not fmus and not controls:
+        raise NoSystemToSimulateDefined("No System to simulate given as argument.")
+    systems = ConnectSystem(fmus, controls)
+    sim = Simulation(systems, result_var)
+    results = sim.simulate(stop_time, step_size, start_time)
+    if get_units:
+        units = sim.get_units()
+        return results, units
+    return results
 
 class ControlClassInheritError(Exception):
 
     def __init__(self, message):
         self.message = message
         super().__init__(message)
+
+class NoSystemToSimulateDefined(Exception):
+
+    def __init__(self, message):
+        self.message = message
+        super().__init__(message)
+
