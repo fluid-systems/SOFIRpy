@@ -1,7 +1,9 @@
+from typing import Type
 import numpy as np
 import pandas as pd
 import copy
 import os
+from pandas.core.frame import DataFrame
 from abstract_control import Control
 from fmpy import read_model_description, extract
 from fmpy.fmi2 import FMU2Slave 
@@ -81,13 +83,74 @@ class Fmu:
 
         return self.unit_vars[variable]
 
+def connections_checker(connection):
+
+    for con in connection:
+        connections_keys = ["input name", "connect to system", "connect to variable"]
+        valid, mes = key_checker(connections_keys, list(con.keys()), "connections")
+        if not valid:
+            raise ConnectionFormatError(mes)
+        for name in list(con.values()):
+            if type(name) != str:
+                raise TypeError(f"{name} should be a string.")
+
+def key_checker(must_keys: list, given_keys: list, info):
+    if not all(key in given_keys for key in must_keys):
+        invalid_name = [name for name in given_keys if name not in must_keys]
+        mes = f"The dictionaries in the list, where the {info} information's are stored, should have the following keys: {must_keys}"
+        if invalid_name:
+            mes+= "\n Invalid: " + ", ".join(invalid_name)
+        return False, mes
+    return True, None
 
 class ConnectSystem:
 
-    def __init__(self, fmus: list = [], controls: list = []):
+    def __init__(self, fmus_info: list = [], controls_info: list = []):
         
-        self.fmus = fmus
-        self.controls = controls
+        self.fmus_info = fmus_info
+        self.controls_info = controls_info
+
+    @property
+    def fmus_info(self) -> list:
+        return self._fmus_info
+
+    @fmus_info.setter
+    def fmus_info(self, fmus_info: list) -> None:
+        
+        if type(fmus_info) != list:
+            raise TypeError("The fmu information needs to be list.")
+        fmu_info_keys = ["model name", "directory", "connections"]
+        for fmu in fmus_info:
+            valid, mes = key_checker(fmu_info_keys, list(fmu.keys()), "fmus")
+            if not valid:
+                raise FmuInfoFormatError(mes)
+            if type(fmu["connections"]) != list:
+                raise TypeError("The values of the key 'connections' should be a list.")
+            connections_checker(fmu["connections"])
+
+        self._fmus_info = fmus_info
+
+    @property
+    def controls_info(self) -> list:
+        return self._controls_info
+
+    @controls_info.setter
+    def controls_info(self, controls_info: list) -> None:
+
+        if type(controls_info) != list:
+            raise TypeError("The control information needs to be list.")
+        control_info_keys = ["control name", "control class", "connections"]
+        for control in controls_info:
+            valid, mes = key_checker(control_info_keys, list(control.keys()), "controls")
+            if not valid:
+                raise ControlInfoFormatError(mes)
+            connections_checker(control["connections"])
+
+            if not hasattr(control["control class"], "__dict__"):
+                raise TypeError("The key 'control class' needs to have an instance of a class as value.")
+
+        self._controls_info = controls_info
+
 
     def create_all_system_classes_dict(self) -> None:
 
@@ -106,7 +169,7 @@ class ConnectSystem:
     def initialise_fmus(self, start_time: float) -> None:
 
         self.fmu_classes = {}
-        for fmu in self.fmus:
+        for fmu in self.fmus_info:
             model_name = fmu["model name"]
             model_directory = fmu["directory"]
             fmu_class = Fmu(model_name, model_directory)
@@ -120,17 +183,15 @@ class ConnectSystem:
         self.check_control_classes()
         self.create_all_system_classes_dict()
    
-        for fmu in self.fmus:
+        for fmu in self.fmus_info:
             for connection in fmu["connections"]:
                 system_name = connection["connect to system"]
                 connection["connect to system"] = self.all_system_classes[system_name]
         
-        for control in self.controls:
+        for control in self.controls_info:
             for connection in control["connections"]:
                 system_name = connection["connect to system"]
                 connection["connect to system"] = self.all_system_classes[system_name]
-              
-class Record:... #TODO
 
 class Simulation:
     
@@ -165,7 +226,7 @@ class Simulation:
         
     def set_control_inputs(self):
         
-        for control in self.systems.controls:
+        for control in self.systems.controls_info:
             for connection in control["connections"]:
                 input_name = connection["input name"]
                 connected_system = connection["connect to system"]
@@ -185,7 +246,7 @@ class Simulation:
     
     def set_fmu_inputs(self):
         
-        for fmu in self.systems.fmus:
+        for fmu in self.systems.fmus_info:
             for connection in fmu["connections"]:
                 input_name = connection["input name"]
                 connected_system = connection["connect to system"]
@@ -211,7 +272,7 @@ class Simulation:
                 value = self.systems.all_system_classes[system_name].get_output(var) 
                 self.result_dict[system_name][var][time_step] = [time, value]
             
-    def convert_results_to_pandas(self):
+    def convert_results_to_pandas(self) -> DataFrame:
 
         result_dataframe = pd.DataFrame(self.time_series, columns = ["time"])
 
@@ -221,7 +282,7 @@ class Simulation:
 
         return result_dataframe
 
-    def get_units(self):
+    def get_units(self) -> dict:
 
         units = {}
         for system_name in self.result_dict:
@@ -231,11 +292,11 @@ class Simulation:
 
         return units
 
-def simulate(stop_time, step_size, fmus: list = [], controls: list = [], result_var: dict = {}, start_time = 0, get_units = False):
+def simulate(stop_time, step_size, fmus_info: list = [], controls_info: list = [], result_var: dict = {}, start_time = 0, get_units = False):
 
-    if not fmus and not controls:
+    if not fmus_info and not controls_info:
         raise NoSystemToSimulateDefined("No System to simulate given as argument.")
-    systems = ConnectSystem(fmus, controls)
+    systems = ConnectSystem(fmus_info, controls_info)
     sim = Simulation(systems, result_var)
     results = sim.simulate(stop_time, step_size, start_time)
     if get_units:
@@ -255,3 +316,22 @@ class NoSystemToSimulateDefined(Exception):
         self.message = message
         super().__init__(message)
 
+
+        
+class FmuInfoFormatError(Exception):
+
+    def __init__(self, message):
+        self.message = message
+        super().__init__(message)
+
+class ConnectionFormatError(Exception):
+
+    def __init__(self, message):
+        self.message = message
+        super().__init__(message)
+
+class ControlInfoFormatError(Exception):
+
+    def __init__(self, message):
+        self.message = message
+        super().__init__(message)
