@@ -4,7 +4,7 @@ import pandas as pd
 import copy
 import os
 from pandas.core.frame import DataFrame
-from abstract_control import Control
+from abstract_control import Control #TODO 
 from fmpy import read_model_description, extract
 from fmpy.fmi2 import FMU2Slave 
 from alive_progress import alive_bar
@@ -151,14 +151,13 @@ class ConnectSystem:
 
         self._controls_info = controls_info
 
-
     def create_all_system_classes_dict(self) -> None:
 
         self.all_system_classes = {**self.fmu_classes, **self.control_classes}
 
     def create_control_classes_dict(self) -> None:
 
-        self.control_classes = {control["control name"]: control["control class"] for control in self.controls}
+        self.control_classes = {control["control name"]: control["control class"] for control in self.controls_info}
 
     def check_control_classes(self) -> None:
 
