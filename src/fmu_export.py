@@ -180,23 +180,23 @@ class _FmuExport(ABC):
         
     @abstractmethod
     def add_parameters(self) -> None:
-        """This methode should implement how add parameters to the modeling environemt."""
+        """This methode should implement how to add parameters to the modeling environemt."""
         pass
     
     @abstractmethod
     def add_model_modifiers(self):
-        """This methode should implement how add model modifiers to the modeling environemt."""
+        """This methode should implement how to add model modifiers to the modeling environemt."""
         pass
     
     @abstractmethod
     def fmu_export(self) -> None:
-        """This methode should implement how export a fmu from the modeling environemt."""
+        """This methode should implement how to export a fmu from the modeling environemt."""
         pass
 
         
-class DymolaFmuExport(_FmuExport, Simulator):
+class DymolaFmuExport(_FmuExport, Simulator): #TODO _ wird zu _0 beim namen der fmu
     """Export a fmu from Dymola."""
-    
+
     def __init__(self, model_name: str, model_directory: str, dymola_path: str, packages: list = []):
         """DymolaFmuExport Class Constructor to initialize the object.
 
@@ -222,7 +222,7 @@ class DymolaFmuExport(_FmuExport, Simulator):
         os.environ["PATH"] += os.pathsep + self.dymola_path
 
     def add_parameters(self, parameters: dict) -> None:
-        """Adds the parameters.
+        """Adds the parameters to the simulator.
 
         Args:
             parameters (dict): [description]
@@ -410,8 +410,8 @@ class FmuExport:
         self._file_management.delete_unnecessary_files(files_to_delete, self.modeling_env.model_directory)
         self._file_management.move_files(files_to_move,self.output_directory,self.modeling_env.model_directory ,additional_file_moves)
 
-def initialize( modeling_environment: str, model_name:str, model_directory:str,env_path, output_directory, 
-                datasheet_directory = None, datasheets = {} ,parameters = {}, model_modifiers = []) -> FmuExport:
+def _initialize( modeling_environment: str, model_name:str, model_directory:str,env_path, output_directory, 
+                _datasheet_directory = None, _datasheets = {} ,parameters = {}, model_modifiers = []) -> FmuExport:
 
     if modeling_environment.lower().startswith("d"):
         modeling_env = DymolaFmuExport(model_name, model_directory, env_path)
@@ -420,9 +420,8 @@ def initialize( modeling_environment: str, model_name:str, model_directory:str,e
     else:
         raise ModelEnvironmentArgumentError("Enter either d for Dymola or o for OpenModelica as the 'modeling_environment'.")
 
-    if (datasheet_directory and datasheets) or parameters or model_modifiers:
-        parameter_import = ParameterImport( model_modifiers, parameters, 
-                                            datasheet_direcotry= datasheet_directory, datasheets= datasheets)
+    if (_datasheet_directory and _datasheets) or parameters or model_modifiers:
+        parameter_import = ParameterImport( model_modifiers, parameters,_datasheets, _datasheet_directory)
     else:
         parameter_import = None
 
@@ -435,7 +434,7 @@ def initialize( modeling_environment: str, model_name:str, model_directory:str,e
 def export_fmu( modeling_environment: str, model_name:str, model_directory:str,env_path, output_directory, 
                 datasheet_directory = None, datasheets = {} ,additional_parameters = {}, model_modifiers = []) -> FmuExport:
     
-    fmu_export = initialize(modeling_environment, model_name, model_directory, env_path, output_directory, 
+    fmu_export = _initialize(modeling_environment, model_name, model_directory, env_path, output_directory, 
                 datasheet_directory, datasheets, additional_parameters, model_modifiers)
 
     fmu_export.import_parameters()
@@ -450,7 +449,7 @@ def export_fmu( modeling_environment: str, model_name:str, model_directory:str,e
         fmu_export.file_management(fmu_export.modeling_env.files_to_delete_no_success)
         # check if parameter where imported that do not exist
         # try fmu export without added parameters
-        _fmu_export = initialize(modeling_environment, model_name, model_directory, env_path, output_directory)
+        _fmu_export = _initialize(modeling_environment, model_name, model_directory, env_path, output_directory)
         success = _fmu_export.fmu_export()
         if success:
             check_paremeters_exist = CheckParametersExist()
@@ -528,7 +527,6 @@ class DirectoryDoesNotExistError(Exception):
 
 class ModelEnvironmentArgumentError(Exception):
 
-    def __init__(self, value, message):
-        self.value = value
+    def __init__(self, message):
         self.message = message
         super().__init__(message)
