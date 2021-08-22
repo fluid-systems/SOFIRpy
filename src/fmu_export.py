@@ -443,7 +443,6 @@ def export_fmu( modeling_environment: str, model_name:str, model_directory:str,e
     if success:
         fmu_export.file_management(fmu_export.modeling_env.files_to_delete, fmu_export.modeling_env.files_to_move, fmu_export.modeling_env.additional_file_moves)
         print("The FMU Export was successful.")
-        return fmu_export
     else:
         print("The FMU Export was not successful. Checking if parameters were added that do not exist...")
         fmu_export.file_management(fmu_export.modeling_env.files_to_delete_no_success)

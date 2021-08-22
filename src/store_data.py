@@ -6,10 +6,11 @@ from datetime import datetime
 import time
 from pandas.core.frame import DataFrame
 import matplotlib.pyplot as plt
+from typing import Callable, Optional, Union
 
 class InitiateProject:
 
-    def __init__(self, project_directory, hdf5_file_name = None, pid_generator = None, sub_project_folder = None):
+    def __init__(self, project_directory: str, hdf5_file_name: Optional[str] = None, pid_generator: Optional[Callable[[str], str]] = None, sub_project_folder: Optional[str] = None) -> None:
 
         self.project_directory = project_directory
         if sub_project_folder:
@@ -20,11 +21,11 @@ class InitiateProject:
         self.hdf5_path = os.path.join(self.working_directory, self.hdf5_file_name)
 
     @property
-    def project_directory(self):
+    def project_directory(self) -> str:
         return self._project_directory
 
     @project_directory.setter
-    def project_directory(self, project_directory):
+    def project_directory(self, project_directory: str) -> None:
 
         if os.path.exists(project_directory):
             self._project_directory = project_directory
@@ -33,22 +34,22 @@ class InitiateProject:
             raise DirectoryDoesNotExistError(f"The directory {project_directory} does not exist. Create it first.")
     
     @property
-    def sub_project_folder(self):
+    def sub_project_folder(self) -> str:
         return self._sub_project_folder
 
     @sub_project_folder.setter
-    def sub_project_folder(self, sub_project_folder):
+    def sub_project_folder(self, sub_project_folder: str) -> None:
         path = os.path.join(self.project_directory + sub_project_folder)
         if not os.path.exists(path):
             os.makedirs(path)
         self._sub_project_folder = sub_project_folder
 
     @property
-    def hdf5_file_name(self):
+    def hdf5_file_name(self) -> str:
         return self._hdf5_file_name
 
     @hdf5_file_name.setter
-    def hdf5_file_name(self, hdf5_file_name):
+    def hdf5_file_name(self, hdf5_file_name: str) -> None:
 
         files = os.listdir(self.working_directory)
         hdf5s = list(filter(lambda file: file.endswith(".hdf5"), files))
@@ -75,20 +76,20 @@ class InitiateProject:
                 self.create_hdf5(os.path.join(self.working_directory, name))
                 self._hdf5_file_name = name
     
-    def create_hdf5(self, hdf5_path):
+    def create_hdf5(self, hdf5_path: str) -> None:
         hdf5 = h5py.File(f'{hdf5_path}', 'a')
         print(f"File '{hdf5_path}' created")
         hdf5.close()
 
 class RunCreation:
 
-    def __init__(self,name_data: InitiateProject, generate_run_name = None):
+    def __init__(self,current_hdf5: InitiateProject, generate_run_name: Optional[Callable[[str, int], str]] = None) -> None:
 
-        self.name_data = name_data
+        self.current_hdf5 = current_hdf5
         self.generate_run_name = generate_run_name if generate_run_name else self.generate_default_run_name
         self.current_run_name = None
 
-    def create_run(self, run_name = None, hdf5_sub_groups = None):
+    def create_run(self,hdf5_sub_groups: list[str], run_name: Optional[str] = None, ) -> None:
 
         number_of_runs = self.get_number_of_runs()
         self.current_run_name = self.generate_run_name(run_name, number_of_runs)
@@ -96,40 +97,37 @@ class RunCreation:
         self.create_hdf5_run(hdf5_sub_groups)
         self.create_run_folder()
 
-    def create_hdf5_run(self, hdf5_sub_groups):
+    def create_hdf5_run(self, hdf5_sub_groups: list[str]) -> None:
         
-       with h5py.File(f'{self.name_data.hdf5_path}', 'a') as hdf5:
+       with h5py.File(f'{self.current_hdf5.hdf5_path}', 'a') as hdf5:
             
-            #TODO maybe add number for a specific order
             group = hdf5.create_group(self.current_run_name)
             group.attrs['creation date'] = datetime.now().strftime('%A, %d. %B %Y, %H:%M:%S')
-            if not hdf5_sub_groups:
-                hdf5_sub_groups = ['/digital_datasheet', '/model_data', '/simulation_data', '/code', '/plots']
-            else:
-                x = lambda sub: "/" + sub if not sub.startswith("/") else sub
-                hdf5_sub_groups = list(map(x, hdf5_sub_groups))
+            
+            x = lambda sub: "/" + sub if not sub.startswith("/") else sub
+            hdf5_sub_groups = list(map(x, hdf5_sub_groups))
                 
             for sub in hdf5_sub_groups:
                 hdf5.create_group(self.current_run_name + sub)
             
             print(f"{self.current_run_name} created")
 
-    def create_run_folder(self):
+    def create_run_folder(self) -> None:
         
-        folder_path = os.path.join(self.name_data.working_directory, self.current_run_name) 
+        folder_path = os.path.join(self.current_hdf5.working_directory, self.current_run_name) 
         
         os.mkdir(folder_path)
 
-    def check_run_exists(self):
+    def check_run_exists(self) -> None:
         
-        with h5py.File(self.name_data.hdf5_path, 'a') as hdf5:
+        with h5py.File(self.current_hdf5.hdf5_path, 'a') as hdf5:
             runs = list(hdf5.keys())
 
         exists_in_hdf5 = False
         if self.current_run_name in runs:
             exists_in_hdf5 = True
 
-        folder_path = os.path.join(self.name_data.working_directory, self.current_run_name) 
+        folder_path = os.path.join(self.current_hdf5.working_directory, self.current_run_name) 
         exists_as_folder = False
         if os.path.exists(folder_path):
             exists_as_folder = True
@@ -137,7 +135,7 @@ class RunCreation:
         if exists_as_folder:
             if exists_in_hdf5:
                 while True:
-                    overwrite = input(f"The run '{self.current_run_name}' already exists in the hdf5 and as a folder in {self.name_data.working_directory}. Overwrite? [y/n]")
+                    overwrite = input(f"The run '{self.current_run_name}' already exists in the hdf5 and as a folder in {self.current_hdf5.working_directory}. Overwrite? [y/n]")
                     if overwrite == "y":
                         self.delete_run(self.current_run_name)
                         break
@@ -163,22 +161,22 @@ class RunCreation:
                     elif overwrite == "n":
                         raise RunAlreadyExistError("Run already exist.")
 
-    def delete_run_folder(self, run_name):
+    def delete_run_folder(self, run_name: str) -> None:
 
         try:
-            shutil.rmtree(os.path.join(self.name_data.working_directory, run_name))
+            shutil.rmtree(os.path.join(self.current_hdf5.working_directory, run_name))
         except FileNotFoundError as err:
             print(err)
 
-    def delete_hdf5_run(self, run_name):
+    def delete_hdf5_run(self, run_name: str) -> None:
         
-        with h5py.File(self.name_data.hdf5_path, 'a') as hdf5:
+        with h5py.File(self.current_hdf5.hdf5_path, 'a') as hdf5:
             try:
                 del hdf5[run_name]
             except KeyError as err:
                 print(err, f". '{run_name}' doesn't exists.")
                 
-    def delete_run(self, run_name):
+    def delete_run(self, run_name: str) -> None:
 
         self.delete_run_folder(run_name)
         self.delete_hdf5_run(run_name)
@@ -193,18 +191,18 @@ class RunCreation:
 
         return len(self.get_hdf5_runs())
 
-    def get_hdf5_runs(self) -> list:
+    def get_hdf5_runs(self) -> list[str]:
 
-        with h5py.File(self.name_data.hdf5_path, 'a') as hdf5:
+        with h5py.File(self.current_hdf5.hdf5_path, 'a') as hdf5:
             return list(hdf5.keys())
 
 class ReadWriteHDF5Data:
 
-    def __init__(self, hdf5_path):
+    def __init__(self, hdf5_path: str):
 
         self.hdf5_path = hdf5_path
 
-    def save_data(self, data, data_name, hdf5_folder_name,  attributes: dict = None):
+    def save_data(self, data, data_name: str, hdf5_folder_name: str,  attributes: Optional[dict] = None):
 
         with h5py.File(self.hdf5_path, 'a') as hdf5:
             folder = hdf5[hdf5_folder_name]
@@ -213,7 +211,7 @@ class ReadWriteHDF5Data:
                 for name, attr in attributes.items():
                     dset.attrs[name] = attr
 
-    def get_data(self, name , get_attribute = False):
+    def get_data(self, name: str, get_attribute: Optional[bool] = False):
     
         with h5py.File(self.hdf5_path, 'a') as hdf5:
             _data = hdf5.get(name)
@@ -231,12 +229,12 @@ class ReadWriteHDF5Data:
 
 class FolderStore:
 
-    def __init__(self, folder_path, pid_generator = None):
+    def __init__(self, folder_path: str, pid_generator: Optional[Callable[[str], str]] = None) -> None: 
 
         self.folder_path = folder_path
         self.pid_generator = pid_generator if pid_generator else generate_default_pid
 
-    def save_fmu(self, fmu_path):
+    def save_fmu(self, fmu_path: str) -> str:
 
         fmu_pid = self.pid_generator("fmu") 
         paste_path = os.path.join(self.folder_path, fmu_pid + ".fmu")
@@ -244,7 +242,7 @@ class FolderStore:
 
         return fmu_pid
 
-    def save_models(self, models):
+    def save_models(self, models: list[dict]) -> list[dict]:
 
         # models = [{"model name": "", "model directory": "" , "custom elements": []}, ...]
         
@@ -268,7 +266,7 @@ class FolderStore:
 
         return model_meta_data
 
-    def save_plots(self, plots, image_type = "png"):
+    def save_plots(self, plots: list, image_type: Optional[str] = "png") -> list[dict]:
 
         plots_meta_data = []
         
@@ -284,15 +282,16 @@ class FolderStore:
         return plots_meta_data
 
 
-def generate_default_pid(type: str):
+def generate_default_pid(type: str) -> str:
     now = datetime.now()
     date = now.strftime('%y%m%d')
     signature_number = now.strftime('%H%M%S')
     
     return f'{type}_{date}_{signature_number}'
 
-def store_date(project_directory, data, hdf5_file_name = None, pid_generator = None, sub_project_folder = None, 
-                generate_run_name = None, current_run_name = None, run_name = None, run_groups = None):
+def store_date(project_directory: str, data, run_groups: list[str], hdf5_file_name: Optional[str] = None, 
+                pid_generator: Optional[Callable[[str], str]] = None, sub_project_folder: Optional[str] = None, 
+                generate_run_name: Optional[Callable[[str, int], str]] = None, current_run_name: Optional[str] = None, run_name: Optional[str] = None):
 
     # data  = [{"data": , "data name": "", "hdf5_folder_name": "", attr: {} oder None }]
 
@@ -315,8 +314,17 @@ def store_date(project_directory, data, hdf5_file_name = None, pid_generator = N
     except Exception as e:
         run.delete_run()
         raise e
+    try:
+        copy_files = FolderStore(h5.working_directory)
+        copy_files.save_fmu()
+        copy_files.save_models()
+        copy_files.save_plots()
+    except Exception as e:
+        run.delete_run()
+        raise e
+    
 
-def read_data(project_directory, data_name, get_attribute = False, hdf5_file_name = None, sub_project_folder = None):
+def read_data(project_directory: str, data_name: str, get_attribute: Optional[bool] = False, hdf5_file_name: Optional[str] = None, sub_project_folder: Optional[str] = None):
 
     h5 = InitiateProject(project_directory, hdf5_file_name, sub_project_folder=sub_project_folder)
     read_hdf5 = ReadWriteHDF5Data(h5.hdf5_path)
