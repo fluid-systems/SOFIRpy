@@ -10,39 +10,24 @@ from typing import Callable, Optional, Union
 
 class InitiateProject:
 
-    def __init__(self, project_directory: str, hdf5_file_name: Optional[str] = None, pid_generator: Optional[Callable[[str], str]] = None, sub_project_folder: Optional[str] = None) -> None:
+    def __init__(self, working_directory: str, hdf5_file_name: Optional[str] = None, pid_generator: Optional[Callable[[str], str]] = None) -> None:
 
-        self.project_directory = project_directory
-        if sub_project_folder:
-            self.sub_project_folder = sub_project_folder
-        self.working_directory = os.path.join(self.project_directory, self.sub_project_folder) if sub_project_folder else self.project_directory
+        self.working_directory = working_directory
         self.pid_generator = pid_generator if pid_generator else generate_default_pid
         self.hdf5_file_name = hdf5_file_name
         self.hdf5_path = os.path.join(self.working_directory, self.hdf5_file_name)
 
     @property
-    def project_directory(self) -> str:
-        return self._project_directory
+    def working_directory(self) -> str:
+        return self._working_directory
 
-    @project_directory.setter
-    def project_directory(self, project_directory: str) -> None:
+    @working_directory.setter
+    def working_directory(self, working_directory: str) -> None:
 
-        if os.path.exists(project_directory):
-            self._project_directory = project_directory
+        if not os.path.exists(working_directory):
+            os.makedirs(working_directory)
 
-        else:
-            raise DirectoryDoesNotExistError(f"The directory {project_directory} does not exist. Create it first.")
-    
-    @property
-    def sub_project_folder(self) -> str:
-        return self._sub_project_folder
-
-    @sub_project_folder.setter
-    def sub_project_folder(self, sub_project_folder: str) -> None:
-        path = os.path.join(self.project_directory + sub_project_folder)
-        if not os.path.exists(path):
-            os.makedirs(path)
-        self._sub_project_folder = sub_project_folder
+        self._working_directory = working_directory
 
     @property
     def hdf5_file_name(self) -> str:
@@ -83,9 +68,9 @@ class InitiateProject:
 
 class RunCreation:
 
-    def __init__(self,current_hdf5: InitiateProject, generate_run_name: Optional[Callable[[str, int], str]] = None) -> None:
+    def __init__(self,current_project: InitiateProject, generate_run_name: Optional[Callable[[str, int], str]] = None) -> None:
 
-        self.current_hdf5 = current_hdf5
+        self.current_project = current_project
         self.generate_run_name = generate_run_name if generate_run_name else self.generate_default_run_name
         self.current_run_name = None
 
@@ -99,7 +84,7 @@ class RunCreation:
 
     def create_hdf5_run(self, hdf5_sub_groups: list[str]) -> None:
         
-       with h5py.File(f'{self.current_hdf5.hdf5_path}', 'a') as hdf5:
+       with h5py.File(f'{self.current_project.hdf5_path}', 'a') as hdf5:
             
             group = hdf5.create_group(self.current_run_name)
             group.attrs['creation date'] = datetime.now().strftime('%A, %d. %B %Y, %H:%M:%S')
@@ -114,20 +99,20 @@ class RunCreation:
 
     def create_run_folder(self) -> None:
         
-        folder_path = os.path.join(self.current_hdf5.working_directory, self.current_run_name) 
+        folder_path = os.path.join(self.current_project.working_directory, self.current_run_name) 
         
         os.mkdir(folder_path)
 
     def check_run_exists(self) -> None:
         
-        with h5py.File(self.current_hdf5.hdf5_path, 'a') as hdf5:
+        with h5py.File(self.current_project.hdf5_path, 'a') as hdf5:
             runs = list(hdf5.keys())
 
         exists_in_hdf5 = False
         if self.current_run_name in runs:
             exists_in_hdf5 = True
 
-        folder_path = os.path.join(self.current_hdf5.working_directory, self.current_run_name) 
+        folder_path = os.path.join(self.current_project.working_directory, self.current_run_name) 
         exists_as_folder = False
         if os.path.exists(folder_path):
             exists_as_folder = True
@@ -135,7 +120,7 @@ class RunCreation:
         if exists_as_folder:
             if exists_in_hdf5:
                 while True:
-                    overwrite = input(f"The run '{self.current_run_name}' already exists in the hdf5 and as a folder in {self.current_hdf5.working_directory}. Overwrite? [y/n]")
+                    overwrite = input(f"The run '{self.current_run_name}' already exists in the hdf5 and as a folder in {self.current_project.working_directory}. Overwrite? [y/n]")
                     if overwrite == "y":
                         self.delete_run(self.current_run_name)
                         break
@@ -164,13 +149,13 @@ class RunCreation:
     def delete_run_folder(self, run_name: str) -> None:
 
         try:
-            shutil.rmtree(os.path.join(self.current_hdf5.working_directory, run_name))
+            shutil.rmtree(os.path.join(self.current_project.working_directory, run_name))
         except FileNotFoundError as err:
             print(err)
 
     def delete_hdf5_run(self, run_name: str) -> None:
         
-        with h5py.File(self.current_hdf5.hdf5_path, 'a') as hdf5:
+        with h5py.File(self.current_project.hdf5_path, 'a') as hdf5:
             try:
                 del hdf5[run_name]
             except KeyError as err:
@@ -193,7 +178,7 @@ class RunCreation:
 
     def get_hdf5_runs(self) -> list[str]:
 
-        with h5py.File(self.current_hdf5.hdf5_path, 'a') as hdf5:
+        with h5py.File(self.current_project.hdf5_path, 'a') as hdf5:
             return list(hdf5.keys())
 
 class ReadWriteHDF5Data:
@@ -289,44 +274,26 @@ def generate_default_pid(type: str) -> str:
     
     return f'{type}_{date}_{signature_number}'
 
-def store_date(project_directory: str, data, run_groups: list[str], hdf5_file_name: Optional[str] = None, 
-                pid_generator: Optional[Callable[[str], str]] = None, sub_project_folder: Optional[str] = None, 
-                generate_run_name: Optional[Callable[[str, int], str]] = None, current_run_name: Optional[str] = None, run_name: Optional[str] = None):
+def initiate_project(working_directory, hdf5_file_name = None, pid_generator = None):
+    return InitiateProject(working_directory, hdf5_file_name, pid_generator)
+
+def store_date(h5: InitiateProject, run: RunCreation, data):
 
     # data  = [{"data": , "data name": "", "hdf5_folder_name": "", attr: {} oder None }]
 
-    h5 = InitiateProject(project_directory, hdf5_file_name, pid_generator, sub_project_folder)
-    run = RunCreation(h5, generate_run_name)
-    if current_run_name:
-        run.current_run_name = current_run_name
-    else:
-        run.create_run(run_name, run_groups)
     write_hdf5 = ReadWriteHDF5Data(h5.hdf5_path)
 
-    try:
-        for _data in data:
-            dt = _data["data"]
-            data_name = _data["data name"]
-            folder = _data["hdf5_folder_name"]
-            loc = f"{run.current_run_name}/{folder}"
-            attr = _data["attr"]
-            write_hdf5.save_data(dt, data_name, loc, attr)
-    except Exception as e:
-        run.delete_run()
-        raise e
-    try:
-        copy_files = FolderStore(h5.working_directory)
-        copy_files.save_fmu()
-        copy_files.save_models()
-        copy_files.save_plots()
-    except Exception as e:
-        run.delete_run()
-        raise e
-    
+    for _data in data:
+        dt = _data["data"]
+        data_name = _data["data name"]
+        folder = _data["hdf5_folder_name"]
+        loc = f"{run.current_run_name}/{folder}"
+        attr = _data.get("attr")
+        write_hdf5.save_data(dt, data_name, loc, attr)
 
-def read_data(project_directory: str, data_name: str, get_attribute: Optional[bool] = False, hdf5_file_name: Optional[str] = None, sub_project_folder: Optional[str] = None):
+def read_data(working_directory: str, data_name: str, get_attribute: Optional[bool] = False):
 
-    h5 = InitiateProject(project_directory, hdf5_file_name, sub_project_folder=sub_project_folder)
+    h5 = InitiateProject(working_directory)
     read_hdf5 = ReadWriteHDF5Data(h5.hdf5_path)
     if get_attribute:
         return read_hdf5.get_data(data_name, get_attribute)
