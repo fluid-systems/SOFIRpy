@@ -411,10 +411,10 @@ class FmuExport:
         self._file_management.move_files(files_to_move,self.output_directory,self.modeling_env.model_directory ,additional_file_moves)
 
 def _initialize( modeling_environment: str, model_name:str, model_directory:str,env_path, output_directory, 
-                _datasheet_directory = None, _datasheets = {} ,parameters = {}, model_modifiers = []) -> FmuExport:
+                _datasheet_directory, _datasheets,parameters, model_modifiers, packages) -> FmuExport:
 
     if modeling_environment.lower().startswith("d"):
-        modeling_env = DymolaFmuExport(model_name, model_directory, env_path)
+        modeling_env = DymolaFmuExport(model_name, model_directory, env_path, packages= packages)
     elif modeling_environment.lower().startswith("o"):
         modeling_env = OpenModelicaFmuExport()
     else:
@@ -432,10 +432,10 @@ def _initialize( modeling_environment: str, model_name:str, model_directory:str,
     return fmu_export
         
 def export_fmu( modeling_environment: str, model_name:str, model_directory:str,env_path, output_directory, 
-                datasheet_directory = None, datasheets = {} ,additional_parameters = {}, model_modifiers = []) -> FmuExport:
+                datasheet_directory = None, datasheets = {} ,additional_parameters = {}, model_modifiers = [], packages = []) -> FmuExport:
     
     fmu_export = _initialize(modeling_environment, model_name, model_directory, env_path, output_directory, 
-                datasheet_directory, datasheets, additional_parameters, model_modifiers)
+                datasheet_directory, datasheets, additional_parameters, model_modifiers, packages)
 
     fmu_export.import_parameters()
     success = fmu_export.fmu_export()
