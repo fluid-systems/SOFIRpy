@@ -1,0 +1,33 @@
+ {
+    "project_directory" : "C:\\Users\\Daniele\\Desktop",
+    "sub_project_folder": "Fluidsystem1",
+    "dymola path" : "",
+    
+    "fmu export" :  [{"model name" : "",
+                    "modeling environment": "", 
+                    "model directory": "", 
+                    "packages" : [],
+                    "datasheet_directory" : "", 
+                    "datasheets" : {}, 
+                    "additional_parameters" : {},
+                    "model_modifiers": null}
+                    ],
+    
+    "fmus" : [{"model name": "nummer1", "directory" : "C:/Users/Daniele/Desktop/", "connections" :[{"input name": "u_in", "connect to system": "nummer2", "connect to variable": "y_out"}
+                                                                             ,{"input name": "u_in2", "connect to system": "MAS", "connect to variable": "agent"}
+                                                                            ]
+                        },  
+                        {"model name": "nummer2", "directory" : "C:/Users/Daniele/Desktop/", "connections" :[]
+                        }
+                        ],    
+    
+    "controls" :[{"control name": "MAS", "control class" : null, "connections" :[ {"input name": "agent_u_in", "connect to system": "nummer1", "connect to variable": "y_out"}]}                                                                           
+                ],
+
+    "record": {"nummer1": ["inductor.i", "inductor.v", "u_in2"], "nummer2":["sine.y"], "MAS": ["u"]},
+
+    "plots": [{"x" : "time","y": ["nummer1.inductor.v", "nummer1.inductor.i"], "title": "test1", "y_label": "", "x_label": ""}, 
+                {"x" : "time","y": "nummer1.u_in2", "title": "test2", "y_label": "", "x_label": ""}],
+    "style_sheet_path" : "C:\\Users\\Daniele\\Documents\\GitLab\\fair_sim_release\\fair_sim_release\\src\\FST.mplstyle",
+    "hdf5_run_groups": ["plots", "simulation_results", "fmus", "datasheets", "models", "code"]
+}
