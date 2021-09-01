@@ -1,10 +1,9 @@
 import shutil
 from typing import Optional
 import sys
-from abstract_control import Control
 from fmu_export import export_fmu
 from simulate import simulate
-from analyze import plot_results
+from plot import plot_results
 from store_data import store_data, Project
 import os
 import json
