@@ -43,3 +43,5 @@ Beim überarbeiten der Module stest im Hinterkopf, Modul sollte als alleinstehde
 - FAIR Modul fertiggestellt
 - Probleme mit hdf5 mit pandas
 
+## Protokoll 30.06.2021 - 09.07.2021
+- Test framework &rarr; erste Tests 
