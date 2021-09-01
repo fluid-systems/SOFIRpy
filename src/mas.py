@@ -1,7 +1,5 @@
 
-from abstract_control import Control
-
-class MAS(Control):
+class MAS:
     
     def __init__(self):
         pass
