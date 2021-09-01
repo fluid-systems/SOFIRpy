@@ -4,7 +4,6 @@ import pandas as pd
 import copy
 import os
 from pandas.core.frame import DataFrame
-from abstract_control import Control #TODO 
 from fmpy import read_model_description, extract
 from fmpy.fmi2 import FMU2Slave 
 from alive_progress import alive_bar
@@ -12,19 +11,8 @@ from alive_progress import alive_bar
 
 class Fmu:
 
-    def __init__(self, model_name: str, fmu_directory: str) -> None:
-        self.model_name = model_name
-        self.fmu_path = os.path.join(fmu_directory, model_name + ".fmu")
-
-    @property
-    def model_name(self) -> str:
-        return self._model_name
-
-    @model_name.setter
-    def model_name(self, model_name: str) -> None:
-        if type(model_name) != str:
-            raise TypeError("The model name needs to be a string.")
-        self._model_name = model_name
+    def __init__(self, model_path) -> None:
+        self.fmu_path = model_path
 
     @property
     def fmu_path(self) -> str:
@@ -52,7 +40,7 @@ class Fmu:
         self.fmu.setupExperiment(startTime=start_time)
         self.fmu.enterInitializationMode()
         self.fmu.exitInitializationMode()
-        print(f'FMU {self.model_name} initialized.')
+        print(f'FMU {os.path.basename(self.fmu_path)} initialized.')
     
     def create_model_vars_dict(self) -> None:
 
@@ -119,7 +107,7 @@ class ConnectSystem:
         
         if type(fmus_info) != list:
             raise TypeError("The fmu information needs to be list.")
-        fmu_info_keys = ["model name", "directory", "connections"]
+        fmu_info_keys = ["model name", "path", "connections"]
         for fmu in fmus_info:
             valid, mes = key_checker(fmu_info_keys, list(fmu.keys()), "fmus")
             if not valid:
@@ -161,18 +149,28 @@ class ConnectSystem:
 
     def check_control_classes(self) -> None:
 
+        must_contain_methods = ["set_input", "generate_output", "get_output"]
         for _class in self.control_classes.values():
-            if not isinstance(_class, Control):
-                raise ControlClassInheritError(f"The class '{type(_class).__name__}' needs to inherit from the Control class. Import Control from abstract_control to get the class")
+            method_missing = [meth for meth in must_contain_methods if not getattr(_class, meth, None)]
+            if method_missing:
+                s = ""
+                for mis in method_missing:
+                    s +=  "\n" + mis
+                raise AttributeError(f"The class '{type(_class).__name__}' is missing the following methodes:" + s)     
+            else:
+                print(f"The class '{type(_class).__name__}' contains all the necessary methods.")
+
+
+
 
     def initialise_fmus(self, start_time: float) -> None:
 
         self.fmu_classes = {}
         for fmu in self.fmus_info:
-            model_name = fmu["model name"]
-            model_directory = fmu["directory"]
-            fmu_class = Fmu(model_name, model_directory)
+            model_path = fmu["path"]
+            fmu_class = Fmu(model_path)
             fmu_class.initialize_fmu(start_time)
+            model_name = fmu["model name"]
             self.fmu_classes[model_name] = fmu_class
 
     def initialize_systems(self, start_time: float) -> None:
@@ -286,8 +284,9 @@ class Simulation:
         units = {}
         for system_name in self.result_dict:
             for var in self.result_dict[system_name]:
-                unit = self.systems.all_system_classes[system_name].get_unit(var)
-                units[system_name + "." + var] = unit
+                if self.systems.fmu_classes.get(system_name):
+                    unit = self.systems.fmu_classes[system_name].get_unit(var)
+                    units[system_name + "." + var] = unit
 
         return units
 
@@ -302,12 +301,6 @@ def simulate(stop_time, step_size, fmus_info: list = [], controls_info: list = [
         units = sim.get_units()
         return results, units
     return results
-
-class ControlClassInheritError(Exception):
-
-    def __init__(self, message):
-        self.message = message
-        super().__init__(message)
 
 class NoSystemToSimulateDefined(Exception):
 

@@ -13,7 +13,7 @@ import json
 class ParameterImport:
     """Imports parameters and model modifiers for the fmu export."""
     
-    def __init__(self, model_modifier_list: list = [], parameters_dict: dict = {}, datasheets: dict = {}, datasheet_directory: str = None) -> None:
+    def __init__(self, model_modifier_list: list = None, parameters_dict: dict = None, datasheets: dict = None, datasheet_directory: str = None) -> None:
         """ParameterImport Class Constructor to initialize the object.
 
         Args:
@@ -23,8 +23,14 @@ class ParameterImport:
                                          Defaults to {}.
             datasheet_directory (str, optional): Directory in which the datasheets are stored. Defaults to None.
         """
+        if not parameters_dict:
+            parameters_dict = {}
         self.parameters = parameters_dict
+        if not model_modifier_list:
+            model_modifier_list = []
         self.model_modifiers = model_modifier_list
+        if not datasheet_directory:
+            datasheets = {}
         self.datasheet_dict = datasheets
         self.datasheet_directory = datasheet_directory
 
@@ -153,7 +159,9 @@ class _FmuExport(ABC):
             raise TypeError("'model_directory' needs to be a string.")
         if not os.path.exists(model_directory):
             raise DirectoryDoesNotExistError(model_directory, f"The directory '{model_directory}' does not exist.")
-        self._model_directory = model_directory
+        # has to be in a certain format to work
+
+        self._model_directory = os.path.normpath(model_directory).replace("\\", "/") + "/"
 
     @property
     def model_name(self) -> str:
@@ -212,9 +220,11 @@ class DymolaFmuExport(_FmuExport, Simulator): #TODO _ wird zu _0 beim namen der 
         self.dymola_path = dymola_path
         self.files_to_delete = ['dslog.txt', 'fmiModelIdentifier.h', 'dsmodel.c', 'buildlog.txt',
                                 'dsmodel_fmuconf.h', "~FMUOutput", "dsin.txt"]
-        self.files_to_move = [f'{model_name}.fmu', 'simulator.log']
+
+        self.fmu_name = self.model_name.replace("_", "_0")
+        self.files_to_move = [f'{self.fmu_name}.fmu', f'simulator_{self.model_name}.log']
         self.additional_file_moves = []
-        self.files_to_delete_no_success = ['simulator.log']
+        self.files_to_delete_no_success = [f'simulator_{self.model_name}.log']
 
     def make_dymola_available(self) -> None:
         """Adds Dymola executable path to the environment variables."""
@@ -312,7 +322,7 @@ translateModelFMU(modelInstance, false, "", "2", "all", false, 2);
         # then the simulations will be done in tmp??/Buildings
         worDir = self._create_worDir()
         self._simulateDir_ = worDir
-        self.additional_file_moves.append(os.path.join(worDir, "run.mos"))
+        self.additional_file_moves.append(os.path.join(worDir, f"run_{self.model_name}.mos"))
         # Copy directory
         shutil.copytree(os.path.abspath(self._packagePath), worDir,
                         ignore=shutil.ignore_patterns('*.svn', '*.git'))        
@@ -325,11 +335,11 @@ translateModelFMU(modelInstance, false, "", "2", "all", false, 2);
         mi = '"{mn}({dec})"'.format(mn=self.modelName, dec=','.join(dec))
         
         # Write the Modelica script
-        runScriptName = os.path.join(worDir, "run.mos").replace("\\","/")
+        runScriptName = os.path.join(worDir, f"run_{self.model_name}.mos").replace("\\","/")
         with open(runScriptName, mode="w", encoding="utf-8") as fil:
             fil.write(self._get_dymola_commands(
                 working_directory=worDir,
-                log_file="simulator.log",
+                log_file=f"simulator_{self.model_name}.log",
                 model_instance=mi,
                 packages = self.packages))
         # Run script
@@ -363,9 +373,22 @@ class FileManagement:
 
     def move_files(self, files: list, target_dir: str, current_dir: str ,additional_file_moves: list[str] = None) -> None:
 
-        def move_file(current_path, target_path):
-            if os.path.exists(current_path):
-                os.rename(current_path, target_path)
+        def move_file(current_path, target_path):       
+            if os.path.exists(current_path):           
+                if not os.path.normpath(current_path) == os.path.normpath(target_path):
+                    try:
+                        os.rename(current_path, target_path)
+                    except FileExistsError as e:
+                            while True:
+                                overwrite = input(f"The path {target_path} already exists. Overwrite? [y/n]")
+                                if overwrite == "y" or overwrite == "n":
+                                    if overwrite == "y":
+                                        break
+                                    elif overwrite == "n":
+                                        raise e
+                                    else:
+                                        print("Enter 'y' or 'n'.")
+                            os.replace(current_path, target_path)
 
         for file in files: 
             current_path = os.path.join(current_dir, file)
@@ -383,6 +406,26 @@ class FmuExport:
         self.parameter_import = ParameterImport #class responsible for import of Parameters
         self._file_management = FileManagement #class responsible for file Management
         self.output_directory = output_directory
+        self.fmu_path = os.path.join(self.modeling_env.model_directory, self.modeling_env.fmu_name + ".fmu")
+
+    @property
+    def fmu_path(self):
+        return self._fmu_path
+
+    @fmu_path.setter
+    def fmu_path(self, fmu_path):
+
+        if os.path.exists(fmu_path):
+            while True:
+                overwrite = input("The new fmu will have the same path as an existing fmu. Overwrite? [y/n]")
+                if overwrite == "y" or overwrite == "n":
+                    if overwrite == "y":
+                        break
+                    elif overwrite == "n":
+                        raise FmuAlreadyExistsError("Stopping execution.")
+                    else: 
+                        print("Enter 'y' or 'n'")
+        self._fmu_path = fmu_path
 
     def import_parameters(self) -> None:
         
@@ -398,9 +441,7 @@ class FmuExport:
         
     def check_fmu_export(self) -> bool:
 
-        fmu_path = os.path.join(self.modeling_env.model_directory, self.modeling_env.model_name + ".fmu")
-
-        if os.path.exists(fmu_path):
+        if os.path.exists(self.fmu_path):
             return True
         else:
             return False
@@ -409,9 +450,10 @@ class FmuExport:
 
         self._file_management.delete_unnecessary_files(files_to_delete, self.modeling_env.model_directory)
         self._file_management.move_files(files_to_move,self.output_directory,self.modeling_env.model_directory ,additional_file_moves)
+        self._fmu_path = os.path.normpath(os.path.join(self.output_directory, self.modeling_env.fmu_name + ".fmu"))
 
 def _initialize( modeling_environment: str, model_name:str, model_directory:str,env_path, output_directory, 
-                _datasheet_directory, _datasheets,parameters, model_modifiers, packages) -> FmuExport:
+                _datasheet_directory  = None, _datasheets = {},parameters = {}, model_modifiers = {}, packages = []) -> FmuExport:
 
     if modeling_environment.lower().startswith("d"):
         modeling_env = DymolaFmuExport(model_name, model_directory, env_path, packages= packages)
@@ -457,6 +499,7 @@ def export_fmu( modeling_environment: str, model_name:str, model_directory:str,e
             # files that need to be moved if fmu export was successful the first time now need to be deleted as well
             files_to_delete = _fmu_export.modeling_env.files_to_delete + _fmu_export.modeling_env.files_to_move
             _fmu_export.file_management(files_to_delete)
+            msg = "The FMU Export without added parameters was successful."
             print("The FMU Export without added parameters was successful.")
             print("Check if model_modifiers and added parameters exist in the model. ")
             print(f"Possible parameters that do not exist:\n{possibly_non_existing_parameters}")
@@ -469,6 +512,7 @@ def export_fmu( modeling_environment: str, model_name:str, model_directory:str,e
             if modeling_environment == 'd':
                 print('Check if Dymola license is active.')
             _fmu_export.file_management(_fmu_export.modeling_env.files_to_delete_no_success)
+        raise FmuExportError("The FMU Export was not successful")
 
     return fmu_export
 
@@ -526,6 +570,16 @@ class DirectoryDoesNotExistError(Exception):
 
 class ModelEnvironmentArgumentError(Exception):
 
+    def __init__(self, message):
+        self.message = message
+        super().__init__(message)
+
+class FmuAlreadyExistsError(Exception):
+    def __init__(self, message):
+        self.message = message
+        super().__init__(message)
+
+class FmuExportError(Exception):
     def __init__(self, message):
         self.message = message
         super().__init__(message)
