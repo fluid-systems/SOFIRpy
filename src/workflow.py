@@ -58,7 +58,8 @@ class Workflow:
                 fmu["path"] = fmu_export.fmu_path
                 fmu["store copy"] = export_dict.get("store copy")
                 # add new path to json file
-                self.add_path_to_json(os.path.join(fmu["store copy"], os.path.basename(fmu["path"])), fmu["model name"])
+                if fmu["store copy"]:
+                    self.add_path_to_json(os.path.join(fmu["store copy"], os.path.basename(fmu["path"])), fmu["model name"])
 
     def add_path_to_json(self, path, name):
 

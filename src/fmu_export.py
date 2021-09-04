@@ -202,7 +202,7 @@ class _FmuExport(ABC):
         pass
 
         
-class DymolaFmuExport(_FmuExport, Simulator): #TODO _ wird zu _0 beim namen der fmu
+class DymolaFmuExport(_FmuExport, Simulator):
     """Export a fmu from Dymola."""
 
     def __init__(self, model_name: str, model_directory: str, dymola_path: str, packages: list = []):
@@ -494,7 +494,7 @@ def export_fmu( modeling_environment: str, model_name:str, model_directory:str,e
         success = _fmu_export.fmu_export()
         if success:
             check_paremeters_exist = CheckParametersExist()
-            check_paremeters_exist.read_model_parameters(model_directory, model_name)
+            check_paremeters_exist.read_model_parameters(model_directory, _fmu_export.modeling_env.fmu_name)
             possibly_non_existing_parameters = check_paremeters_exist.check(list(fmu_export.parameter_import.parameters.keys()))
             # files that need to be moved if fmu export was successful the first time now need to be deleted as well
             files_to_delete = _fmu_export.modeling_env.files_to_delete + _fmu_export.modeling_env.files_to_move
@@ -518,11 +518,11 @@ def export_fmu( modeling_environment: str, model_name:str, model_directory:str,e
 
 class CheckParametersExist:
     
-    def read_model_parameters(self, model_directory: str, model_name: str) -> None:
+    def read_model_parameters(self, model_directory: str, fmu_name: str) -> None:
 
         from fmpy import read_model_description
         
-        fmu_path = os.path.join(model_directory, model_name + ".fmu")
+        fmu_path = os.path.join(model_directory, fmu_name + ".fmu")
         model_description = read_model_description(fmu_path)
 
         self.variables =  [variable.name for variable in model_description.modelVariables]

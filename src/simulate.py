@@ -93,9 +93,13 @@ def key_checker(must_keys: list, given_keys: list, info):
 
 class ConnectSystem:
 
-    def __init__(self, fmus_info: list = [], controls_info: list = []):
+    def __init__(self, fmus_info: list = None, controls_info: list = None):
         
+        if not fmus_info:
+            self.fmus_info = []
         self.fmus_info = fmus_info
+        if not controls_info:
+            self.controls_info = []
         self.controls_info = controls_info
 
     @property
