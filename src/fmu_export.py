@@ -202,10 +202,10 @@ class _FmuExport(ABC):
         pass
 
         
-class DymolaFmuExport(_FmuExport, Simulator):
+class DymolaFmuExport(_FmuExport, Simulator): #TODO option to delete simulator log and run file if not needed
     """Export a fmu from Dymola."""
 
-    def __init__(self, model_name: str, model_directory: str, dymola_path: str, packages: list = []):
+    def __init__(self, model_name: str, model_directory: str, dymola_path: str, packages: list = [], keep_log = True, keep_run = True):
         """DymolaFmuExport Class Constructor to initialize the object.
 
         Args:
@@ -218,11 +218,15 @@ class DymolaFmuExport(_FmuExport, Simulator):
         _FmuExport.__init__(self, model_name, model_directory)
         self.packages = packages
         self.dymola_path = dymola_path
+        self.fmu_name = self.model_name.replace("_", "_0")
         self.files_to_delete = ['dslog.txt', 'fmiModelIdentifier.h', 'dsmodel.c', 'buildlog.txt',
                                 'dsmodel_fmuconf.h', "~FMUOutput", "dsin.txt"]
-
-        self.fmu_name = self.model_name.replace("_", "_0")
-        self.files_to_move = [f'{self.fmu_name}.fmu', f'simulator_{self.model_name}.log']
+        if not keep_log:
+            self.files_to_delete += [f'simulator_{self.model_name}.log']
+            self.files_to_move = [f'{self.fmu_name}.fmu']
+        else:
+            self.files_to_move = [f'{self.fmu_name}.fmu', f'simulator_{self.model_name}.log'] 
+        self.keep_run = keep_run    
         self.additional_file_moves = []
         self.files_to_delete_no_success = [f'simulator_{self.model_name}.log']
 
@@ -322,7 +326,8 @@ translateModelFMU(modelInstance, false, "", "2", "all", false, 2);
         # then the simulations will be done in tmp??/Buildings
         worDir = self._create_worDir()
         self._simulateDir_ = worDir
-        self.additional_file_moves.append(os.path.join(worDir, f"run_{self.model_name}.mos"))
+        if self.keep_run:
+            self.additional_file_moves.append(os.path.join(worDir, f"run_{self.model_name}.mos"))
         # Copy directory
         shutil.copytree(os.path.abspath(self._packagePath), worDir,
                         ignore=shutil.ignore_patterns('*.svn', '*.git'))        
@@ -453,10 +458,10 @@ class FmuExport:
         self._fmu_path = os.path.normpath(os.path.join(self.output_directory, self.modeling_env.fmu_name + ".fmu"))
 
 def _initialize( modeling_environment: str, model_name:str, model_directory:str,env_path, output_directory, 
-                _datasheet_directory  = None, _datasheets = {},parameters = {}, model_modifiers = {}, packages = []) -> FmuExport:
+                _datasheet_directory, _datasheets,parameters, model_modifiers, packages, keep_log, keep_run) -> FmuExport:
 
     if modeling_environment.lower().startswith("d"):
-        modeling_env = DymolaFmuExport(model_name, model_directory, env_path, packages= packages)
+        modeling_env = DymolaFmuExport(model_name, model_directory, env_path, packages= packages, keep_run= keep_run, keep_log= keep_log)
     elif modeling_environment.lower().startswith("o"):
         modeling_env = OpenModelicaFmuExport()
     else:
@@ -474,10 +479,10 @@ def _initialize( modeling_environment: str, model_name:str, model_directory:str,
     return fmu_export
         
 def export_fmu( modeling_environment: str, model_name:str, model_directory:str,env_path, output_directory, 
-                datasheet_directory = None, datasheets = {} ,additional_parameters = {}, model_modifiers = [], packages = []) -> FmuExport:
+                datasheet_directory = None, datasheets = {} ,additional_parameters = {}, model_modifiers = [], packages = [],keep_log = True, keep_run = True) -> FmuExport:
     
     fmu_export = _initialize(modeling_environment, model_name, model_directory, env_path, output_directory, 
-                datasheet_directory, datasheets, additional_parameters, model_modifiers, packages)
+                datasheet_directory, datasheets, additional_parameters, model_modifiers, packages, keep_log= keep_log, keep_run= keep_run)
 
     fmu_export.import_parameters()
     success = fmu_export.fmu_export()
