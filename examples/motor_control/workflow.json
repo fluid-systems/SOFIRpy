@@ -1,0 +1,74 @@
+{
+    "project directory": "C:\\Users\\Daniele\\Desktop\\Motor_Control1",
+    "dymola path": "C:\\Program Files\\Dymola 2018 FD01\\bin64",
+    "fmu export": [
+        {
+            "model name": "DC_Motor",
+            "modeling environment": "d",
+            "model directory": "C:\\Users\\Daniele\\Documents\\GitLab\\fair_sim_release\\fair_sim_release\\examples\\motor_control",
+            "packages": [],
+            "datasheet directory": "C:\\Users\\Daniele\\Documents\\GitLab\\fair_sim_release\\fair_sim_release\\examples\\motor_control",
+            "datasheets": {
+                "damper": "damper_datasheet"
+            },
+            "additional_parameters": {
+                "inertia.J": 0.5
+            },
+            "model_modifiers": null,
+            "store copy": "C:\\Users\\Daniele\\Documents\\GitLab\\fair_sim_release\\fair_sim_release\\examples\\motor_control"
+        }
+    ],
+    "fmus": [
+        {
+            "model name": "DC_Motor",
+            "path": "C:\\Users\\Daniele\\Documents\\GitLab\\fair_sim_release\\fair_sim_release\\examples\\motor_control\\DC_0Motor.fmu",
+            "connections": [
+                {
+                    "input name": "u",
+                    "connect to system": "pid",
+                    "connect to variable": "u"
+                }
+            ]
+        }
+    ],
+    "controls": [
+        {
+            "control name": "pid",
+            "connections": [
+                {
+                    "input name": "speed",
+                    "connect to system": "DC_Motor",
+                    "connect to variable": "y"
+                }
+            ]
+        }
+    ],
+    "record": {
+        "DC_Motor": [
+            "y",
+            "MotorTorque.tau"
+        ],
+        "pid": [
+            "u"
+        ]
+    },
+    "plots": [
+        {
+            "x": "time",
+            "y": [
+                "DC_Motor.y"
+            ],
+            "title": "Speed over time",
+            "y_label": "SPEED",
+            "x_label": "TIME"
+        },
+        {
+            "x": "time",
+            "y": "pid.u",
+            "title": "Voltage over time",
+            "y_label": "VOLTAGE",
+            "x_label": "TIME"
+        }
+    ],
+    "style_sheet_path": "C:\\Users\\Daniele\\Documents\\GitLab\\fair_sim_release\\fair_sim_release\\examples\\FST.mplstyle"
+}
