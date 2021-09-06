@@ -4,7 +4,7 @@ from OMPython import ModelicaSystem
 from buildingspy.simulate.Simulator import Simulator
 from abc import ABC, abstractmethod
 import re
-from typing import Union
+from typing import Union, Optional
 import json
 
 
@@ -376,7 +376,7 @@ class FileManagement:
                 else:
                     os.remove(path)
 
-    def move_files(self, files: list, target_dir: str, current_dir: str ,additional_file_moves: list[str] = None) -> None:
+    def move_files(self, files, target_dir, current_dir, additional_file_moves = None) -> None:
 
         def move_file(current_path, target_path):       
             if os.path.exists(current_path):           
@@ -399,9 +399,10 @@ class FileManagement:
             current_path = os.path.join(current_dir, file)
             target_path = os.path.join(target_dir, file)
             move_file(current_path, target_path)
-            
-        for current_path in additional_file_moves:
-            move_file(current_path, os.path.join(target_dir, os.path.basename(current_path)))
+
+        if additional_file_moves:    
+            for current_path in additional_file_moves:
+                move_file(current_path, os.path.join(target_dir, os.path.basename(current_path)))
 
 class FmuExport:
     
