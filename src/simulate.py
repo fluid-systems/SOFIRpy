@@ -209,15 +209,15 @@ class Simulation:
         self.create_result_dict()
 
         print("Starting Simulation...")
-        with alive_bar(len(self.time_series), bar= 'blocks', spinner='classic') as bar:
-            for time_step, time in enumerate(self.time_series):
+        #with alive_bar(len(self.time_series), bar= 'blocks', spinner='classic') as bar: #TODO reproduce UnicodeEncodeError
+        for time_step, time in enumerate(self.time_series):
 
-                self.set_control_inputs()
-                self.generate_control_output()
-                self.set_fmu_inputs()
-                self.record_values(time_step, time)
-                self.fmu_do_step(time, step_size)
-                bar()
+            self.set_control_inputs()
+            self.generate_control_output()
+            self.set_fmu_inputs()
+            self.record_values(time_step, time)
+            self.fmu_do_step(time, step_size)
+            #bar()
                 
         self.conclude_fmu_simulation()
        
