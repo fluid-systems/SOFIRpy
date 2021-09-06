@@ -74,7 +74,7 @@ class Project(InitiateProject):
         self.run_name_generator = run_name_generator if run_name_generator else self.generate_default_run_name
         self.current_run_name = None
 
-    def create_run(self,hdf5_sub_groups: list[str], run_name: Optional[str] = None, attr = None, create_run_folder = True) -> None:
+    def create_run(self,hdf5_sub_groups, run_name = None, attr = None, create_run_folder = True):
 
         number_of_runs = self.get_number_of_runs()
         self.current_run_name = self.run_name_generator(run_name, number_of_runs)
@@ -83,7 +83,7 @@ class Project(InitiateProject):
         if create_run_folder:
             self.create_run_folder()
 
-    def create_hdf5_run(self, hdf5_sub_groups: list[str], attr = None) -> None:
+    def create_hdf5_run(self, hdf5_sub_groups, attr = None) -> None:
         
        with h5py.File(f'{self.hdf5_path}', 'a') as hdf5:
             
@@ -181,7 +181,7 @@ class Project(InitiateProject):
 
         return len(self.get_hdf5_runs())
 
-    def get_hdf5_runs(self) -> list[str]:
+    def get_hdf5_runs(self):
 
         with h5py.File(self.hdf5_path, 'a') as hdf5:
             return list(hdf5.keys())
@@ -213,7 +213,7 @@ def read_data(hdf5_path, data_name, get_attribute = False):
                 data =list(_data.keys())
             
             else: 
-                date = None
+                data = None
 
             if get_attribute:
                 attr = dict(_data.attrs)
