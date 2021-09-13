@@ -9,6 +9,138 @@ import os
 import json
 import time
 
+class WorkflowInitiation:
+
+    def __init__(self, setup_file_path):
+
+        self.setup_file_path = setup_file_path
+
+    @property
+    def setup_file_path(self):
+        return self._setup_file_path
+
+    @setup_file_path.setter
+    def setup_file_path(self, path):
+
+        file_extension = os.path.splitext(path)[1]
+        if file_extension != ".json":
+            raise FileTypeError("The 'setup_file_path' needs to end with .json")
+        if not os.path.exists(path):
+            raise FileNotFoundError(f"The path '{path}' does not exist.")
+
+        self._setup_file_path = os.path.normpath(path)
+
+    def initiate(self, hdf5_file_name, pid_generator, run_name_generator):
+
+        with open(self.setup_file_path) as file:
+            self.setup = json.load(file)  
+        
+        working_directory = self.setup["project directory"]
+
+        self.project = Project(working_directory, hdf5_file_name, pid_generator, run_name_generator)
+
+    def create_run(self, run_name, run_groups: list = None, attr = None, create_run_folder = True):
+
+        if not run_groups:
+            run_groups = ["simulation_results", "plots", "datasheets", "code", "models", "fmus"]
+
+        self.project.create_run(run_groups, run_name, attr, create_run_folder)
+        self.run_directory = os.path.join(self.project.working_directory, self.project.current_run_name)
+
+class FmuSetup:
+
+    def __init__(self, init: WorkflowInitiation) -> None:
+        
+        self.init = init
+
+    def export_fmus(self):
+
+        for fmu in self.init.setup["fmus"]:
+            if not fmu["path"]:
+                if not self.init.setup.get("fmu export"):
+                    raise KeyError("If the path for a fmu is not defined the json file needs the key 'fmu export' for the corresponding fmu.")
+                else:
+                    for exp_dict in self.init.setup["fmu export"]:
+                        if exp_dict["model name"] == fmu["model name"]:
+                                fmu_path = self.export_fmu(exp_dict)
+                                fmu["path"] = fmu_path
+                                break
+
+    def export_fmu(self, export_dict):
+                    
+        modeling_environment = export_dict["modeling environment"]
+        model_name = export_dict["model name"]
+        model_directory = export_dict["model directory"]
+        packages = export_dict.get("packages")
+        datasheet_directory = export_dict.get("datasheet directory")
+        datasheets = export_dict.get("datasheets")
+        additional_parameters = export_dict.get("additional parameters")
+        model_modifiers = export_dict.get("model modifiers")
+        env_path = self.init.setup["dymola path"] if modeling_environment == "d" else None
+        output_directory =  self.init.run_directory
+        fmu = export_fmu(modeling_environment, model_name, model_directory, env_path, output_directory, 
+                                datasheet_directory = datasheet_directory, datasheets = datasheets, 
+                                additional_parameters = additional_parameters, model_modifiers = model_modifiers, packages = packages)
+        fmu_path = fmu.fmu_path
+        if export_dict.get("store copy"):
+            copy_path = os.path.join(export_dict["store copy"], os.path.basename(fmu["path"]))
+            shutil.copy(fmu_path, copy_path)
+            self.add_path_to_json(copy_path, model_name)
+
+        return fmu_path
+
+    def add_path_to_json(self, path, model_name):
+
+        with open(self.setup_file_path) as file:
+            data = json.load(file) 
+
+        for fmu in data["fmus"]:
+            if fmu["model name"] == model_name:
+                fmu["path"] = path
+                break
+
+        with open(self.setup_file_path, "w") as file:
+            json.dump(data, file)   
+
+class Simulation:
+
+    def __init__(self, init: WorkflowInitiation):
+
+        self.init = init
+
+    def control_setup(self, control_classes: dict):
+
+        if self.init.setup.get("controls"):
+            for control in self.init.setup["controls"]:
+                control_name = control["control name"]
+                control["control class"] = control_classes[control_name]
+
+    def simulate(self, stop_time, step_size, start_time = None):
+
+        if not start_time:
+            start_time = 0
+        self.results, self.units = simulate(stop_time, step_size, fmus_info = self.init.setup.get("fmus"), 
+                                            controls_info = self.init.setup.get("controls"), result_var= self.init.setup.get("record"), 
+                                            start_time= start_time, get_units= True)
+
+class SaveData:
+
+    def __init__(self, init: WorkflowInitiation, sim: Simulation):
+        
+        self.init = init
+        self.sim = sim
+
+    def save_plots(self):
+        pass
+    def save_simulation_results(self):...
+
+    def save_fmus(self):...
+
+    def save_models(self):...
+
+    def save_file(self, type, copy_path, paste_path):...
+
+    def store_data_in_hdf5(self):...
 
 class Workflow:
 
@@ -222,3 +354,11 @@ def workflow(setup_file_path,stop_time, step_size, control_classes = None, hdf5_
             else:
                 print("Enter 'y' or 'n'")
         raise e
+
+
+
+class FileTypeError(Exception):
+
+    def __init__(self, message):
+        self.message = message
+        super().__init__(message)
