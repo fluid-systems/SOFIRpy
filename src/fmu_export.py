@@ -1,6 +1,6 @@
 import os
 import shutil
-from OMPython import ModelicaSystem
+#from OMPython import ModelicaSystem #TODO
 from buildingspy.simulate.Simulator import Simulator
 from abc import ABC, abstractmethod
 import re
