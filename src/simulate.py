@@ -294,7 +294,7 @@ class Simulation:
 
         return units
 
-def simulate(stop_time, step_size, fmus_info: list = [], controls_info: list = [], result_var: dict = {}, start_time = 0, get_units = False):
+def simulate(stop_time: float, step_size: float, fmus_info: list = None, controls_info: list = None, result_var: dict = None, start_time = 0, get_units = False):
 
     if not fmus_info and not controls_info:
         raise NoSystemToSimulateDefined("No System to simulate given as argument.")
