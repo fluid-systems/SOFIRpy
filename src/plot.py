@@ -15,8 +15,11 @@ def plot_results(y, x, x_label = None, y_label = None, title = None,
         ax.set_xlabel(x_label)
     if y_label:
         ax.set_ylabel(y_label)
-    for _y in y:
-        ax.plot(x, _y)
+    if isinstance(y, list):
+        for _y in y:
+            ax.plot(x, _y)  
+    else:
+        ax.plot(x,y)
     if legend: 
         ax.legend(legend)
 
