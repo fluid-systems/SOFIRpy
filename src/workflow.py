@@ -8,8 +8,8 @@ import os
 import json
 import time
 
-class WorkflowInitiation:
 
+class WorkflowInitiation:
     def __init__(self, setup_file_path):
 
         self.setup_file_path = setup_file_path
@@ -32,41 +32,65 @@ class WorkflowInitiation:
     def initiate(self, hdf5_file_name, pid_generator, run_name_generator):
 
         with open(self.setup_file_path) as file:
-            self.setup = json.load(file)  
-        
+            self.setup = json.load(file)
+
         working_directory = self.setup["project directory"]
 
-        self.project = Project(working_directory, hdf5_file_name, pid_generator, run_name_generator)
+        self.project = Project(
+            working_directory, hdf5_file_name, pid_generator, run_name_generator
+        )
 
-    def create_run(self, run_name, run_groups: list = None, attr = None, create_run_folder = True):
+    def create_run(
+        self,
+        run_groups: list = None,
+        run_name: str = None,
+        attr=None,
+        create_run_folder=True,
+    ):
 
         if not run_groups:
-            run_groups = ["simulation_results", "plots", "datasheets", "code", "models", "fmus"]
+            run_groups = [
+                "simulation_results",
+                "plots",
+                "datasheets",
+                "code",
+                "models",
+                "fmus",
+            ]
 
         self.project.create_run(run_groups, run_name, attr, create_run_folder)
-        self.run_directory = os.path.join(self.project.working_directory, self.project.current_run_name)
+        self.run_directory = os.path.join(
+            self.project.working_directory, self.project.current_run_name
+        )
+
 
 class FmuSetup:
-
     def __init__(self, init: WorkflowInitiation) -> None:
-        
+
         self.init = init
 
-    def export_fmus(self):
+    def export_fmus(self):  # TODO if save_fmus set to false
 
         for fmu in self.init.setup["fmus"]:
             if not fmu["path"]:
                 if not self.init.setup.get("fmu export"):
-                    raise KeyError("If the path for a fmu is not defined the json file needs the key 'fmu export' for the corresponding fmu.")
+                    raise KeyError(
+                        "If the path for a fmu is not defined the json file needs the key 'fmu export' for the corresponding fmu."
+                    )
                 else:
                     for exp_dict in self.init.setup["fmu export"]:
                         if exp_dict["model name"] == fmu["model name"]:
-                                fmu_path = self._export_fmu(exp_dict)
-                                fmu["path"] = fmu_path
-                                break
+                            fmu["path"] = self._export_fmu(exp_dict)
+                            if exp_dict.get("store copy"):
+                                self.store_fmu_copy(
+                                    fmu["path"],
+                                    exp_dict["store copy"],
+                                    fmu["model name"],
+                                )
+                            break
 
     def _export_fmu(self, export_dict):
-                    
+
         modeling_environment = export_dict["modeling environment"]
         model_name = export_dict["model name"]
         model_directory = export_dict["model directory"]
@@ -75,45 +99,59 @@ class FmuSetup:
         datasheets = export_dict.get("datasheets")
         additional_parameters = export_dict.get("additional parameters")
         model_modifiers = export_dict.get("model modifiers")
-        env_path = self.init.setup["dymola path"] if modeling_environment == "d" else None
-        output_directory =  self.init.run_directory
-        fmu = export_fmu(modeling_environment, model_name, model_directory, env_path, output_directory, 
-                                datasheet_directory = datasheet_directory, datasheets = datasheets, 
-                                additional_parameters = additional_parameters, model_modifiers = model_modifiers, packages = packages)
-        fmu_path = fmu.fmu_path
-        if export_dict.get("store copy"):
-            copy_path = os.path.join(export_dict["store copy"], os.path.basename(fmu["path"]))
-            shutil.copy(fmu_path, copy_path)
-            if os.path.exists(copy_path):
-                    while True:
-                        overwrite = input(f"The path {copy_path} already exists. Overwrite? [y/n]")
-                        if overwrite == "y" or overwrite == "n":
-                            if overwrite == "y":
-                                break
-                            elif overwrite == "n":
-                                raise FileExistsError
-                            else:
-                                print("Enter 'y' or 'n'.")
+        env_path = (
+            self.init.setup.get("dymola path")
+            if modeling_environment.lower().startswith("d")
+            else None
+        )
+        output_directory = self.init.run_directory
+        fmu = export_fmu(
+            modeling_environment,
+            model_name,
+            model_directory,
+            output_directory,
+            env_path,
+            datasheet_directory=datasheet_directory,
+            datasheets=datasheets,
+            additional_parameters=additional_parameters,
+            model_modifiers=model_modifiers,
+            packages=packages,
+        )
+        return fmu.fmu_path
 
-            self.add_path_to_json(copy_path, model_name)
+    def store_fmu_copy(self, src_path, dest_dir, model_name):
 
-        return fmu_path
+        dest_path = os.path.join(dest_dir, os.path.basename(src_path))
+        if os.path.exists(dest_path):
+            while True:
+                overwrite = input(
+                    f"The path {dest_path} already exists. Overwrite? [y/n]"
+                )
+                if overwrite == "y" or overwrite == "n":
+                    if overwrite == "y":
+                        break
+                    elif overwrite == "n":
+                        raise FileExistsError
+                    else:
+                        print("Enter 'y' or 'n'.")
+        shutil.copy(src_path, dest_path)
+        self.add_path_to_json(dest_path, model_name)
 
     def add_path_to_json(self, path, model_name):
 
-        with open(self.setup_file_path) as file:
-            data = json.load(file) 
+        with open(self.init.setup_file_path) as file:
+            data = json.load(file)
 
         for fmu in data["fmus"]:
             if fmu["model name"] == model_name:
                 fmu["path"] = path
                 break
 
-        with open(self.setup_file_path, "w") as file:
-            json.dump(data, file)   
+        with open(self.init.setup_file_path, "w") as file:
+            json.dump(data, file)
+
 
 class Simulation:
-
     def __init__(self, init: WorkflowInitiation):
 
         self.init = init
@@ -125,46 +163,75 @@ class Simulation:
                 for control in self.init.setup["controls"]:
                     control_name = control["control name"]
                     control["control class"] = control_classes[control_name]
+
             else:
                 raise KeyError("The setup file is missing the key 'controls'")
 
-    def simulate(self, stop_time, step_size, start_time = None):
+        if not control_classes and self.init.setup.get(
+            "controls"
+        ):  # TODO name Exception
+            raise Exception(
+                "Controllers are specified in json file but no control classes are passed to the workflow function."
+            )
+
+    def _simulate(
+        self, stop_time, step_size, control_classes: dict = None, start_time=None
+    ):
 
         if not start_time:
             start_time = 0
-        self.results, self.units = simulate(stop_time, step_size, fmus_info = self.init.setup.get("fmus"), 
-                                            controls_info = self.init.setup.get("controls"), result_var= self.init.setup.get("record"), 
-                                            start_time= start_time, get_units= True)
+        self.control_setup(control_classes)
+
+        self.results, self.units = simulate(
+            stop_time,
+            step_size,
+            fmus_info=self.init.setup.get("fmus"),
+            controls_info=self.init.setup.get("controls"),
+            result_var=self.init.setup.get("record"),
+            start_time=start_time,
+            get_units=True,
+        )
+
 
 class SaveData:
-
     def __init__(self, init: WorkflowInitiation, sim: Simulation):
-        
+
         self.init = init
         self.sim = sim
 
-    def plot(self, plot_func = None, img_type: str = None, group: str = None):
+    def plot(self, plot_func=None, img_type: str = None, group: str = None):
 
         if not plot_func:
             plot_func = plot_results
 
         if self.init.setup.get("plots"):
-            for plot in self.setup["plots"]:
-                x_data = [self.sim.results[plot["x"]]]
+            for plot in self.init.setup["plots"]:
+                x_data = self.sim.results[plot["x"]]
                 title = plot["title"]
                 if isinstance(plot["y"], list):
                     y_data = [self.sim.results[sub] for sub in plot["y"]]
-                    ax = plot_results(y = y_data, x= x_data, title= title, x_label= plot.get("x_label"), 
-                                        y_label = plot.get("y_label"), legend= plot.get("legend"), 
-                                        style_sheet_path = self.setup.get("style sheet path"))
+                    ax = plot_results(
+                        y=y_data,
+                        x=x_data,
+                        title=title,
+                        x_label=plot.get("x_label"),
+                        y_label=plot.get("y_label"),
+                        legend=plot.get("legend"),
+                        style_sheet_path=self.init.setup.get("style sheet path"),
+                    )
                 else:
                     y_data = self.sim.results[plot["y"]]
-                    ax = plot_results(y = y_data, x= x_data, title= title, x_label= plot.get("x_label"), 
-                                        y_label = plot.get("y_label"), legend= plot.get("legend"), 
-                                        style_sheet_path = self.setup.get("style sheet path"))
-                attr = {k:v for k,v in plot.items() if k not in ["title"]}
+                    ax = plot_results(
+                        y=y_data,
+                        x=x_data,
+                        title=title,
+                        x_label=plot.get("x_label"),
+                        y_label=plot.get("y_label"),
+                        legend=plot.get("legend"),
+                        style_sheet_path=self.init.setup.get("style sheet path"),
+                    )
+                attr = {k: v for k, v in plot.items() if k not in ["title"]}
                 self.save_plot(ax.get_figure(), title, img_type, group, attr)
-
 
     def save_plot(self, fig, title: str, img_type: str, group: str, attr: dict):
 
@@ -174,13 +241,13 @@ class SaveData:
         if not group:
             group = self.init.project.current_run_name + "/plots"
 
-        plot_pid = self.init.project.pid_generator("plot", title = title)
-        plot_path = os.path.join(self.init.run_directory, plot_pid +"." + img_type)
+        plot_pid = self.init.project.pid_generator("plot", title=title)
+        plot_path = os.path.join(self.init.run_directory, plot_pid + "." + img_type)
         if os.path.exists(plot_path):
             time.sleep(1)
-            plot_pid = self.init.project.pid_generator("plot", title = title)
-            path = os.path.join(self.run_directory, plot_pid +"." + type)
-        fig.savefig(path)
+            plot_pid = self.init.project.pid_generator("plot", title=title)
+            plot_path = os.path.join(self.init.run_directory, plot_pid + "." + img_type)
+        fig.savefig(plot_path)
 
         self.store_data_in_hdf5(plot_pid, title, group, attr)
 
@@ -193,9 +260,9 @@ class SaveData:
 
         for var in variable_list:
             if var != "time":
-                rec = self.results[["time", var]].to_records(index= False)
-                if self.units.get(var):
-                    attr = {"unit": self.units[var]}
+                rec = self.sim.results[["time", var]].to_records(index=False)
+                if self.sim.units.get(var):
+                    attr = {"unit": self.sim.units[var]}
                     self.store_data_in_hdf5(rec, var, group, attr)
                 else:
                     self.store_data_in_hdf5(rec, var, group)
@@ -206,14 +273,20 @@ class SaveData:
             group = self.init.project.current_run_name + "/fmus"
 
         for fmu in self.init.setup["fmus"]:
-            fmu_pid = self.init.project.pid_generator("fmus", model_name = fmu["model name"])
+            fmu_pid = self.init.project.pid_generator(
+                "fmu", model_name=fmu["model name"]
+            )
             old_path = fmu["path"]
             new_path = os.path.join(self.init.run_directory, fmu_pid + ".fmu")
             if os.path.exists(new_path):
                 time.sleep(1)
-                fmu_pid = self.init.project.pid_generator("fmus", model_name = fmu["model name"])
+                fmu_pid = self.init.project.pid_generator(
+                    "fmus", model_name=fmu["model name"]
+                )
                 new_path = os.path.join(self.init.run_directory, fmu_pid + ".fmu")
-            if os.path.normpath(os.path.dirname(old_path)) == os.path.normpath(self.run_directory):
+            if os.path.normpath(os.path.dirname(old_path)) == os.path.normpath(
+                self.init.run_directory
+            ):
                 os.rename(old_path, new_path)
             else:
                 shutil.copy(old_path, new_path)
@@ -224,251 +297,82 @@ class SaveData:
 
         if self.init.setup["save additional files"]:
             for file in self.init.setup["save additional files"]:
-                group = self.init.run_directory + "/" + file["group"]
+                group = self.init.project.current_run_name + "/" + file["group"]
                 _, extension = os.path.splitext(file["path"])
                 file_name = os.path.basename(file["path"]).split(".")[0]
                 if file["pid"]:
-                    pid = self.init.project.pid_generator(file["type"])
+                    pid = name = self.init.project.pid_generator(file["type"])
                     copy_path = os.path.join(self.init.run_directory, pid + extension)
                     if os.path.exists(copy_path):
                         time.sleep(1)
                         pid = name = self.init.project.pid_generator(file["type"])
-                        copy_path = os.path.join(self.init.run_directory, pid + extension)
+                        copy_path = os.path.join(
+                            self.init.run_directory, pid + extension
+                        )
                 else:
                     name = file_name
-                    copy_path = os.path.join(self.init.run_directory, os.path.basename(file["path"]))
-                
+                    copy_path = os.path.join(
+                        self.init.run_directory, os.path.basename(file["path"])
+                    )
+
                 shutil.copy(file["path"], copy_path)
                 self.store_data_in_hdf5(name, file_name, group)
 
-
-    def store_data_in_hdf5(self, data, data_name, folder, attr = None):
+    def store_data_in_hdf5(self, data, data_name, folder, attr=None):
 
         store_data(self.init.project.hdf5_path, data, data_name, folder, attr)
 
-def workflow(setup_file_path,stop_time, step_size, control_classes = None, hdf5_group_attr = None, **kwargs):
+
+def workflow(
+    setup_file_path,
+    stop_time,
+    step_size,
+    control_classes=None,
+    hdf5_groups=None,
+    hdf5_group_attr=None,
+    create_run_folder=True,
+    save_fmus=True,
+    save_plots=True,
+    save_simulation_results=True,
+    **kwargs,
+):
 
     init = WorkflowInitiation(setup_file_path)
-    init.initiate(kwargs.get("hdf5_file_name"), kwargs.get("pid_generator"), kwargs.get("run_name_generator"))
-    init.create_run(kwargs.get("generate_run_name"), kwargs.get("run_name"), hdf5_group_attr)
-    fmu_setup = FmuSetup(init)
-    fmu_setup.export_fmus()
-    sim = Simulation(init)    
-    sim.control_setup(control_classes)
-    sim.simulate(stop_time, step_size, kwargs.get("start_time"))
-    save = SaveData(init, sim)
-    save.plot() # TODO arguments
-    save.save_fmus()
-    save.save_simulation_results()
-    save.save_files()
-
-
-class Workflow:
-
-    def __init__(self, setup_file_path):
-
-        self.setup_file_path = setup_file_path
-        self.data = []
-        
-    def initiate(self, hdf5_file_name, pid_generator, run_name_generator):
-
-        with open(self.setup_file_path) as file:
-            self.setup = json.load(file)  
-        
-        working_directory = self.setup["project directory"]
-
-        self.project = Project(working_directory, hdf5_file_name, pid_generator, run_name_generator)
-
-    def create_run(self, run_name, run_groups: list = None, attr = None):
-
-        if not run_groups:
-            run_groups = ["simulation_results", "plots", "datasheets", "code", "models", "fmus"]
-
-        self.project.create_run(run_groups, run_name, attr)
-        self.run_directory = os.path.join(self.project.working_directory, self.project.current_run_name)
-
-    def fmu_setup(self):
-
-        for fmu in self.setup["fmus"]:
-            if not fmu["path"]:
-                for exp in self.setup["fmu export"]:
-                    if exp["model name"] == fmu["model name"]:
-                        export_dict = exp
-                        break
-                modeling_environment = export_dict["modeling environment"]
-                model_name = export_dict["model name"]
-                model_directory = export_dict["model directory"]
-                packages = export_dict.get("packages")
-                datasheet_directory = export_dict.get("datasheet directory")
-                datasheets = export_dict.get("datasheets")
-                additional_parameters = export_dict.get("additional parameters")
-                model_modifiers = export_dict.get("model modifiers")
-                env_path = self.setup["dymola path"] if modeling_environment == "d" else None
-                output_directory =  self.run_directory
-                fmu_export = export_fmu(modeling_environment, model_name, model_directory, env_path, output_directory, 
-                                        datasheet_directory = datasheet_directory, datasheets = datasheets, 
-                                        additional_parameters = additional_parameters, model_modifiers = model_modifiers, packages = packages)
-                fmu["path"] = fmu_export.fmu_path
-                fmu["store copy"] = export_dict.get("store copy")
-                # add new path to json file
-                if fmu["store copy"]:
-                    self.add_path_to_json(os.path.join(fmu["store copy"], os.path.basename(fmu["path"])), fmu["model name"])
-
-    def add_path_to_json(self, path, name):
-
-        with open(self.setup_file_path) as file:
-            data = json.load(file) 
-
-        for fmu in data["fmus"]:
-            if fmu["model name"] == name:
-                fmu["path"] = path
-                break
-
-        with open(self.setup_file_path, "w") as file:
-            json.dump(data, file)       
-
-    def control_setup(self, control_classes):
-
-        if self.setup.get("controls"):
-            for control in self.setup["controls"]:
-                control_name = control["control name"]
-                control["control class"] = control_classes[control_name]
-
-    def simulate(self, stop_time, step_size, start_time = None):
-
-        if not start_time:
-            start_time = 0
-        self.results, self.units = simulate(stop_time, step_size, fmus_info = self.setup.get("fmus"), controls_info = self.setup.get("controls"), result_var= self.setup.get("record"), start_time= start_time, get_units= True)
-
-    def save_plots(self, type = None, group: str = None):
-
-        if not type:
-            type = "png"
-        if not group:
-            group = self.project.current_run_name + "/plots"
-
-        plots = []
-        if self.setup.get("plots"):
-            for plot in self.setup["plots"]:
-                x_data = self.results[plot["x"]] 
-                if isinstance(plot["y"], list):
-                    y_data = [self.results[sub] for sub in plot["y"]]
-                    ax = plot_results(y = y_data, x= x_data, title= plot["title"], x_label= plot.get("x_label"), 
-                                        y_label = plot.get("y_label"), legend= plot.get("legend"), 
-                                        style_sheet_path = self.setup.get("style sheet path"))
-                else:
-                    y_data = self.results[plot["y"]]
-                    ax = plot_results(y = [y_data], x= x_data, title= plot["title"], x_label= plot.get("x_label"), 
-                                        y_label = plot.get("y_label"), legend= plot.get("legend"), 
-                                        style_sheet_path = self.setup.get("style sheet path"))
-                pid = self.project.pid_generator("plot")
-                plot_data = {"pid": pid, "title" : plot["title"], "x_label": plot.get("x_label"), "y_label": plot.get("y_label")}
-                plots.append(plot_data)
-                fig = ax.get_figure()
-                pid = self.project.pid_generator("plot")
-                path = os.path.join(self.run_directory, pid +"." + type)
-                if os.path.exists(path):
-                    time.sleep(1)
-                    pid = self.project.pid_generator("plot", title = plot["title"])
-                    path = os.path.join(self.run_directory, pid +"." + type)
-                fig.savefig(path)
-
-        for plot in plots:
-            attr = {k:v for k,v in plot.items() if k not in ["pid", "title"]}
-            self.append_data(plot["title"], plot["pid"], group, attr)
-
-    def save_simulation_results(self, group: str = None):
-
-        if not group:
-            group =  self.project.current_run_name + "/simulation_results"
-        variable_list = list(self.results.columns)
-
-        for var in variable_list:
-            if var != "time":
-                rec = self.results[["time", var]].to_records(index= False)
-                if self.units.get(var):
-                    attr = {"unit": self.units[var]}
-                    self.append_data(var, rec, group, attr)
-                else:
-                    self.append_data(var, rec, group)
-
-                
-
-    def save_fmus(self, group = None):
-        
-        if not group:
-            group =  self.project.current_run_name +"/fmus"
-        self.fmus = []
-        for fmu in self.setup["fmus"]:
-            fmu_pid = self.project.pid_generator("fmu", model_name = fmu["model name"])
-            old_path = fmu["path"]
-            if fmu.get("store copy"):
-                fmu_copy_path = os.path.normpath(fmu.get("store copy") + "/" + os.path.basename(old_path))
-                if os.path.exists(fmu_copy_path):
-                    while True:
-                        overwrite = input(f"The path {fmu_copy_path} already exists. Overwrite? [y/n]")
-                        if overwrite == "y" or overwrite == "n":
-                            if overwrite == "y":
-                                break
-                            elif overwrite == "n":
-                                raise FileExistsError
-                            else:
-                                print("Enter 'y' or 'n'.")
-                shutil.copy(old_path, fmu["store copy"])
-
-            new_path = os.path.join(self.run_directory, fmu_pid +".fmu")
-            if os.path.exists(new_path):
-                time.sleep(1)
-                fmu_pid = self.project.pid_generator("fmu")
-                new_path = os.path.join(self.run_directory, fmu_pid +".fmu")
-            if os.path.normpath(os.path.dirname(old_path)) == os.path.normpath(self.run_directory):
-                os.rename(old_path, new_path)
-            else:
-                shutil.copy(old_path, new_path)
-            self.append_data(fmu["model name"], fmu_pid, group)
-
-    def append_data(self, data_name, data, hdf5_folder_name, attr = None):
-
-            data_dict = {}
-            data_dict["data_name"] = data_name
-            data_dict["data"] = data
-            data_dict["hdf5_folder_name"] = hdf5_folder_name
-            if attr:
-                data_dict["attr"] = attr          
-            self.data.append(data_dict)
-
-    def save_models(self):
-        pass
-
-    def store_data_in_hdf5(self):
-
-        for data in self.data:
-
-            store_data(self.project.hdf5_path,data["data"], data["data_name"], data["hdf5_folder_name"], data.get("attr"))
-
-def _workflow(setup_file_path,stop_time, step_size, control_classes = None, hdf5_group_attr = None, **kwargs):
-
+    init.initiate(
+        kwargs.get("hdf5_file_name"),
+        kwargs.get("pid_generator"),
+        kwargs.get("run_name_generator"),
+    )
 
     try:
-        wf = Workflow(setup_file_path)
-        wf.initiate(kwargs.get("hdf5_file_name"), kwargs.get("pid_generator"), kwargs.get("run_name_generator"))
-        wf.create_run(kwargs.get("generate_run_name"), kwargs.get("run_name"), hdf5_group_attr)
-        wf.fmu_setup()
-        if control_classes:
-            wf.control_setup(control_classes)
-        wf.simulate(stop_time, step_size, kwargs.get("start_time"))
-        wf.save_plots(kwargs.get("plot_type"), kwargs.get("plotting_function"))
-        wf.save_simulation_results(kwargs.get("result_group"))
-        wf.save_fmus(kwargs.get("fmu_group"))
-        wf.store_data_in_hdf5()
-
+        init.create_run(
+            hdf5_groups, kwargs.get("run_name"), hdf5_group_attr, create_run_folder
+        )
+        fmu_setup = FmuSetup(init)
+        fmu_setup.export_fmus()
+        sim = Simulation(init)
+        sim._simulate(stop_time, step_size, control_classes, kwargs.get("start_time"))
+        save = SaveData(init, sim)
+        if save_plots:
+            save.plot(
+                kwargs.get("plotting_function"),
+                kwargs.get("img_type"),
+                kwargs.get("plot_group"),
+            )  # TODO arguments
+        if save_fmus:
+            save.save_fmus(kwargs.get("fmu_group"))
+        if save_simulation_results:
+            save.save_simulation_results(kwargs.get("simulation_results_group"))
+        save.save_files()
     except Exception as e:
-        ecx_type, value, _  = sys.exc_info()
+        ecx_type, value, _ = sys.exc_info()
         while True:
-            delete = input(f"Following error occurred: {ecx_type.__name__}: {value}. Delete run? [y/n]")
+            delete = input(
+                f"Following error occurred: {ecx_type.__name__}: {value}. Delete run? [y/n]"
+            )
             if delete == "y" or delete == "n":
                 if delete == "y":
-                    wf.project.delete_run(wf.project.current_run_name)
+                    init.project.delete_run(init.project.current_run_name)
                 else:
                     print("The run will not be deleted.")
                 break
@@ -477,9 +381,7 @@ def _workflow(setup_file_path,stop_time, step_size, control_classes = None, hdf5
         raise e
 
 
-
 class FileTypeError(Exception):
-
     def __init__(self, message):
         self.message = message
         super().__init__(message)
