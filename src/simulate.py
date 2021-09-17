@@ -1,16 +1,14 @@
-from typing import Type
 import numpy as np
 import pandas as pd
 import copy
 import os
 from pandas.core.frame import DataFrame
 from fmpy import read_model_description, extract
-from fmpy.fmi2 import FMU2Slave 
+from fmpy.fmi2 import FMU2Slave
 from alive_progress import alive_bar
 
 
 class Fmu:
-
     def __init__(self, model_path) -> None:
         self.fmu_path = model_path
 
@@ -20,7 +18,7 @@ class Fmu:
 
     @fmu_path.setter
     def fmu_path(self, fmu_path: str) -> None:
-        
+
         if not os.path.exists(fmu_path):
             raise FileNotFoundError(f"The path '{fmu_path}' does not exist")
         self._fmu_path = fmu_path
@@ -31,36 +29,44 @@ class Fmu:
         self.create_model_vars_dict()
         self.create_unit_vars_dict()
         unzipdir = extract(self.fmu_path)
-        self.fmu = FMU2Slave(guid=self.model_description.guid,
-                    unzipDirectory=unzipdir,
-                    modelIdentifier=self.model_description.coSimulation.modelIdentifier,
-                    instanceName='instance1') 
+        self.fmu = FMU2Slave(
+            guid=self.model_description.guid,
+            unzipDirectory=unzipdir,
+            modelIdentifier=self.model_description.coSimulation.modelIdentifier,
+            instanceName="instance1",
+        )
 
         self.fmu.instantiate()
         self.fmu.setupExperiment(startTime=start_time)
         self.fmu.enterInitializationMode()
         self.fmu.exitInitializationMode()
-        print(f'FMU {os.path.basename(self.fmu_path)} initialized.')
-    
+        print(f"FMU {os.path.basename(self.fmu_path)} initialized.")
+
     def create_model_vars_dict(self) -> None:
 
-        self.model_vars = {variable.name : variable.valueReference for variable in self.model_description.modelVariables}
+        self.model_vars = {
+            variable.name: variable.valueReference
+            for variable in self.model_description.modelVariables
+        }
 
     def create_unit_vars_dict(self) -> None:
 
-        self.unit_vars = {variable.name : variable.unit for variable in self.model_description.modelVariables}
-            
-    def set_input(self,input_name: str, input_value: float) -> None:
-        
+        self.unit_vars = {
+            variable.name: variable.unit
+            for variable in self.model_description.modelVariables
+        }
+
+    def set_input(self, input_name: str, input_value: float) -> None:
+
         self.fmu.setReal([self.model_vars[input_name]], [input_value])
 
     def get_output(self, variable_name: str) -> float:
-        
+
         return self.fmu.getReal([self.model_vars[variable_name]])[0]
-         
+
     def do_step(self, time, step_size: float) -> None:
 
-        self.fmu.doStep(currentCommunicationPoint=time,communicationStepSize=step_size)
+        self.fmu.doStep(currentCommunicationPoint=time, communicationStepSize=step_size)
 
     def conclude_simulation_process(self) -> None:
 
@@ -70,6 +76,7 @@ class Fmu:
     def get_unit(self, variable: str) -> str:
 
         return self.unit_vars[variable]
+
 
 def connections_checker(connection):
 
@@ -82,24 +89,25 @@ def connections_checker(connection):
             if type(name) != str:
                 raise TypeError(f"{name} should be a string.")
 
+
 def key_checker(must_keys: list, given_keys: list, info):
     if not all(key in given_keys for key in must_keys):
         invalid_name = [name for name in given_keys if name not in must_keys]
         mes = f"The dictionaries in the list, where the {info} information's are stored, should have the following keys: {must_keys}"
         if invalid_name:
-            mes+= "\n Invalid: " + ", ".join(invalid_name)
+            mes += "\n Invalid: " + ", ".join(invalid_name)
         return False, mes
     return True, None
 
-class ConnectSystem:
 
+class ConnectSystem:
     def __init__(self, fmus_info: list = None, controls_info: list = None):
-        
+
         if not fmus_info:
-            self.fmus_info = []
+            fmus_info = []
         self.fmus_info = fmus_info
         if not controls_info:
-            self.controls_info = []
+            controls_info = []
         self.controls_info = controls_info
 
     @property
@@ -108,7 +116,7 @@ class ConnectSystem:
 
     @fmus_info.setter
     def fmus_info(self, fmus_info: list) -> None:
-        
+
         if type(fmus_info) != list:
             raise TypeError("The fmu information needs to be list.")
         fmu_info_keys = ["model name", "path", "connections"]
@@ -133,13 +141,17 @@ class ConnectSystem:
             raise TypeError("The control information needs to be list.")
         control_info_keys = ["control name", "control class", "connections"]
         for control in controls_info:
-            valid, mes = key_checker(control_info_keys, list(control.keys()), "controls")
+            valid, mes = key_checker(
+                control_info_keys, list(control.keys()), "controls"
+            )
             if not valid:
                 raise ControlInfoFormatError(mes)
             connections_checker(control["connections"])
 
             if not hasattr(control["control class"], "__dict__"):
-                raise TypeError("The key 'control class' needs to have an instance of a class as value.")
+                raise TypeError(
+                    "The key 'control class' needs to have an instance of a class as value."
+                )
 
         self._controls_info = controls_info
 
@@ -149,23 +161,30 @@ class ConnectSystem:
 
     def create_control_classes_dict(self) -> None:
 
-        self.control_classes = {control["control name"]: control["control class"] for control in self.controls_info}
+        self.control_classes = {
+            control["control name"]: control["control class"]
+            for control in self.controls_info
+        }
 
     def check_control_classes(self) -> None:
 
         must_contain_methods = ["set_input", "generate_output", "get_output"]
         for _class in self.control_classes.values():
-            method_missing = [meth for meth in must_contain_methods if not getattr(_class, meth, None)]
+            method_missing = [
+                meth for meth in must_contain_methods if not getattr(_class, meth, None)
+            ]
             if method_missing:
                 s = ""
                 for mis in method_missing:
-                    s +=  "\n" + mis
-                raise AttributeError(f"The class '{type(_class).__name__}' is missing the following methodes:" + s)     
+                    s += "\n" + mis
+                raise AttributeError(
+                    f"The class '{type(_class).__name__}' is missing the following methodes:"
+                    + s
+                )
             else:
-                print(f"The class '{type(_class).__name__}' contains all the necessary methods.")
-
-
-
+                print(
+                    f"The class '{type(_class).__name__}' contains all the necessary methods."
+                )
 
     def initialise_fmus(self, start_time: float) -> None:
 
@@ -183,33 +202,33 @@ class ConnectSystem:
         self.create_control_classes_dict()
         self.check_control_classes()
         self.create_all_system_classes_dict()
-   
+
         for fmu in self.fmus_info:
             for connection in fmu["connections"]:
                 system_name = connection["connect to system"]
                 connection["connect to system"] = self.all_system_classes[system_name]
-        
+
         for control in self.controls_info:
             for connection in control["connections"]:
                 system_name = connection["connect to system"]
                 connection["connect to system"] = self.all_system_classes[system_name]
 
+
 class Simulation:
-    
-    def __init__(self,systems: ConnectSystem, result_var_dict: dict = {}): #TODO check if works with empty dict
+    def __init__(self, systems: ConnectSystem, result_var_dict: dict = {}):
 
         self.systems = systems
         self.result_var_dict = result_var_dict
         self.result_dict = copy.deepcopy(result_var_dict)
-          
-    def simulate(self,stop_time, step_size, start_time = 0):
+
+    def simulate(self, stop_time, step_size, start_time=0):
 
         self.systems.initialize_systems(start_time)
         self.time_series = np.arange(start_time, stop_time + step_size, step_size)
         self.create_result_dict()
 
         print("Starting Simulation...")
-        #with alive_bar(len(self.time_series), bar= 'blocks', spinner='classic') as bar: #TODO reproduce UnicodeEncodeError
+        # with alive_bar(len(self.time_series), bar= 'blocks', spinner='classic') as bar: #TODO reproduce UnicodeEncodeError
         for time_step, time in enumerate(self.time_series):
 
             self.set_control_inputs()
@@ -217,69 +236,83 @@ class Simulation:
             self.set_fmu_inputs()
             self.record_values(time_step, time)
             self.fmu_do_step(time, step_size)
-            #bar()
-                
+            # bar()
+
         self.conclude_fmu_simulation()
-       
+
         print("Simulation completed.")
 
-        return  self.convert_results_to_pandas()
-        
+        return self.convert_results_to_pandas()
+
     def set_control_inputs(self):
-        
+
         for control in self.systems.controls_info:
             for connection in control["connections"]:
                 input_name = connection["input name"]
                 connected_system = connection["connect to system"]
                 connected_variable = connection["connect to variable"]
                 input_value = connected_system.get_output(connected_variable)
-                self.systems.control_classes[control["control name"]].set_input(input_name,input_value)
+                self.systems.control_classes[control["control name"]].set_input(
+                    input_name, input_value
+                )
 
     def fmu_do_step(self, time, step_size):
 
         for fmu in self.systems.fmu_classes.values():
-                fmu.do_step(time, step_size)
+            fmu.do_step(time, step_size)
 
     def generate_control_output(self):
-        
+
         for control in self.systems.control_classes.values():
             control.generate_output()
-    
+
     def set_fmu_inputs(self):
-        
+
         for fmu in self.systems.fmus_info:
             for connection in fmu["connections"]:
                 input_name = connection["input name"]
                 connected_system = connection["connect to system"]
                 connected_variable = connection["connect to variable"]
                 input_value = connected_system.get_output(connected_variable)
-                self.systems.fmu_classes[fmu["model name"]].set_input(input_name,input_value)
-                
+                self.systems.fmu_classes[fmu["model name"]].set_input(
+                    input_name, input_value
+                )
+
     def conclude_fmu_simulation(self):
 
-         for fmu in self.systems.fmu_classes.values():
+        for fmu in self.systems.fmu_classes.values():
             fmu.conclude_simulation_process()
 
     def create_result_dict(self):
-        
-        for system in self.result_var_dict:
-            zero_list = [np.zeros((len(self.time_series), 2)) for i in range(len(self.result_dict[system]))]
-            self.result_dict[system] = {variable_name:zero_array for (variable_name, zero_array) in zip(self.result_var_dict[system], zero_list)}
 
-    def record_values(self,time_step, time):
-        
+        for system in self.result_var_dict:
+            zero_list = [
+                np.zeros((len(self.time_series), 2))
+                for i in range(len(self.result_dict[system]))
+            ]
+            self.result_dict[system] = {
+                variable_name: zero_array
+                for (variable_name, zero_array) in zip(
+                    self.result_var_dict[system], zero_list
+                )
+            }
+
+    def record_values(self, time_step, time):
+
         for system_name in self.result_dict:
             for var in self.result_dict[system_name]:
-                value = self.systems.all_system_classes[system_name].get_output(var) 
+                value = self.systems.all_system_classes[system_name].get_output(var)
                 self.result_dict[system_name][var][time_step] = [time, value]
-            
+
     def convert_results_to_pandas(self) -> DataFrame:
 
-        result_dataframe = pd.DataFrame(self.time_series, columns = ["time"])
+        result_dataframe = pd.DataFrame(self.time_series, columns=["time"])
 
         for system_name in self.result_dict:
             for var in self.result_dict[system_name]:
-                result_dataframe[system_name +"." + var] = self.result_dict[system_name][var][:,1] 
+                result_dataframe[system_name + "." + var] = self.result_dict[
+                    system_name
+                ][var][:, 1]
 
         return result_dataframe
 
@@ -294,10 +327,19 @@ class Simulation:
 
         return units
 
-def simulate(stop_time, step_size, fmus_info: list = [], controls_info: list = [], result_var: dict = {}, start_time = 0, get_units = False):
+
+def simulate(
+    stop_time: float,
+    step_size: float,
+    fmus_info: list = None,
+    controls_info: list = None,
+    result_var: dict = None,
+    start_time=0,
+    get_units=False,
+):
 
     if not fmus_info and not controls_info:
-        raise NoSystemToSimulateDefined("No System to simulate given as argument.")
+        raise NoSystemToSimulateDefinedError("No System to simulate given as argument.")
     systems = ConnectSystem(fmus_info, controls_info)
     sim = Simulation(systems, result_var)
     results = sim.simulate(stop_time, step_size, start_time)
@@ -306,28 +348,26 @@ def simulate(stop_time, step_size, fmus_info: list = [], controls_info: list = [
         return results, units
     return results
 
-class NoSystemToSimulateDefined(Exception):
 
+class NoSystemToSimulateDefinedError(Exception):
     def __init__(self, message):
         self.message = message
         super().__init__(message)
 
 
-        
 class FmuInfoFormatError(Exception):
-
     def __init__(self, message):
         self.message = message
         super().__init__(message)
+
 
 class ConnectionFormatError(Exception):
-
     def __init__(self, message):
         self.message = message
         super().__init__(message)
 
-class ControlInfoFormatError(Exception):
 
+class ControlInfoFormatError(Exception):
     def __init__(self, message):
         self.message = message
         super().__init__(message)
