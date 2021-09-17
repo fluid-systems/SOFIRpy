@@ -56,10 +56,11 @@
         {
             "x": "time",
             "y": [
-                "DC_Motor.y"
+                "DC_Motor.y",
+                "pid.u"
             ],
-            "title": "Speed over time",
-            "y_label": "SPEED",
+            "title": "Speed, Voltage over time",
+            "y_label": "SPEED, Voltage",
             "x_label": "TIME"
         },
         {
@@ -77,6 +78,18 @@
             "type": "model",
             "pid": true,
             "group": "models"
+        },
+        {
+            "path": "C:\\Users\\Daniele\\Documents\\GitLab\\fair_sim_release\\fair_sim_release\\examples\\motor_control\\discrete_pid.py",
+            "type": "code",
+            "pid": false,
+            "group": "code"
+        },
+        {
+            "path": "C:\\Users\\Daniele\\Documents\\GitLab\\fair_sim_release\\fair_sim_release\\examples\\motor_control\\damper_datasheet.json",
+            "type": "datasheet",
+            "pid": true,
+            "group": "datasheets"
         }
     ]
 }
