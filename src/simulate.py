@@ -1,29 +1,50 @@
-import numpy as np
-import pandas as pd
 import copy
 import os
-from pandas.core.frame import DataFrame
-from fmpy import read_model_description, extract
-from fmpy.fmi2 import FMU2Slave
+
+import numpy as np
+import pandas as pd
 from alive_progress import alive_bar
+from fmpy import extract, read_model_description
+from fmpy.fmi2 import FMU2Slave
+from pandas.core.frame import DataFrame
 
 
 class Fmu:
+    """Class representing a fmu."""
+
     def __init__(self, model_path) -> None:
         self.fmu_path = model_path
 
     @property
     def fmu_path(self) -> str:
+        """
+        Returns:
+            str: Path to the fmu.
+        """
+
         return self._fmu_path
 
     @fmu_path.setter
     def fmu_path(self, fmu_path: str) -> None:
+        """Sets the fmu path.
+
+        Args:
+            fmu_path (str): The path to the fmu.
+
+        Raises:
+            FileNotFoundError: If the path to the fmu doesn't exists.
+        """
 
         if not os.path.exists(fmu_path):
             raise FileNotFoundError(f"The path '{fmu_path}' does not exist")
         self._fmu_path = fmu_path
 
     def initialize_fmu(self, start_time: float) -> None:
+        """Initializes the fmu.
+
+        Args:
+            start_time (float): Start time.
+        """
 
         self.model_description = read_model_description(self.fmu_path)
         self.create_model_vars_dict()
@@ -43,6 +64,7 @@ class Fmu:
         print(f"FMU {os.path.basename(self.fmu_path)} initialized.")
 
     def create_model_vars_dict(self) -> None:
+        """Creates a dictionary with the model variables as the keys and the coresponding reference number as the values."""
 
         self.model_vars = {
             variable.name: variable.valueReference
@@ -50,6 +72,7 @@ class Fmu:
         }
 
     def create_unit_vars_dict(self) -> None:
+        """Creates a dictionary with the model variables as the keys and the corresponding unit as the values."""
 
         self.unit_vars = {
             variable.name: variable.unit
@@ -57,28 +80,56 @@ class Fmu:
         }
 
     def set_input(self, input_name: str, input_value: float) -> None:
+        """Sets the input of the fmu.
 
+        Args:
+            input_name (str): Variabel name of the input.
+            input_value (float): Value of the input.
+        """
         self.fmu.setReal([self.model_vars[input_name]], [input_value])
 
     def get_output(self, variable_name: str) -> float:
+        """Returns the value of a variable. 
+
+        Args:
+            variable_name (str): Name of the variable.
+
+        Returns:
+            float: Value of the variable. 
+        """
 
         return self.fmu.getReal([self.model_vars[variable_name]])[0]
 
-    def do_step(self, time, step_size: float) -> None:
+    def do_step(self, time: float, step_size: float) -> None:
+        """Performs a simulation step.
+
+        Args:
+            time (float): Current time. 
+            step_size (float): Step size of the simulation.
+        """
 
         self.fmu.doStep(currentCommunicationPoint=time, communicationStepSize=step_size)
 
     def conclude_simulation_process(self) -> None:
+        """Concludes the simulation process of the fmu."""
 
         self.fmu.terminate()
         self.fmu.freeInstance()
 
     def get_unit(self, variable: str) -> str:
+        """Returns the unit of a variable.
+
+        Args:
+            variable (str): Name of the variable.
+
+        Returns:
+            str: The unit of the variable. 
+        """
 
         return self.unit_vars[variable]
 
 
-def connections_checker(connection):
+def connections_checker(connection: list):
 
     for con in connection:
         connections_keys = ["input name", "connect to system", "connect to variable"]
@@ -91,6 +142,7 @@ def connections_checker(connection):
 
 
 def key_checker(must_keys: list, given_keys: list, info):
+
     if not all(key in given_keys for key in must_keys):
         invalid_name = [name for name in given_keys if name not in must_keys]
         mes = f"The dictionaries in the list, where the {info} information's are stored, should have the following keys: {must_keys}"
@@ -101,8 +153,24 @@ def key_checker(must_keys: list, given_keys: list, info):
 
 
 class ConnectSystem:
+    """Class making thr connections between the systems."""
     def __init__(self, fmus_info: list = None, controls_info: list = None):
-
+        """
+        Args:
+            fmus_info (list, optional): List of dictionaries in which the information about a fmu are stored. 
+                                        The dictionary needs to be in the following format. 
+                                        >>> {
+                                                "model name": "<model name>",
+                                                "path": "<path to the fmu>",
+                                                "connections": [
+                                                    {
+                                                        "input name": "<input name of the fmu>",
+                                                        "connect to system": "<name of the connected system>",
+                                                        "connect to variable": "<name of the variable in the connected system>"
+                                                    }
+                                        Defaults to None.
+            controls_info (list, optional): [description]. Defaults to None.
+        """
         if not fmus_info:
             fmus_info = []
         self.fmus_info = fmus_info
