@@ -1,5 +1,6 @@
 import shutil
 import sys
+from typing import Any, Callable, Optional
 from fmu_export import export_fmu
 from simulate import simulate
 from plot import plot_results
@@ -10,16 +11,16 @@ import time
 
 
 class WorkflowInitiation:
-    def __init__(self, setup_file_path):
+    def __init__(self, setup_file_path: str) -> None:
 
         self.setup_file_path = setup_file_path
 
     @property
-    def setup_file_path(self):
+    def setup_file_path(self) -> str:
         return self._setup_file_path
 
     @setup_file_path.setter
-    def setup_file_path(self, path):
+    def setup_file_path(self, path: str) -> None:
 
         file_extension = os.path.splitext(path)[1]
         if file_extension != ".json":
@@ -29,7 +30,7 @@ class WorkflowInitiation:
 
         self._setup_file_path = os.path.normpath(path)
 
-    def initiate(self, hdf5_file_name, pid_generator, run_name_generator):
+    def initiate(self, hdf5_file_name: str, pid_generator, run_name_generator) -> None:
 
         with open(self.setup_file_path) as file:
             self.setup = json.load(file)
@@ -46,7 +47,7 @@ class WorkflowInitiation:
         run_name: str = None,
         attr=None,
         create_run_folder=True,
-    ):
+    ) -> None:
 
         if not run_groups:
             run_groups = [
@@ -69,7 +70,7 @@ class FmuSetup:
 
         self.init = init
 
-    def export_fmus(self):  # TODO if save_fmus set to false
+    def export_fmus(self) -> None:  # TODO if save_fmus set to false
 
         for fmu in self.init.setup["fmus"]:
             if not fmu["path"]:
@@ -89,7 +90,7 @@ class FmuSetup:
                                 )
                             break
 
-    def _export_fmu(self, export_dict):
+    def _export_fmu(self, export_dict: dict) -> str:
 
         modeling_environment = export_dict["modeling environment"]
         model_name = export_dict["model name"]
@@ -119,7 +120,7 @@ class FmuSetup:
         )
         return fmu.fmu_path
 
-    def store_fmu_copy(self, src_path, dest_dir, model_name):
+    def store_fmu_copy(self, src_path: str, dest_dir: str, model_name: str) -> None:
 
         dest_path = os.path.join(dest_dir, os.path.basename(src_path))
         if os.path.exists(dest_path):
@@ -137,7 +138,7 @@ class FmuSetup:
         shutil.copy(src_path, dest_path)
         self.add_path_to_json(dest_path, model_name)
 
-    def add_path_to_json(self, path, model_name):
+    def add_path_to_json(self, path: str, model_name: str) -> None:
 
         with open(self.init.setup_file_path) as file:
             data = json.load(file)
@@ -156,7 +157,7 @@ class Simulation:
 
         self.init = init
 
-    def control_setup(self, control_classes: dict = None):
+    def control_setup(self, control_classes: dict = None) -> None:
 
         if control_classes:
             if self.init.setup.get("controls"):
@@ -175,8 +176,8 @@ class Simulation:
             )
 
     def _simulate(
-        self, stop_time, step_size, control_classes: dict = None, start_time=None
-    ):
+        self, stop_time: float, step_size: float, control_classes: dict = None, start_time: float=None
+    ) -> None:
 
         if not start_time:
             start_time = 0
@@ -194,12 +195,12 @@ class Simulation:
 
 
 class SaveData:
-    def __init__(self, init: WorkflowInitiation, sim: Simulation):
+    def __init__(self, init: WorkflowInitiation, sim: Simulation) -> None:
 
         self.init = init
         self.sim = sim
 
-    def plot(self, plot_func=None, img_type: str = None, group: str = None):
+    def plot(self, plot_func=None, img_type: str = None, group: str = None) -> None:
 
         if not plot_func:
             plot_func = plot_results
@@ -233,7 +234,7 @@ class SaveData:
                 attr = {k: v for k, v in plot.items() if k not in ["title"]}
                 self.save_plot(ax.get_figure(), title, img_type, group, attr)
 
-    def save_plot(self, fig, title: str, img_type: str, group: str, attr: dict):
+    def save_plot(self, fig, title: str, img_type: str, group: str, attr: dict) -> None:
 
         if not img_type:
             img_type = "png"
@@ -251,7 +252,7 @@ class SaveData:
 
         self.store_data_in_hdf5(plot_pid, title, group, attr)
 
-    def save_simulation_results(self, group: str = None):
+    def save_simulation_results(self, group: str = None) -> None:
 
         if not group:
             group = self.init.project.current_run_name + "/simulation_results"
@@ -267,7 +268,7 @@ class SaveData:
                 else:
                     self.store_data_in_hdf5(rec, var, group)
 
-    def save_fmus(self, group: str = None):
+    def save_fmus(self, group: str = None) -> None:
 
         if not group:
             group = self.init.project.current_run_name + "/fmus"
@@ -293,7 +294,7 @@ class SaveData:
 
             self.store_data_in_hdf5(fmu_pid, fmu["model name"], group)
 
-    def save_files(self):
+    def save_files(self) -> None:
 
         if self.init.setup["save additional files"]:
             for file in self.init.setup["save additional files"]:
@@ -318,24 +319,24 @@ class SaveData:
                 shutil.copy(file["path"], copy_path)
                 self.store_data_in_hdf5(name, file_name, group)
 
-    def store_data_in_hdf5(self, data, data_name, folder, attr=None):
+    def store_data_in_hdf5(self, data: Any, data_name: str, folder: str, attr: dict =None) -> None:
 
         store_data(self.init.project.hdf5_path, data, data_name, folder, attr)
 
 
 def workflow(
-    setup_file_path,
-    stop_time,
-    step_size,
-    control_classes=None,
-    hdf5_groups=None,
-    hdf5_group_attr=None,
-    create_run_folder=True,
-    save_fmus=True,
-    save_plots=True,
-    save_simulation_results=True,
+    setup_file_path: str,
+    stop_time: float,
+    step_size: float,
+    control_classes: dict=None,
+    hdf5_groups: list=None,
+    hdf5_group_attr: dict=None,
+    create_run_folder: bool=True,
+    save_fmus: bool=True,
+    save_plots: bool=True,
+    save_simulation_results: bool=True,
     **kwargs,
-):
+) -> None:
 
     init = WorkflowInitiation(setup_file_path)
     init.initiate(
