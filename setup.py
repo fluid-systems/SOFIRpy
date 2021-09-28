@@ -1,24 +1,25 @@
-import setuptools
+# %%
+import os
 
-with open("README", 'r') as f:
+from setuptools import setup, find_packages
+
+rootdir = os.path.abspath(os.path.dirname(__file__))
+print(rootdir)
+
+with open(os.path.join(rootdir,"README.md"), 'r') as f:
     long_description = f.read()
 
-setuptools.setup(
-    name="fairsim",
-    version="0.0.1",
+setup(
+    name="fair_sim_release",
+    version="0.1",
     author="Daniele Inturri",
     author_email="daniele.inturri@sud.tu-darmstadt.de",
-    description="A small example package",
+    description="A package to simulate fmus and controllers. It also provides a workflow that simplifies simulation and allows data to be stored according to the fair principles.",
     long_description=long_description,
-    long_description_content_type="text/markdown",
-    url="",
-    project_urls={
-        
-    },
-    classifiers=[
-        
-    ],
+    url="https://git.rwth-aachen.de/fst-tuda/projects/digitalization/fair_sim/fair_sim_release",
     package_dir={"": "src"},
-    packages=setuptools.find_packages(where="src"),
+    packages=find_packages(where="src"),
     python_requires=">=3.6",
 )
+
+# %%
