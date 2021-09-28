@@ -1,4 +1,3 @@
-# %%
 import os
 
 from setuptools import setup, find_packages
@@ -11,15 +10,12 @@ with open(os.path.join(rootdir,"README.md"), 'r') as f:
 
 setup(
     name="fair_sim_release",
-    version="0.1",
+    version="0.0.1",
     author="Daniele Inturri",
     author_email="daniele.inturri@sud.tu-darmstadt.de",
-    description="A package to simulate fmus and controllers. It also provides a workflow that simplifies simulation and allows data to be stored according to the fair principles.",
+    description="A package to simulate fmus and controllers.",
     long_description=long_description,
     url="https://git.rwth-aachen.de/fst-tuda/projects/digitalization/fair_sim/fair_sim_release",
-    package_dir={"": "src"},
-    packages=find_packages(where="src"),
+    packages= ["fair_sim"],
     python_requires=">=3.6",
 )
-
-# %%
