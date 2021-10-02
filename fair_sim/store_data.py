@@ -4,7 +4,6 @@ import shutil
 from datetime import datetime
 from typing import Callable, Optional
 
-
 class InitiateProject:
     def __init__(
         self,
@@ -74,6 +73,9 @@ class InitiateProject:
 
     def create_hdf5(self, hdf5_path: str) -> None:
         hdf5 = h5py.File(f"{hdf5_path}", "a")
+        hdf5.attrs["creation date"] = datetime.now().strftime(
+                "%A, %d. %B %Y, %H:%M:%S"
+            )
         print(f"File '{hdf5_path}' created")
         hdf5.close()
 
@@ -234,26 +236,6 @@ def store_data(hdf5_path, data, data_name, folder, attributes: dict = None):
         if attributes:
             for name, attr in attributes.items():
                 dset.attrs[name] = attr
-
-
-def read_data(hdf5_path, data_name, get_attribute=False):
-
-    with h5py.File(hdf5_path, "a") as hdf5:
-        _data = hdf5.get(data_name)
-        if isinstance(_data, h5py.Dataset):
-            data = _data[()]
-
-        elif isinstance(_data, h5py.Group):
-            data = list(_data.keys())
-
-        else:
-            data = None
-
-        if get_attribute:
-            attr = dict(_data.attrs)
-            return data, attr
-    return data
-
 
 class DirectoryDoesNotExistError(Exception):
     def __init__(self, message):
