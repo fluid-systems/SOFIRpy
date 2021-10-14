@@ -4,7 +4,8 @@ from typing import Any, Callable, Optional
 from fmu_export import export_fmu
 from simulate import simulate
 from plot import plot_results
-from store_data import store_data, Project
+from store_data import store_data
+from project import Project
 import os
 import json
 import time
@@ -381,8 +382,15 @@ def workflow(
                 print("Enter 'y' or 'n'")
         raise e
 
+def get_hdf5_project(working_directory):
+    return Project(working_directory)
 
 class FileTypeError(Exception):
+    def __init__(self, message):
+        self.message = message
+        super().__init__(message)
+
+class NothingToDeleteError(Exception):
     def __init__(self, message):
         self.message = message
         super().__init__(message)

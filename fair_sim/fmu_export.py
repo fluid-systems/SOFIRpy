@@ -151,7 +151,7 @@ class ParameterImport:
 
 
 class _FmuExport(ABC):
-    """Blueprint for class that export a fmu from a certain modeling environment."""
+    """Blueprint for class that exports a fmu from a certain modeling environment."""
 
     def __init__(self, model_name: str, model_directory: str) -> None:
         """_FmuExport Class Constructor to initialize the object."""
