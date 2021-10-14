@@ -49,4 +49,5 @@ def read_entire_group_content(hdf5_path: str, group_name: str, merge_into_datafr
             if isinstance(dt,numpy.ndarray):
                 data_set = pd.DataFrame(dt[()]) 
                 data_frame = pd.merge(data_frame, data_set, on = merge_on)
+                
     return data_frame
