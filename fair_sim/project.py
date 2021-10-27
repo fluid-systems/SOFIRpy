@@ -110,24 +110,29 @@ class Project(InitiateProject):
 
     def create_hdf5_run(self, hdf5_sub_groups, attr=None) -> None:
 
+        # create run group
+        group_attr = {"creation date": datetime.now().strftime("%A, %d. %B %Y, %H:%M:%S")}
+        self.create_hdf5_group(self.current_run_name, group_attr)
+        print(f"{self.current_run_name} created")
+        
+        x = lambda sub: "/" + sub if not sub.startswith("/") else sub
+        hdf5_sub_groups = list(map(x, hdf5_sub_groups))
+        for sub in hdf5_sub_groups:
+            name = sub[1:]
+            if attr:
+                sub_attr = attr.get(name)
+            else:
+                sub_attr = None
+            self.create_hdf5_group(self.current_run_name + sub, sub_attr)
+
+    def create_hdf5_group(self, group_path, attr = None):
+
         with h5py.File(f"{self.hdf5_path}", "a") as hdf5:
+            group = hdf5.create_group(group_path)
+            if attr:
+                for k, v in attr.items():
+                    group.attrs[k] = v
 
-            group = hdf5.create_group(self.current_run_name)
-            group.attrs["creation date"] = datetime.now().strftime(
-                "%A, %d. %B %Y, %H:%M:%S"
-            )
-
-            x = lambda sub: "/" + sub if not sub.startswith("/") else sub
-            hdf5_sub_groups = list(map(x, hdf5_sub_groups))
-
-            for sub in hdf5_sub_groups:
-                group = hdf5.create_group(self.current_run_name + sub)
-                name = sub[1:]
-                if attr and attr.get(name):
-                    for k, v in attr[name].items():
-                        group.attrs[k] = v
-
-            print(f"{self.current_run_name} created")
 
     def create_run_folder(self) -> None:
 
