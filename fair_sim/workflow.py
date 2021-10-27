@@ -4,11 +4,12 @@ from typing import Any, Callable, Optional
 from fmu_export import export_fmu
 from simulate import simulate
 from plot import plot_results
-from store_data import store_data
+from store_data import store_data, append_attributes
 from project import Project
 import os
 import json
 import time
+import numpy as np
 
 
 class WorkflowInitiation:
@@ -241,7 +242,9 @@ class SaveData:
             img_type = "png"
 
         if not group:
-            group = self.init.project.current_run_name + "/plots"
+            group = "plots"
+
+        group = self.init.project.current_run_name + "/" + group
 
         plot_pid = self.init.project.pid_generator("plot", title=title)
         plot_path = os.path.join(self.init.run_directory, plot_pid + "." + img_type)
@@ -251,12 +254,14 @@ class SaveData:
             plot_path = os.path.join(self.init.run_directory, plot_pid + "." + img_type)
         fig.savefig(plot_path)
 
-        self.store_data_in_hdf5(plot_pid, title, group, attr)
+        self.store_data_in_hdf5([['file name',plot_pid]], title, group, attr)
 
     def save_simulation_results(self, group: str = None) -> None:
 
         if not group:
-            group = self.init.project.current_run_name + "/simulation_results"
+            group = "simulation_results"
+        
+        group = self.init.project.current_run_name + "/" + group
 
         variable_list = list(self.sim.results.columns)
 
@@ -272,7 +277,10 @@ class SaveData:
     def save_fmus(self, group: str = None) -> None:
 
         if not group:
-            group = self.init.project.current_run_name + "/fmus"
+            group = "fmus"
+        
+        group = self.init.project.current_run_name + "/" + group
+        
 
         for fmu in self.init.setup["fmus"]:
             fmu_pid = self.init.project.pid_generator(
@@ -293,8 +301,26 @@ class SaveData:
             else:
                 shutil.copy(old_path, new_path)
 
-            self.store_data_in_hdf5(fmu_pid, fmu["model name"], group)
+            self.store_data_in_hdf5([['file name',fmu_pid]], fmu["model name"], group)
 
+    def save_controller_data(self, control_classes: dict, group: str = None):
+
+        if not group:
+            group = "code/instances"
+
+        loc = self.init.project.current_run_name + "/" + group
+        self.init.project.create_hdf5_group(loc)
+        
+        for name, controller in control_classes.items():
+            self.store_data_in_hdf5([['class name', type(controller).__name__]], name, loc)
+            if hasattr(controller, "__input_arguments__"):
+                data_path = loc + "/" + name
+                for input_name, input_value in controller.__input_arguments__.items():
+                    try:
+                        append_attributes(self.init.project.hdf5_path, data_path, {input_name: input_value})
+                    except TypeError:
+                        append_attributes(self.init.project.hdf5_path, data_path, {input_name: f'Type {type(input_value)} can not be stored'})
+                        
     def save_files(self) -> None:
 
         if self.init.setup["save additional files"]:
@@ -318,7 +344,7 @@ class SaveData:
                     )
 
                 shutil.copy(file["path"], copy_path)
-                self.store_data_in_hdf5(name, file_name, group)
+                self.store_data_in_hdf5([['file name', name]], file_name, group)
 
     def store_data_in_hdf5(self, data: Any, data_name: str, folder: str, attr: dict =None) -> None:
 
@@ -336,6 +362,7 @@ def workflow(
     save_fmus: bool=True,
     save_plots: bool=True,
     save_simulation_results: bool=True,
+    save_controller_data: bool = True,
     **kwargs,
 ) -> None:
 
@@ -365,6 +392,9 @@ def workflow(
             save.save_fmus(kwargs.get("fmu_group"))
         if save_simulation_results:
             save.save_simulation_results(kwargs.get("simulation_results_group"))
+        if save_controller_data:
+            save.save_controller_data(control_classes)
+
         save.save_files()
     except Exception as e:
         ecx_type, value, _ = sys.exc_info()
