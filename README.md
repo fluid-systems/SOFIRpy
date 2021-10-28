@@ -12,3 +12,6 @@ $ python -m pip install .
 ## Examples
 
 Two small examples can be found here: [examples](https://git.rwth-aachen.de/fst-tuda/projects/digitalization/fair_sim/fair_sim_release/-/tree/master/examples/motor_control)
+
+## Documentation
+documentation coming soon...
