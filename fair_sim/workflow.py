@@ -1,10 +1,10 @@
 import shutil
 import sys
 from typing import Any, Callable, Optional
-from fmu_export import export_fmu
-from simulate import simulate
-from plot import plot_results
-from store_data import store_data, Project
+from fair_sim.fmu_export import export_fmu
+from fair_sim.simulate import simulate
+from fair_sim.plot import plot_results
+from fair_sim.store_data import store_data, Project
 import os
 import json
 import time
