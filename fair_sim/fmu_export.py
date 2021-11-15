@@ -57,7 +57,7 @@ class ParameterImport:
             TypeError: If the the argument 'parameter_dict' is not a dictionary.
             ComponentSymbolFormatError: If the keys or the values of the argument 'parameter_dict' have a wrong format.
         """
-        if type(parameter_dict) != dict:
+        if not isinstance(parameter_dict, dict):
             raise TypeError("'parameter_dict' needs to be a dictionary")
         self._parameters = {}
         for comsym, value in parameter_dict.items():
@@ -82,7 +82,7 @@ class ParameterImport:
             TypeError: If the 'model_modifier_list' is not a list
             ModelModifierFormatError: If the model modifiers do not have the right format.
         """
-        if type(model_modifier_list) != list:
+        if not isinstance(model_modifier_list, list):
             raise TypeError("'model_modifier_list' has to be a list")
 
         r = re.compile("redeclare [A-Za-z]+ [A-Za-z0-9]+ = [A-Za-z0-9._]+$")
@@ -136,13 +136,13 @@ class ParameterImport:
             ValueTypeError: If 'value' is not a string, integer or a float
         """
 
-        if type(component) != str:
+        if not isinstance(component, str):
             raise ComponentSymbolTypeError(
                 component, "'Component' needs to be a string."
             )
-        if type(symbol) != str:
+        if not isinstance(symbol, str):
             raise ComponentSymbolTypeError(symbol, "'Symbol' needs to be a string.")
-        if type(value) not in (str, float, int):
+        if not isinstance(value, (str, float, int)):
             raise ValueTypeError(
                 value, "'Value' needs to be a string, integer or float"
             )
@@ -175,7 +175,7 @@ class _FmuExport(ABC):
             TypeError: If the model directory is not a string.
             DirectoryDoesNotExistError: If the directory does not exist.
         """
-        if type(model_directory) != str:
+        if not isinstance(model_directory, str):
             raise TypeError("'model_directory' needs to be a string.")
         if not os.path.exists(model_directory):
             raise DirectoryDoesNotExistError(
@@ -200,7 +200,7 @@ class _FmuExport(ABC):
             TypeError: If the model name is not a string.
             FileNotFoundError: If the file does not exist.
         """
-        if type(model_name) != str:
+        if not isinstance(model_name, str):
             raise TypeError("'model_name' needs to be a string.")
         path = os.path.join(self.model_directory, model_name + ".mo")
         if not os.path.exists(path):

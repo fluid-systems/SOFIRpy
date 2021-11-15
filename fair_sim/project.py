@@ -3,7 +3,7 @@ import h5py
 import shutil
 from datetime import datetime
 from typing import Callable, Optional
-from read_hdf5_data import read_data
+from fair_sim.read_hdf5_data import read_data
 import numpy
 
 class InitiateProject:
@@ -217,7 +217,7 @@ class Project(InitiateProject):
         hdf5_data_path, deleted_data = self.delete_data_in_hdf5_run(run_name, data_name)
         _deleted_data = deleted_data
         
-        if type(deleted_data) in [bytes, numpy.ndarray, str]:
+        if isinstance(deleted_data, (bytes, numpy.ndarray, str)):
             if isinstance(deleted_data, numpy.ndarray):
                 if deleted_data.size == 1:
                     deleted_data = deleted_data[0,0]
@@ -282,10 +282,6 @@ class Project(InitiateProject):
             print(f'File at {path} has been deleted.')
         else:
             print(f"Path {path} does not exist.")
-
-
-
-
 
     def generate_default_run_name(
         self, number_of_runs: int, run_name: str = None

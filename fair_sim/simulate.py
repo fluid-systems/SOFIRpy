@@ -137,7 +137,7 @@ def connections_checker(connection: list):
         if not valid:
             raise ConnectionFormatError(mes)
         for name in list(con.values()):
-            if type(name) != str:
+            if not isinstance(name, str):
                 raise TypeError(f"{name} should be a string.")
 
 
@@ -185,14 +185,14 @@ class ConnectSystem:
     @fmus_info.setter
     def fmus_info(self, fmus_info: list) -> None:
 
-        if type(fmus_info) != list:
+        if not isinstance(fmus_info, list):
             raise TypeError("The fmu information needs to be list.")
         fmu_info_keys = ["model name", "path", "connections"]
         for fmu in fmus_info:
             valid, mes = key_checker(fmu_info_keys, list(fmu.keys()), "fmus")
             if not valid:
                 raise FmuInfoFormatError(mes)
-            if type(fmu["connections"]) != list:
+            if not isinstance(fmu["connections"], list):
                 raise TypeError("The values of the key 'connections' should be a list.")
             connections_checker(fmu["connections"])
 
@@ -205,7 +205,7 @@ class ConnectSystem:
     @controls_info.setter
     def controls_info(self, controls_info: list) -> None:
 
-        if type(controls_info) != list:
+        if not isinstance(controls_info, list):
             raise TypeError("The control information needs to be list.")
         control_info_keys = ["control name", "control class", "connections"]
         for control in controls_info:

@@ -1,11 +1,11 @@
 import shutil
 import sys
 from typing import Any, Callable, Optional
-from fmu_export import export_fmu
-from simulate import simulate
-from plot import plot_results
-from store_data import store_data, append_attributes
-from project import Project
+from fair_sim.fmu_export import export_fmu
+from fair_sim.simulate import simulate
+from fair_sim.plot import plot_results
+from fair_sim.store_data import store_data, append_attributes
+from fair_sim.project import Project
 import os
 import json
 import time
@@ -305,6 +305,8 @@ class SaveData:
 
     def save_controller_data(self, control_classes: dict, group: str = None):
 
+        if not control_classes:
+            return
         if not group:
             group = "code/instances"
 
