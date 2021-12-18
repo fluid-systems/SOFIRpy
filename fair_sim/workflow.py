@@ -1,5 +1,6 @@
 import shutil
 import sys
+import warnings
 from typing import Any, Callable, Optional
 from fair_sim.fmu_export import export_fmu
 from fair_sim.simulate import simulate
@@ -172,10 +173,8 @@ class Simulation:
 
         if not control_classes and self.init.setup.get(
             "controls"
-        ):  # TODO name Exception
-            raise Exception(
-                "Controllers are specified in json file but no control classes are passed to the workflow function."
-            )
+        ): 
+            warnings.warn("The setup json file has the key 'controls' but no control classes were given as an input argument.")
 
     def _simulate(
         self, stop_time: float, step_size: float, control_classes: dict = None, start_time: float=None
