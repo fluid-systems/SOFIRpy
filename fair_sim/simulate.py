@@ -186,7 +186,7 @@ class ConnectSystem:
     def fmus_info(self, fmus_info: list) -> None:
 
         if not isinstance(fmus_info, list):
-            raise TypeError("The fmu information needs to be list.")
+            raise TypeError("The fmu information needs to be a list.")
         fmu_info_keys = ["model name", "path", "connections"]
         for fmu in fmus_info:
             valid, mes = key_checker(fmu_info_keys, list(fmu.keys()), "fmus")
