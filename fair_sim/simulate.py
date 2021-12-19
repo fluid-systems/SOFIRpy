@@ -153,7 +153,7 @@ def key_checker(must_keys: list, given_keys: list, info):
 
 
 class ConnectSystem:
-    """Class making thr connections between the systems."""
+    """Class making the connections between the systems."""
     def __init__(self, fmus_info: list = None, controls_info: list = None):
         """
         Args:
