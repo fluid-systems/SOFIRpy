@@ -273,7 +273,7 @@ class SaveData:
                 else:
                     self.store_data_in_hdf5(rec, var, group)
 
-    def save_fmus(self, group: str = None) -> None:
+    def save_fmus(self, store_fmu_copy, group: str = None) -> None:
 
         if not group:
             group = "fmus"
@@ -286,21 +286,23 @@ class SaveData:
                 "fmu", model_name=fmu["model name"]
             )
             old_path = fmu["path"]
-            new_path = os.path.join(self.init.run_directory, fmu_pid + ".fmu")
-            if os.path.exists(new_path):
-                time.sleep(1)
-                fmu_pid = self.init.project.pid_generator(
-                    "fmus", model_name=fmu["model name"]
-                )
+            if store_fmu_copy:
                 new_path = os.path.join(self.init.run_directory, fmu_pid + ".fmu")
-            if os.path.normpath(os.path.dirname(old_path)) == os.path.normpath(
-                self.init.run_directory
-            ):
-                os.rename(old_path, new_path)
+                if os.path.exists(new_path):
+                    time.sleep(1)
+                    fmu_pid = self.init.project.pid_generator(
+                        "fmus", model_name=fmu["model name"]
+                    )
+                    new_path = os.path.join(self.init.run_directory, fmu_pid + ".fmu")
+                if os.path.normpath(os.path.dirname(old_path)) == os.path.normpath(
+                    self.init.run_directory
+                ):
+                    os.rename(old_path, new_path)
+                else:
+                    shutil.copy(old_path, new_path)
+                self.store_data_in_hdf5([['file name',fmu_pid]], fmu["model name"], group)
             else:
-                shutil.copy(old_path, new_path)
-
-            self.store_data_in_hdf5([['file name',fmu_pid]], fmu["model name"], group)
+                self.store_data_in_hdf5([['file path',old_path]], fmu["model name"], group)
 
     def save_controller_data(self, control_classes: dict, group: str = None):
 
@@ -330,6 +332,9 @@ class SaveData:
                 group = self.init.project.current_run_name + "/" + file["group"]
                 _, extension = os.path.splitext(file["path"])
                 file_name = os.path.basename(file["path"]).split(".")[0]
+                if file.get("only_in_hdf5"):
+                    self.store_data_in_hdf5([['file name', file["path"]]], file_name, group)
+                    continue
                 if file["pid"]:
                     pid = name = self.init.project.pid_generator(file["type"])
                     copy_path = os.path.join(self.init.run_directory, pid + extension)
@@ -361,7 +366,7 @@ def workflow(
     hdf5_groups: list=None,
     hdf5_group_attr: dict=None,
     create_run_folder: bool=True,
-    save_fmus: bool=True,
+    store_fmu_copy: bool=True,
     save_plots: bool=True,
     save_simulation_results: bool=True,
     save_controller_data: bool = True,
@@ -390,8 +395,7 @@ def workflow(
                 kwargs.get("img_type"),
                 kwargs.get("plot_group"),
             )  # TODO arguments
-        if save_fmus:
-            save.save_fmus(kwargs.get("fmu_group"))
+        save.save_fmus(store_fmu_copy, kwargs.get("fmu_group"))
         if save_simulation_results:
             save.save_simulation_results(kwargs.get("simulation_results_group"))
         if save_controller_data:
