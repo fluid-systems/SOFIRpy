@@ -98,11 +98,11 @@ class Project(InitiateProject):
         self.current_run_name = None
 
     def create_run(
-        self, hdf5_sub_groups, run_name=None, attr=None, create_run_folder=True
+        self, hdf5_sub_groups, run_name_suffix=None, attr=None, create_run_folder=True
     ):
 
         number_of_runs = self.get_number_of_runs()
-        self.current_run_name = self.run_name_generator(number_of_runs, run_name)
+        self.current_run_name = self.run_name_generator(number_of_runs, run_name_suffix)
         self.check_run_exists()
         self.create_hdf5_run(hdf5_sub_groups, attr)
         if create_run_folder:
@@ -284,11 +284,11 @@ class Project(InitiateProject):
             print(f"Path {path} does not exist.")
 
     def generate_default_run_name(
-        self, number_of_runs: int, run_name: str = None
+        self, number_of_runs: int, run_name_suffix: str = None
     ) -> str:
 
-        if run_name:
-            return f"Run_{number_of_runs + 1}_" + run_name
+        if run_name_suffix:
+            return f"Run_{number_of_runs + 1}_" + run_name_suffix
         return f"Run_{number_of_runs + 1}"
 
     def get_number_of_runs(self) -> int:
