@@ -315,10 +315,9 @@ class SaveData:
         self.init.project.create_hdf5_group(loc)
         
         for name, controller in control_classes.items():
-            self.store_data_in_hdf5([['class name', type(controller).__name__]], name, loc)
+            self.store_data_in_hdf5([['class type', str(type(controller))]], name, loc)
             if hasattr(controller, "__input_arguments__"):
                 data_path = loc + "/" + name
-                append_attributes(self.init.project.hdf5_path, data_path, {'instance of class': str(type(controller))})
                 for input_name, input_value in controller.__input_arguments__.items():
                     try:
                         append_attributes(self.init.project.hdf5_path, data_path, {input_name: input_value})
