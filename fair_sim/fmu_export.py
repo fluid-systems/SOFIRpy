@@ -1,5 +1,6 @@
 import os
 import shutil
+import warnings
 from OMPython import ModelicaSystem
 from buildingspy.simulate.Simulator import Simulator
 from abc import ABC, abstractmethod
@@ -690,6 +691,8 @@ def _initialize(
         )
     elif modeling_environment.lower().startswith("o"):
         modeling_env = OpenModelicaFmuExport(model_name, model_directory)
+        if parameters or datasheets or datasheets or model_modifiers:
+            warnings.warn("Parameter for importing are specified, but the parameter import for OpenModelica is not supported.")
     else:
         raise ModelEnvironmentArgumentError(
             "Enter either d for Dymola or o for OpenModelica as the 'modeling_environment'."
