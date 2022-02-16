@@ -2,11 +2,11 @@ import shutil
 import sys
 import warnings
 from typing import Any, Callable, Optional
-from fair_sim.fmu_export import export_fmu
-from fair_sim.simulate import simulate
-from fair_sim.plot import plot_results
-from fair_sim.store_data import store_data, append_attributes
-from fair_sim.project import Project
+#from fair_sim import fmu_export
+from . import simulate
+from . import plot_results
+from . import store_data, append_attributes
+from . import Project
 import os
 import json
 import time

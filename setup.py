@@ -1,5 +1,4 @@
 import os
-
 from setuptools import setup
 
 rootdir = os.path.abspath(os.path.dirname(__file__))
@@ -8,7 +7,7 @@ with open(os.path.join(rootdir,"README.md"), 'r') as f:
     long_description = f.read()
 
 setup(
-    name="fair_sim_release",
+    name="fair_sim",
     version="0.0.1",
     author="Daniele Inturri",
     author_email="daniele.inturri@sud.tu-darmstadt.de",

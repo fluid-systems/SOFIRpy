@@ -2,8 +2,8 @@ import matplotlib.pyplot as plt
 
 
 def plot_results(
-    y,
     x,
+    y,
     x_label=None,
     y_label=None,
     title=None,
@@ -15,7 +15,7 @@ def plot_results(
     if style_sheet_path:
         plt.style.use(style_sheet_path)
 
-    fig, ax = plt.subplots(**plt_kwargs)
+    _, ax = plt.subplots(**plt_kwargs)
 
     if title:
         ax.set_title(title)

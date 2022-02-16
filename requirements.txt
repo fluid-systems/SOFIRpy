@@ -1,7 +1,6 @@
 FMPy == 0.2.26
 OMPython == 3.3.0
 alive_progress == 1.6.2
-buildingspy == 2.1.0
 h5py == 3.1.0
 matplotlib == 3.3.4
 numpy == 1.19.3
