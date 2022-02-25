@@ -1,11 +1,18 @@
 from pathlib import Path
-from export import FmuExport
-from fair_sim.utils import delete_paths, move_files
+from fair_sim.fmu_export.fmu_export import FmuExport
+import fair_sim.utils as utils 
 from OMPython import ModelicaSystem
+from typing import Union
 
 class OpenModelicaFmuExport(FmuExport):
+    """Object that performs the OpenModelica fmu export """
 
-    def __init__(self, model_path: Path) -> None:
+    def __init__(self, model_path: Union[Path, str]) -> None:
+        """Initialize the OpenModelicaFmuExport object.
+
+        Args:
+            model_path (Union[Path, str]): Path to the modelica model that should be exported
+        """
 
         self.dump_directory = Path.cwd()
         fmu_path = self.dump_directory / f"{model_path.stem}.fmu"
@@ -75,28 +82,32 @@ class OpenModelicaFmuExport(FmuExport):
         self.paths_to_delete = map(lambda file_name: self.dump_directory / file_name, files_to_delete)
 
     def export_fmu(self):
+        """Exports the model as an fmu."""
+
         om = ModelicaSystem(str(self.model_path).replace("\\", "//"), self.model_name)
         om.convertMo2Fmu()
 
-def export_open_modelica_fmu(model_path: Path, output_directory: Path) -> bool:
+def export_open_modelica_fmu(model_path: Union[Path, str], output_directory: Union[Path, str]) -> bool:
+    """Exports a modelica model as an fmu and moves the fmu to the output directory
+
+    Args:
+        model_path (Union[Path, str]): Path to the modelica model that should be exported
+        output_directory (Union[Path, str]): Path to the output directory.
+
+    Returns:
+        bool: True if export was successful else False
+    """
 
     om_fmu_export = OpenModelicaFmuExport(model_path) 
     om_fmu_export.export_fmu()
 
     # delete unnecessary files
-    delete_paths(om_fmu_export.paths_to_delete)
+    utils.delete_paths(om_fmu_export.paths_to_delete)
 
     if om_fmu_export.fmu_path.exists():
         print("The FMU Export was successful.")
-        move_files(om_fmu_export.files_to_move, output_directory)
+        utils.move_files(om_fmu_export.files_to_move, output_directory)
         return True
     else:
         print("The FMU Export was not successful")
         return False
-
-if __name__ == "__main__":
-
-    export_open_modelica_fmu(Path(r'C:\Users\Daniele\Desktop\export_test\test.mo'),
-        Path(r'C:\Users\Daniele\Desktop\export_test_out'))
-    
-    

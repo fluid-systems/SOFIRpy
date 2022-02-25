@@ -14,7 +14,7 @@ setup(
     description="Framework for simulating fmus and controller written in python.",
     long_description=long_description,
     url="https://git.rwth-aachen.de/fst-tuda/projects/digitalization/fair_sim/fair_sim_release",
-    packages= ["fair_sim"],
+    packages= ["fair_sim", "fair_sim.fmu_export", "fair_sim.simulation", "fair_sim.project"],
     install_requires = ["FMPy == 0.2.26",
                         "OMPython == 3.3.0",
                         "alive_progress == 1.6.2",

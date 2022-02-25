@@ -1,7 +1,7 @@
 from pathlib import Path
 import h5py
 from typing import Any, Optional, Union
-import utils as utils
+import fair_sim.utils as utils
 
 class HDF5:
 

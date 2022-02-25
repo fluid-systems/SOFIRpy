@@ -132,7 +132,7 @@ class Fmu:
             raise FileNotFoundError(f"The path '{fmu_path}' does not exist")
         self._fmu_path = fmu_path
 
-    def initialize_fmu(self, start_time: float = 0) -> None:
+    def initialize_fmu(self, start_time: Optional[float] = 0) -> None:
         """Initializes the fmu
 
         Args:
@@ -154,7 +154,6 @@ class Fmu:
         self.fmu.setupExperiment(startTime=start_time)
         self.fmu.enterInitializationMode()
         self.fmu.exitInitializationMode()
-        print(f"FMU {self.fmu_path.name} initialized.")
 
     def create_model_vars_dict(self) -> None:
         """Creates a dictionary with the model variables as the keys and the coresponding reference number as the values."""
@@ -391,7 +390,7 @@ def simulate( stop_time: Union[float,int], step_size: float,
             the key "path" is not part of the dictionaries. 
             Note: The name of the controllers can be chosen arbitrarily, but each name in the controllers and the fmus must occur only once.
             Defaults to None.
-        control_classes (Optional[dict[str, Controller]], optional): dictionary with the name of the controller as keys and a instance of the controller class as values.
+        control_classes (Optional[dict[str, Controller]], optional): Dictionary with the name of the controller as keys and a instance of the controller class as values.
             The name in the dictionary must be chosen according to the names specified in 'control_infos'. Defaults to None.
         parameters_to_log (Optional[dict[str, list[str]]], optional): Dictionary that defines which parameters should be logged. It needs to have the following format:
             >>> parameters_to_log = {
@@ -461,7 +460,18 @@ def simulate( stop_time: Union[float,int], step_size: float,
 def init_systems(
     fmu_infos: list[dict[str, Union[str, list[dict[str, str]]]]], 
     control_infos: list[dict[str, Union[str, list[dict[str, str]]]]],
-    control_classes: dict[str, Controller]) -> dict[str, System]:
+    control_classes: dict[str, Controller]
+    ) -> dict[str, System]:
+    """Initializes all System object and stores them in a dictionary.
+
+    Args:
+        fmu_infos (list[dict[str, Union[str, list[dict[str, str]]]]]): Defines which fmus should be simulated and how they are connected to other systems.
+        control_infos (list[dict[str, Union[str, list[dict[str, str]]]]]): Defines which controllers should be simulated and how they are connected to other systems.
+        control_classes (dict[str, Controller]): Dictionary with the name of the controller as keys and a instance of the controller class as values.
+
+    Returns:
+        dict[str, System]: Dictrionary with system names as keys and the corresponding System instance as values. 
+    """
 
     systems = {}
     for fmu_info in fmu_infos:
@@ -472,19 +482,31 @@ def init_systems(
         fmu.initialize_fmu()
         system = System(fmu, fmu_name)
         systems[fmu_name] = system
-
+        print(f"FMU '{fmu_name}' initialized.")
+        
     for control_info in control_infos:
         control_name: str = control_info["name"]
         controller = control_classes[control_name]
         system = System(controller, control_name)
         systems[control_name] = system
+        print(f"Controller '{control_name}' initialized.")
 
     return systems
 
 def init_connections(
     system_infos: list[dict[str, Union[str, list[dict[str, str]]]]], 
-    systems: dict[str, System]) -> list[Connection]:
+    systems: dict[str, System]
+    ) -> list[Connection]:
+    """Initializes all the connections. 
 
+    Args:
+        system_infos (list[dict[str, Union[str, list[dict[str, str]]]]]): Defines how all systems are connected.
+        systems (dict[str, System]): Dictrionary with system names as keys and the corresponding System instance as values.
+
+    Returns:
+        list[Connection]: List of Connections.
+    """
+    
     all_connections = []
 
     for system_info in system_infos:
@@ -504,6 +526,15 @@ def init_connections(
     return all_connections
 
 def init_parameter_list(parameters_to_log: Optional[dict[str, list[str]]], systems: dict[str, System]) -> list[SystemParameter]:
+    """Initializes all parameters that should be logged.
+
+    Args:
+        parameters_to_log (Optional[dict[str, list[str]]]): Defines which paramters should be logged.
+        systems (dict[str, System]): Dictrionary with system names as keys and the corresponding System instance as values.
+
+    Returns:
+        list[SystemParameter]: List of system parameters that should be logged.
+    """
 
     log: list[SystemParameter] = []
 

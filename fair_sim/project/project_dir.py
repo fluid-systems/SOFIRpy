@@ -1,6 +1,6 @@
 from pathlib import Path
-from typing import Any, Callable, Optional, Union
-import utils as utils
+from typing import Optional, Union
+import fair_sim.utils as utils
 
 
 class ProjectDir:
