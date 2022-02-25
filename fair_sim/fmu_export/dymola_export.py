@@ -102,6 +102,7 @@ class DymolaFmuExport(FmuExport):
         Returns:
             dict[str, Union[str, int, float, list, bool]]: Dictionary of parameter names and values
         """
+        
         return self._parameters
 
     @parameters.setter
@@ -218,7 +219,7 @@ class DymolaFmuExport(FmuExport):
     def format_parameters(self) -> list[str]:
         """Formats parameter values to adjust to dymola scripting syntax and stores the parameter 
            names and values in a list in the following format.
-           >>> ['"Resistor.R" =  "1"', '"Resistor.useHeatPort" = "true"']  
+           >>> parameter_declaration = ['"Resistor.R" =  "1"', '"Resistor.useHeatPort" = "true"']  
 
         Returns:
             list[str]: List of parameters. 

@@ -22,7 +22,7 @@ class Project:
 
     def delete_folder(self, folder_name: str) -> None:
 
-        self.hdf5.delete_folder(folder_name)
+        self.hdf5.delete_group(folder_name)
         self.project_dir.delete_folder(folder_name)
 
     def store_file(self, source_path: Union[str, Path], folder_name: str, copy: Optional[bool] = True, new_file_name: Optional[Union[str, None]] = None) -> None:
