@@ -365,9 +365,9 @@ def simulate(
                 "path": "<path to the fmu>",
                 "connections": [
                     {
-                    "parameter name": "<name of the input parameter of the fmu>"
+                    "parameter name": "<name of the input parameter of the fmu>",
                     "connect to system":    "<name of the system the input 
-                                            parameter should be connected to>"
+                                            parameter should be connected to>",
                     "connect to external parameter":    "<name of the output 
                                                         parameter in the 
                                                         connected system the 
@@ -375,9 +375,9 @@ def simulate(
                                                         be connected to>"
                     },
                     {
-                    "parameter name": "<name of the input parameter of the fmu>"
+                    "parameter name": "<name of the input parameter of the fmu>",
                     "connect to system":    "<name of the system the input 
-                                            parameter should be connected to>"
+                                            parameter should be connected to>",
                     "connect to external parameter":    "<name of the output 
                                                         parameter in the 
                                                         connected system the 
@@ -390,9 +390,9 @@ def simulate(
                 "path": "<path to the fmu>",
                 "connections": [
                     {
-                    "parameter name": "<name of the input parameter of the fmu>"
+                    "parameter name": "<name of the input parameter of the fmu>",
                     "connect to system":    "<name of the system the input 
-                                            parameter should be connected to>"
+                                            parameter should be connected to>",
                     "connect to external parameter":    "<name of the output
                                                         parameter in the 
                                                         connected system the 
@@ -424,16 +424,16 @@ def simulate(
 
             >>> parameters_to_log = 
             {
-                <name of system 1 (corresponding to the names specified in 
-                'control_infos' or 'fmu_infos')>: 
+                "<name of system 1 (corresponding to the names specified in 
+                'control_infos' or 'fmu_infos')>": 
                 [
-                    <name of parameter 1>,
-                    <name of parameter 2>,...
+                    "<name of parameter 1>",
+                    "<name of parameter 2>",
                 ], 
-                <name of system 2>:
+                "<name of system 2>":
                 [
-                    <name of parameter 1>,
-                    <name of parameter 2>,...
+                    "<name of parameter 1>",
+                    "<name of parameter 2>",
                 ]
             }
 
@@ -465,7 +465,7 @@ def simulate(
             )
     step_size = float(step_size)
 
-    if fmu_infos and control_infos is None:
+    if not fmu_infos and not control_infos:
         raise ValueError(
             f"'fmu_infos' and 'control_infos' are empty; expected al least one to be not empty"
             )
@@ -561,18 +561,19 @@ def init_connections(
     all_connections = []
 
     for system_info in system_infos:
-        connections = system_info["connections"]
-        this_system_name = system_info["name"]
-        this_system = systems[this_system_name]
-        for con in connections:
-            this_parameter_name = con["parameter name"]
-            this_connection_point = ConnectionPoint(this_system, this_parameter_name)
-            other_system_name = con["connect to system"]
-            other_system = systems[other_system_name]
-            other_parameter_name = con["connect to external parameter"]
-            other_connection_point = ConnectionPoint(other_system, other_parameter_name)
-            connection = Connection(this_connection_point, other_connection_point)
-            all_connections.append(connection)
+        if system_info.get("connections"):
+            connections = system_info["connections"]
+            this_system_name = system_info["name"]
+            this_system = systems[this_system_name]
+            for con in connections:
+                this_parameter_name = con["parameter name"]
+                this_connection_point = ConnectionPoint(this_system, this_parameter_name)
+                other_system_name = con["connect to system"]
+                other_system = systems[other_system_name]
+                other_parameter_name = con["connect to external parameter"]
+                other_connection_point = ConnectionPoint(other_system, other_parameter_name)
+                connection = Connection(this_connection_point, other_connection_point)
+                all_connections.append(connection)
 
     return all_connections
 
