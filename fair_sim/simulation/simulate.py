@@ -232,8 +232,10 @@ class Simulation:
 
         Args:
             systems (list[System]): list of systems which are to be simulated 
-            connections (list[Connection]): list of connections between the systems
-            parameters_to_record (list[SystemParameter], optional): List of Parameters that should be logged. Defaults to None.
+            connections (list[Connection]): list of connections between the
+                 systems
+            parameters_to_record (list[SystemParameter], optional): List of
+                Parameters that should be logged. Defaults to None.
         """
         self.systems = systems
         self.connections = connections
@@ -361,46 +363,51 @@ def simulate(
             to other systems. It needs to have the following formart:
 
             >>> fmu_infos = [
-            {   "name": "<name of the fmu>",
-                "path": "<path to the fmu>",
-                "connections": [
-                    {
-                    "parameter name": "<name of the input parameter of the fmu>",
-                    "connect to system":    "<name of the system the input 
-                                            parameter should be connected to>",
-                    "connect to external parameter":    "<name of the output 
-                                                        parameter in the 
-                                                        connected system the 
-                                                        input parameter should 
-                                                        be connected to>"
-                    },
-                    {
-                    "parameter name": "<name of the input parameter of the fmu>",
-                    "connect to system":    "<name of the system the input 
-                                            parameter should be connected to>",
-                    "connect to external parameter":    "<name of the output 
-                                                        parameter in the 
-                                                        connected system the 
-                                                        input parameter should 
-                                                        be connected to>"
-                    }
-                ]
-            },
-            {   "name": "<name of the fmu>",
-                "path": "<path to the fmu>",
-                "connections": [
-                    {
-                    "parameter name": "<name of the input parameter of the fmu>",
-                    "connect to system":    "<name of the system the input 
-                                            parameter should be connected to>",
-                    "connect to external parameter":    "<name of the output
-                                                        parameter in the 
-                                                        connected system the 
-                                                        input parameter should 
-                                                        be connected to>"
-                    }
-            }
-            ]
+            >>> {"name": "<name of the fmu>",
+            >>>  "path": "<path to the fmu>",
+            >>>  "connections": 
+            >>>     [
+            >>>     {
+            >>>         "parameter name":       "<name of the input" 
+            >>>                                 "parameter of the fmu>",
+            >>>         "connect to system":    "<name of the system the input"
+            >>>                                 "parameter should be connected to>",
+            >>>         "connect to external parameter":    "<name of the output" 
+            >>>                                             "parameter in the" 
+            >>>                                             "connected system the" 
+            >>>                                             "input parameter should" 
+            >>>                                             "be connected to>"
+            >>>         },
+            >>>         {
+            >>>         "parameter name":       "<name of the input" 
+            >>>                                 "parameter of the fmu>",
+            >>>         "connect to system":    "<name of the system the input"
+            >>>                                  "parameter should be connected to>",
+            >>>         "connect to external parameter":    "<name of the output" 
+            >>>                                             "parameter in the"
+            >>>                                             "connected system the" 
+            >>>                                             "input parameter should" 
+            >>>                                             "be connected to>"
+            >>>         }
+            >>>     ]
+            >>>     },
+            >>> {"name": "<name of the fmu>",
+            >>>  "path": "<path to the fmu>",
+            >>>  "connections": 
+            >>>     [
+            >>>     {
+            >>>         "parameter name":       "<name of the input"
+            >>>                                 "parameter of the fmu>",
+            >>>         "connect to system":    "<name of the system the input"
+            >>>                                  "parameter should be connected to>",
+            >>>         "connect to external parameter":    "<name of the output"
+            >>>                                             "parameter in the"
+            >>>                                             "connected system the" 
+            >>>                                             "input parameter should"
+            >>>                                             "be connected to>"
+            >>>        }
+            >>> }
+            >>> ]
             
             Note: The name of the fmus can be chosen arbitrarily, but each name
             in the controllers and the fmus must occur only once.
@@ -423,19 +430,19 @@ def simulate(
             It needs to have the following format:
 
             >>> parameters_to_log = 
-            {
-                "<name of system 1 (corresponding to the names specified in 
-                'control_infos' or 'fmu_infos')>": 
-                [
-                    "<name of parameter 1>",
-                    "<name of parameter 2>",
-                ], 
-                "<name of system 2>":
-                [
-                    "<name of parameter 1>",
-                    "<name of parameter 2>",
-                ]
-            }
+            >>> {
+            >>>     "<name of system 1 (corresponding to the names specified in"
+            >>>     "'control_infos' or 'fmu_infos')>":
+            >>>     [
+            >>>         "<name of parameter 1>",
+            >>>         "<name of parameter 2>",
+            >>>     ], 
+            >>>     "<name of system 2>":
+            >>>     [
+            >>>         "<name of parameter 1>",
+            >>>         "<name of parameter 2>",
+            >>>     ]
+            >>> }
 
             Defaults to None.
         get_units (Optional[bool], optional): Determines whether the units of 

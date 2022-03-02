@@ -1,8 +1,20 @@
 from inspect import getfullargspec
 from functools import wraps
+from typing import Callable
 
-def store_input_arguments(func):
+def store_input_arguments(func: Callable):
+    """Decorator that lets you store the input arguments of the __init__ class methode.
 
+    The input arguments will be stored as a dictrionay with the variable names
+    as keys and the value of the variables as values. The dictrionay will be
+    stored as a class attribute with the name '__input_arguments__'.
+
+    Args:
+        func (Callable): Function to decorate
+
+    Returns:
+        Callable: Decorated function
+    """
     @wraps(func)
     def wrapper(*args, **kwargs):
         insp = getfullargspec(func)

@@ -105,7 +105,8 @@ class DymolaFmuExport(FmuExport):
         """Dictionary of parameter names and values.
 
         Returns:
-            dict[str, Union[str, int, float, list, bool]]: Dictionary of parameter names and values
+            dict[str, Union[str, int, float, list, bool]]: Dictionary of
+            parameter names and values
         """
         return self._parameters
 
@@ -229,7 +230,7 @@ class DymolaFmuExport(FmuExport):
         stores the parameter names and values in a list in the following format.
 
         >>> parameter_declaration = ['"Resistor.R" =  "1"',
-        '"Resistor.useHeatPort" = "true"']  
+        >>>                          '"Resistor.useHeatPort" = "true"']  
 
         Returns:
             list[str]: List of parameters. 
@@ -278,7 +279,8 @@ def export_dymola_fmu(
 
     Args:
         dymola_exe_path (Union[Path, str]):  Path to the dymola executable.
-        model_path (Union[Path, str]): Path to the dymola model that should be exported.
+        model_path (Union[Path, str]): Path to the dymola model that should be
+            exported.
         output_directory (Union[Path, str]): Path to the output directory.
         parameters (dict[str, Union[str, int, float, list, bool]], optional): 
             Dictionary of parameter names and values.
@@ -293,8 +295,10 @@ def export_dymola_fmu(
             >>> model_modifiers = ["redeclare package Medium = Modelica.Media.Water.ConstantPropertyLiquidWater"]
 
             Defaults to None.
-        keep_log (Optional[bool], optional): If True the simulator log is kept else it will be deleted. Defaults to True.
-        keep_mos (Optional[bool], optional): If True the mos script is kept else it will be deleted. Defaults to True.
+        keep_log (Optional[bool], optional): If True the simulator log is kept
+            else it will be deleted. Defaults to True.
+        keep_mos (Optional[bool], optional): If True the mos script is kept
+            else it will be deleted. Defaults to True.
 
     Returns:
         bool: True if export was successful else False
