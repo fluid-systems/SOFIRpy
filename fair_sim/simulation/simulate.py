@@ -326,7 +326,7 @@ class Simulation:
 
         return pd.DataFrame(columns= ["time"] + columns)
 
-    def get_units(self) -> dict[str, Union[str, None]]:
+    def get_units(self) -> dict[str, str]:
         """Get a dictionary with all logged parameters as keys and their units as values.
 
         Returns:
@@ -450,7 +450,9 @@ def simulate(
 
     Raises:
         TypeError: start_time type was invalid
-        TypeError: step_size time was invalid
+        TypeError: step_size type was invalid
+        TypeError: fmu_infos type was invalid
+        TypeError: control_infos type was invalid
         ValueError: fmu_infos and control_infos were 'None'
         ValueError: start_time value was invalid
         ValueError: step_size value was invalid
@@ -471,6 +473,12 @@ def simulate(
             f"'step_size' is {type(step_size)}; expected float, int"
             )
     step_size = float(step_size)
+
+    if not isinstance(fmu_infos, list):
+        raise TypeError(f"'fmu_infos' is {type(fmu_infos)}; expected list")
+
+    if not isinstance(control_infos, list):
+        raise TypeError(f"'control_infos' is {type(control_infos)}; expected list")
 
     if not fmu_infos and not control_infos:
         raise ValueError(

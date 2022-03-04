@@ -6,6 +6,7 @@ import fair_sim.utils as utils
 from html import unescape
 import fmpy
 import re
+from datetime import datetime
 
 class DymolaFmuExport(FmuExport):
     """Object that performs the Dymola fmu export."""
@@ -55,9 +56,11 @@ class DymolaFmuExport(FmuExport):
         
         self.dymola_exe_path = dymola_exe_path
 
-        self.mos_file_path = self.model_directory / f"export_script_{self.model_name}.mos"
-        self.simulator_log_path = self.model_directory / f"simulator_{self.model_name}.txt"
-        self.error_log_path =  self.model_directory / f"errors_{self.model_name}.txt"
+        # add a time stamp to the mos file
+        time_stamp = datetime.now().strftime("%y%m%d%H%M%S") 
+        self.mos_file_path = self.model_directory / f"export_script_{self.model_name}_{time_stamp}.mos"
+        self.simulator_log_path = self.model_directory / f"log_{self.model_name}_{time_stamp}.txt"
+        self.error_log_path =  self.model_directory / f"errors_{self.model_name}_{time_stamp}.txt"
 
         if not parameters:
             parameters = {}
@@ -253,7 +256,7 @@ class DymolaFmuExport(FmuExport):
 
         return parameter_declaration
 
-def export_dymola_fmu(
+def export_dymola_model(
     dymola_exe_path: Union[Path, str], 
     model_path: Union[Path, str], 
     output_directory: Union[Path, str], 
@@ -327,25 +330,27 @@ def export_dymola_fmu(
     else:
         print("The FMU Export was not successful")
         print("Dymola Error Message: ")
+        print("======================")
         with open(dymola_fmu_export.error_log_path, "r") as error_log:
-            print(unescape(extract_error_message(error_log.read())))
+            print(unescape(error_log.read()))
+        print("======================")
         dymola_fmu_export.error_log_path.unlink()
+        if parameters: 
+            print("Checking if added parameters exist in the model...")
+            print("Exporting model without parameters and model modifiers...")
 
-        print("Checking if added parameters exist in the model...")
-        print("Exporting model without parameters and model modifiers...")
-
-        # TODO export in temp instead of model dir
-        dymola_fmu_export = DymolaFmuExport(dymola_exe_path, model_path)
-        dymola_fmu_export.export_fmu(export_simulator_log = False, export_error_log = False)
-        utils.delete_paths(dymola_fmu_export.paths_to_delete)
-        if dymola_fmu_export.fmu_path.exists():
-            print("FMU Export without added parameters and model modifiers was successfull.")
-            parameters_in_model = read_model_parameters(dymola_fmu_export.fmu_path)
-            not_valid_parameters = check_not_valid_parameters(list(parameters.keys()), parameters_in_model)
-            print(f"Possible parameters that do not exist:\n{not_valid_parameters}")
-            dymola_fmu_export.fmu_path.unlink()
-        else:
-            print("FMU Export without added parameters and model modifiers was not successfull.")
+            # TODO export in temp instead of model dir
+            dymola_fmu_export = DymolaFmuExport(dymola_exe_path, model_path)
+            dymola_fmu_export.export_fmu(export_simulator_log = False, export_error_log = False)
+            utils.delete_paths(dymola_fmu_export.paths_to_delete)
+            if dymola_fmu_export.fmu_path.exists():
+                print("FMU Export without added parameters and model modifiers was successfull.")
+                parameters_in_model = read_model_parameters(dymola_fmu_export.fmu_path)
+                not_valid_parameters = check_not_valid_parameters(list(parameters.keys()), parameters_in_model)
+                print(f"Possible parameters that do not exist:\n{not_valid_parameters}")
+                dymola_fmu_export.fmu_path.unlink()
+            else:
+                print("FMU Export without added parameters and model modifiers was not successfull.")
         return False
 
 def read_model_parameters(fmu_path: Path) -> list[str]:
@@ -372,20 +377,3 @@ def check_not_valid_parameters( imported_parameters: list[str], parameters_in_mo
         list[str]: List of parameters names that are were tried to be imported but were not part of the model 
     """
     return [parameter for parameter in imported_parameters if parameter not in parameters_in_model]
-
-def extract_error_message(error_log: str) -> str:
-    """Extract the error message of the dymola error dialog.
-
-    Args:
-        error_log (str): Dymola error dialog
-
-    Returns:
-        str: Dymola error message.
-    """
-    error_log = error_log.split("Error: ", 1)
-    if len(error_log) == 1: # in case dymola doesn't throw an error
-        error_log = "No Dymola errors thrown."
-    else:
-        error_log = error_log[1]
-        error_log = error_log.split("Error: ERRORS have been issued.", 1)[0]
-    return error_log

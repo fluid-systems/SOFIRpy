@@ -1,8 +1,8 @@
-from store_input_arguments import store_input_arguments
+from fair_sim import SimulationEntity
 
-class PID:
+class PID(SimulationEntity):
     """Simple implementation of a discrete pid controller"""
-    @store_input_arguments    
+    
     def __init__(self,step_size, K_p = 1, K_i = 0, K_d = 0, set_point = 0, u_max = 1000, u_min = -1000):
         
         self.T_a = step_size
@@ -29,7 +29,7 @@ class PID:
 
         self.inputs[input_name] = input_value 
 
-    def generate_output(self): # mandatory methode
+    def do_step(self, time): # mandatory methode
 
         self.compute_error()
         u = self.outputs["u"] + self.d_0*self.error[0] + self.d_1*self.error[1]+ self.d_2*self.error[2]

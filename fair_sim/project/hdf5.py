@@ -66,6 +66,9 @@ class HDF5:
                 >>> folder_name = "folder2/subfolder1/subsubfolder1" 
         """
         with h5py.File(str(self.hdf5_path), "a") as hdf5:
+            if folder_name in hdf5:
+                print(f"Folder {folder_name} already exists in hdf5.")
+                return
             hdf5.create_group(folder_name)
 
     def store_data(self, data_name: str, data: Any, folder_path: str, attributes: Optional[dict] = None) -> None:
@@ -83,15 +86,19 @@ class HDF5:
             ValueError: If data path already exists.
         """
         with h5py.File(str(self.hdf5_path), "a") as hdf5:
-            if folder_path not in hdf5:
-                folder = hdf5.create_group(folder_path)
-            else:
-                folder = hdf5[folder_path]
-            data_path = f"{folder_path}/{data_name}"
+            if folder_path: 
+                if folder_path not in hdf5:
+                    folder = hdf5.create_group(folder_path)
+                else:
+                    folder = hdf5[folder_path]
+                data_path = f"{folder_path}/{data_name}"
+            else: # if folder path is empty, the data will be stored in the top level
+                folder = hdf5
+                data_path = data_name
             if data_path in hdf5:
-                overwrite = utils._get_user_input(data_path, "hdf5_path")
+                overwrite = utils._get_user_input(data_path, "hdf5 dataset at")
                 if not overwrite:
-                    raise ValueError(f"Unable to create dataset, {data_path} already exists)")
+                    raise ValueError(f"Unable to create dataset, dataset at {data_path} already exists)")
                 del hdf5[data_path]
             dset = folder.create_dataset(data_name, data=data)
             if attributes:
@@ -111,12 +118,12 @@ class HDF5:
             for name, attr in attributes.items():
                 dataset.attrs[name] = attr
 
-    def read_data(self, folder_name: str, data_name: str, get_attributes: Optional[bool] = False) -> Union[Any, tuple[Any, dict[str, Any]]]:
+    def read_data(self, data_name: str, folder_path: str, get_attributes: Optional[bool] = False) -> Union[Any, tuple[Any, dict[str, Any]]]:
         """Reads the data of at a given data path.
 
         Args:
-            folder_name (str): Path to the hdf5 folder.
             data_name (str): Name of the data.
+            folder_path (str): Path to the hdf5 folder.
             get_attributes (Optional[bool], optional): If True attributes will
                 be returned as well. Defaults to False.
 
@@ -128,7 +135,10 @@ class HDF5:
             the Dataset.
         """
         with h5py.File(str(self.hdf5_path), "a") as hdf5:
-            data_path = f"{folder_name}/{data_name}"
+            if folder_path:
+                data_path = f"{folder_path}/{data_name}"
+            else:
+                data_path = data_name
             dataset = hdf5.get(data_path)
             
             if isinstance(dataset, h5py.Dataset):

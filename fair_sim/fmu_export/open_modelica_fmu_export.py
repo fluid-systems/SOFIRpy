@@ -87,7 +87,7 @@ class OpenModelicaFmuExport(FmuExport):
         om = ModelicaSystem(str(self.model_path).replace("\\", "//"), self.model_name)
         om.convertMo2Fmu()
 
-def export_open_modelica_fmu(model_path: Union[Path, str], output_directory: Union[Path, str]) -> bool:
+def export_open_modelica_model(model_path: Union[Path, str], output_directory: Union[Path, str]) -> bool:
     """Exports a modelica model as an fmu and moves the fmu to the output directory
 
     Args:

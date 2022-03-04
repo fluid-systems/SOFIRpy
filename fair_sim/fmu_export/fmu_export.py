@@ -68,7 +68,8 @@ class FmuExport:
 
         Raises:
             TypeError: fmu_path type was not 'Path'
-            FmuAlreadyExistsError: file at fmu_path already exists before exporting the new fmu
+            FileExistsError: Fmu at fmu_path already exists before exporting
+                the new fmu.
         """
 
         if not isinstance(fmu_path, Path):
@@ -83,13 +84,8 @@ class FmuExport:
                     if overwrite == "y":
                         break
                     elif overwrite == "n":
-                        raise FmuAlreadyExistsError("Stopping execution.")
+                        raise FileExistsError(f"Stopping execution. Fmu at {fmu_path} already exists.")
                     else:
                         print("Enter 'y' or 'n'")
 
         self._fmu_path = fmu_path
-
-class FmuAlreadyExistsError(Exception):
-    def __init__(self, message):
-        self.message = message
-        super().__init__(message)

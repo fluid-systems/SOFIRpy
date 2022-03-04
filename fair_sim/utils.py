@@ -2,46 +2,50 @@ from pathlib import Path
 import shutil
 from typing import Union
 
-def delete_file_or_directory(path: Path):
+def delete_file_or_directory(path: Path, print_status: bool = False):
 
     if path.exists():
         if path.is_dir():
             shutil.rmtree(str(path), ignore_errors = True)
         else:
             path.unlink()
-        print(f"{str(path)} has been deleted")
+        if print_status:
+            print(f"{str(path)} has been deleted")
     else:
-        print(f"{str(path)} does not exist")
+        if print_status:
+            print(f"{str(path)} does not exist")
 
-def delete_files_in_directory(file_names: list[str], directory: Path) -> None:
+def delete_files_in_directory(file_names: list[str], directory: Path, print_status: bool = False) -> None:
     
     for file_name in file_names:
         path = directory / file_name
-        delete_file_or_directory(path)
+        delete_file_or_directory(path, print_status)
 
 def delete_paths(paths: list[Path]) -> None:
 
     for path in paths:
         delete_file_or_directory(path)
             
-def move_file( source_path: Path, target_path: Path) -> None:
+def move_file( source_path: Path, target_path: Path, print_status: bool = False) -> None:
 
-    if source_path.exists():
-        if target_path.exists():
-            overwrite = _get_user_input(target_path)
-            if not overwrite:
-                raise FileExistsError(f"{target_path} already exists")
+    if not source_path == target_path:
+        if source_path.exists():
+            if target_path.exists():
+                overwrite = _get_user_input(target_path)
+                if not overwrite:
+                    raise FileExistsError(f"{target_path} already exists")
 
-        source_path.replace(target_path)
+            source_path.replace(target_path)
 
-    else:
-        print(f"{source_path} doesn't exists. Can't move file.")
+        else:
+            if print_status:
+                print(f"{source_path} doesn't exists. Can't move file.")
 
-def move_files( source_paths: list[Path], target_directory: Path) -> None:
+def move_files( source_paths: list[Path], target_directory: Path, print_status: bool = False) -> None:
 
     for source_path in source_paths:
         target_path = target_directory / source_path.name
-        move_file(source_path, target_path)
+        move_file(source_path, target_path, print_status)
 
 def copy_file(source_path: Path, target_path: Path) -> None:
 

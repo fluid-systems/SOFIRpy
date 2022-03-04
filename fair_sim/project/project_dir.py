@@ -38,11 +38,11 @@ class ProjectDir:
         return self._current_folder
 
     @current_folder.setter
-    def current_folder(self, folder_path: Union[Path, str, None]) -> None:
+    def current_folder(self, folder_path: Union[Path, str]) -> None:
         """Path to the current folder.
 
         Args:
-            folder_path (Union[Path, str, None]): Path to the current folder.
+            folder_path (Union[Path, str]): Path to the current folder.
         """
         if folder_path is not None:
             folder_path = self._dir_setter(folder_path, 'folder_path')
@@ -83,22 +83,26 @@ class ProjectDir:
         Args:
             folder_name (str): Name of the folder. Subfolders can be created by
                 seperating the folder names with '/'.
-
-        Raises:
-            ValueError: Folder already exists.
         """
         folder_path = self.project_directory / folder_name
         if folder_path.exists():
-            raise ValueError(f"{folder_path} already exists")
+            print(f"Folder at {folder_path} already exists.")
         self.current_folder = folder_path
 
-    def set_current_folder(self, name: str) -> None:
-        """Set the current folder.
+    def set_current_folder(self, folder_name: str) -> None:
+        """Set the current folder. 
 
         Args:
-            name (str): Name of the folder.
+            folder_name (str): Name of the folder.
         """
-        self.current_folder = self.project_directory / name
+        folder_path = self.project_directory / folder_name
+        if not folder_path.exists():
+            print(f"Folder at {folder_path} doesn't exist.")
+            return
+        if not folder_path.is_dir():
+            print(f"{folder_path} does not lead to a directory.")
+            return
+        self.current_folder = folder_path
 
     def delete_element(self, name: str) -> None:
         """Delete file or directory in the current folder.
@@ -108,7 +112,7 @@ class ProjectDir:
         """
         if self.current_folder is not None:
             path = self.current_folder / name
-            utils.delete_file_or_directory(path)
+            utils.delete_file_or_directory(path, print_status = True)
         else:
             print("'current_folder' is not set")
 
@@ -119,17 +123,17 @@ class ProjectDir:
             file_names (list[str]): List with file names.
         """
         if self.current_folder is not None:
-            utils.delete_files_in_directory(file_names, self.current_folder)
+            utils.delete_files_in_directory(file_names, self.current_folder, print_status = True)
         else:
             print("'current_folder' is not set")
 
-    def move_file(self, source_path: Union[Path, str], target_directory: Union[Path, str, None] = None) -> Path:
+    def move_file(self, source_path: Union[Path, str], target_directory: Union[Path, str] = None) -> Path:
         """Move a file from a source path to a target directory.
 
         Args:
             source_path (Union[Path, str]): Source path of the file that should 
                 be moved.
-            target_directory (Union[Path, None], optional): Target Directory
+            target_directory (Union[Path, str], optional): Target Directory
                 the file should be moved to. If not specified the file is moved
                 to the current folder. Defaults to None.
 
@@ -147,17 +151,17 @@ class ProjectDir:
 
         target_directory = self._dir_setter(target_directory, 'target directroy')
         target_path = target_directory / source_path.name
-        utils.move_file(source_path, target_path)
+        utils.move_file(source_path, target_path, print_status = True)
 
         return target_path
 
-    def move_files(self, source_paths: list[Union[Path, str]], target_directory: Optional[Union[Path, str, None]] = None) -> None:
+    def move_files(self, source_paths: list[Union[Path, str]], target_directory: Optional[Union[Path, str]] = None) -> None:
         """Move multiple files to a target directory.
 
         Args:
             source_paths (list[Union[Path, str]]): List of file paths that
                 should be moved.
-            target_directory (Optional[Union[Path, None, str]], optional): 
+            target_directory (Optional[Union[Path, str]], optional): 
                 Target Directory the file should be moved to. If not specified
                 the file is moved to the current folder. Defaults to None.
         """
@@ -170,16 +174,16 @@ class ProjectDir:
             target_directory = self.current_folder
         target_directory = self._dir_setter(target_directory, 'target directroy')
 
-        utils.move_files(source_paths, target_directory)
+        utils.move_files(source_paths, target_directory, print_status = True)
         
 
-    def copy_file(self, source_path: Union[Path, str], target_directory: Optional[Union[Path, str, None]] = None) -> Path:
+    def copy_file(self, source_path: Union[Path, str], target_directory: Optional[Union[Path, str]] = None) -> Path:
         """Copy a file from a source path to a target directory while keeping the file name.
 
         Args:
             source_path (Union[Path, str]): Source path of the file that should
                 be copied.
-            target_directory (Optional[Union[Path, str, None]], optional): Target
+            target_directory (Optional[Union[Path, str]], optional): Target
                 Directory the file should be moved to. If not specified the
                 file is moved to the current folder. Defaults to None.
 
@@ -227,4 +231,4 @@ class ProjectDir:
                 with '/'.
         """
         folder_path = self.project_directory / folder_name
-        utils.delete_file_or_directory(folder_path)
+        utils.delete_file_or_directory(folder_path, print_status=True)

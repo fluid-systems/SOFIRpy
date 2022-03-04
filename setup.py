@@ -8,7 +8,7 @@ with open(os.path.join(rootdir,"README.md"), 'r') as f:
 
 setup(
     name="fair_sim",
-    version="0.0.1",
+    version="0.1.0",
     author="Daniele Inturri",
     author_email="daniele.inturri@sud.tu-darmstadt.de",
     description="Framework for simulating fmus and controller written in python.",
