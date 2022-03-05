@@ -26,7 +26,7 @@ def delete_paths(paths: list[Path]) -> None:
     for path in paths:
         delete_file_or_directory(path)
             
-def move_file( source_path: Path, target_path: Path, print_status: bool = False) -> None:
+def move_file( source_path: Path, target_path: Path, print_status: bool = False) -> bool:
 
     if not source_path == target_path:
         if source_path.exists():
@@ -36,11 +36,12 @@ def move_file( source_path: Path, target_path: Path, print_status: bool = False)
                     raise FileExistsError(f"{target_path} already exists")
 
             source_path.replace(target_path)
-
+            return True
         else:
             if print_status:
                 print(f"{source_path} doesn't exists. Can't move file.")
-
+            return False
+            
 def move_files( source_paths: list[Path], target_directory: Path, print_status: bool = False) -> None:
 
     for source_path in source_paths:

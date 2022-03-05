@@ -1,5 +1,7 @@
 from pathlib import Path
 from typing import Union
+import fair_sim.utils as utils
+
 
 class FmuExport:
     """Object that sets the paths for the fmu export."""
@@ -89,3 +91,10 @@ class FmuExport:
                         print("Enter 'y' or 'n'")
 
         self._fmu_path = fmu_path
+    
+    def move_fmu(self, target_directory: Path) -> None:
+        
+        new_fmu_path =  target_directory / self.fmu_path.name
+        moved = utils.move_file(self.fmu_path, new_fmu_path)
+        if moved:
+            self.fmu_path = new_fmu_path
