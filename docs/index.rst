@@ -12,7 +12,6 @@ Welcome to FairSim's documentation!
    overview
    installation
    getting_started
-   simulation
    packages doc <subpackages_doc/fair_sim>
 
 

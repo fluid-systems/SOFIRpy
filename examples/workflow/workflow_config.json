@@ -1,0 +1,8 @@
+{
+    "simulation": {
+        "fmu_infos": {},
+        "control_infos": {},
+        "parameters_to_log": {}
+    },
+    "project": ""
+}
