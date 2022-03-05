@@ -38,3 +38,4 @@ Additional examples are listed below:
 
 * `Simulating mutiple fmus and controller <https://git.rwth-aachen.de/fst-tuda/projects/digitalization/fair_sim/fair_sim_release/-/tree/development/examples>`_
 * `Import parameters before exporting a dymola model <https://git.rwth-aachen.de/fst-tuda/projects/digitalization/fair_sim/fair_sim_release/-/tree/development/examples>`_
+* `Workflow <https://git.rwth-aachen.de/fst-tuda/projects/digitalization/fair_sim/fair_sim_release/-/tree/development/examples>`_
