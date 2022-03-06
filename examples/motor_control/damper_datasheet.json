@@ -1,9 +1,0 @@
-
-{"Parameters":[{"symbol": "d",
-    "value": 0.1,
-    "unit": "N*m*s/rad", 
-    "description": "Damping constant"}, 
-   {"symbol": "useHeatPort",
-    "value": "false",
-    "unit": "",
-    "description": ""}]}
