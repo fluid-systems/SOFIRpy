@@ -28,19 +28,20 @@ def delete_paths(paths: list[Path]) -> None:
             
 def move_file( source_path: Path, target_path: Path, print_status: bool = False) -> bool:
 
-    if not source_path == target_path:
-        if source_path.exists():
-            if target_path.exists():
-                overwrite = _get_user_input(target_path)
-                if not overwrite:
-                    raise FileExistsError(f"{target_path} already exists")
+    if source_path == target_path:
+        return True
+    if source_path.exists():
+        if target_path.exists():
+            overwrite = _get_user_input(target_path)
+            if not overwrite:
+                raise FileExistsError(f"{target_path} already exists")
 
-            source_path.replace(target_path)
-            return True
-        else:
-            if print_status:
-                print(f"{source_path} doesn't exists. Can't move file.")
-            return False
+        source_path.replace(target_path)
+        return True
+    else:
+        if print_status:
+            print(f"{source_path} doesn't exists. Can't move file.")
+        return False
             
 def move_files( source_paths: list[Path], target_directory: Path, print_status: bool = False) -> None:
 
@@ -52,6 +53,8 @@ def copy_file(source_path: Path, target_path: Path) -> None:
 
     if source_path.exists():
         if source_path.is_file():
+            if source_path == target_path:
+                return
             if target_path.exists():
                 overwrite = _get_user_input(target_path)
                 if not overwrite:

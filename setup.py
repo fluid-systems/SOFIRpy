@@ -15,14 +15,13 @@ setup(
     long_description=long_description,
     url="https://git.rwth-aachen.de/fst-tuda/projects/digitalization/fair_sim/fair_sim_release",
     packages= ["fair_sim", "fair_sim.fmu_export", "fair_sim.simulation", "fair_sim.project"],
-    install_requires = ["FMPy == 0.2.26",
-                        "OMPython == 3.3.0",
-                        "alive_progress == 1.6.2",
-                        "buildingspy == 2.1.0",
-                        "h5py == 3.1.0",
-                        "matplotlib == 3.3.4",
-                        "numpy == 1.19.3",
-                        "pandas == 1.2.0"
-                        ],
-    python_requires=">=3.6",
+    install_requires = ["FMPy",
+                        "alive_progress",
+                        "h5py",
+                        "matplotlib",
+                        "numpy",
+                        "pandas",
+                        "OMpython @ git+https://git@github.com/OpenModelica/OMPython.git"],
+
+    python_requires=">=3.9",
 )

@@ -1,7 +1,7 @@
-FMPy == 0.2.26
-OMPython == 3.3.0
-alive_progress == 1.6.2
-h5py == 3.1.0
-matplotlib == 3.3.4
-numpy == 1.19.3
-pandas == 1.2.0
+FMPy
+OMpython
+alive_progress
+h5py
+matplotlib
+numpy
+pandas
