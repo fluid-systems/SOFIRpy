@@ -3,7 +3,7 @@ from setuptools import setup
 
 rootdir = Path(__file__).parent
 
-with open(rootdir / "docs" / "overview.rst", 'r') as f:
+with open(rootdir / "README.md", 'r') as f:
     long_description = f.read()
 
 setup(
@@ -13,6 +13,7 @@ setup(
     author_email="daniele.inturri@sud.tu-darmstadt.de",
     description="Framework for simulating fmus and controller written in python.",
     long_description=long_description,
+    long_description_content_type="text/markdown",
     url="https://git.rwth-aachen.de/fst-tuda/projects/digitalization/fair_sim/fair_sim_release",
     packages= ["fair_sim", "fair_sim.fmu_export", "fair_sim.simulation", "fair_sim.project"],
     install_requires = ["FMPy",
