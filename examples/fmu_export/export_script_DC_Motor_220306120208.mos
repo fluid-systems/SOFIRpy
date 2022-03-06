@@ -1,9 +1,0 @@
-cd("c:\Users\Daniele\Documents\GitLab\fair_sim_release\fair_sim_release\examples\fmu_export");
-openModel("c:\Users\Daniele\Documents\GitLab\fair_sim_release\fair_sim_release\examples\fmu_export\DC_Motor.mo");
-modelInstance = "DC_Motor()";
-translateModelFMU(modelInstance, false, "", "2", "all", false, 2);
-savelog("c:\Users\Daniele\Documents\GitLab\fair_sim_release\fair_sim_release\examples\fmu_export\log_DC_Motor_220306120208.txt");
-errors = getLastError();
-Modelica.Utilities.Files.removeFile("errors_DC_Motor_220306120208.txt");
-Modelica.Utilities.Streams.print(errors, "errors_DC_Motor_220306120208.txt");
-Modelica.Utilities.System.exit();
