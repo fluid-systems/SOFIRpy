@@ -1,9 +1,9 @@
-import os
+from pathlib import Path
 from setuptools import setup
 
-rootdir = os.path.abspath(os.path.dirname(__file__))
+rootdir = Path(__file__).parent
 
-with open(os.path.join(rootdir,"README.md"), 'r') as f:
+with open(rootdir / "docs" / "overview.rst", 'r') as f:
     long_description = f.read()
 
 setup(
