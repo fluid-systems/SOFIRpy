@@ -1,9 +1,9 @@
-import os
+from pathlib import Path
 from setuptools import setup
 
-rootdir = os.path.abspath(os.path.dirname(__file__))
+rootdir = Path(__file__).parent
 
-with open(os.path.join(rootdir,"README.md"), 'r') as f:
+with open(rootdir / "README.md", 'r') as f:
     long_description = f.read()
 
 setup(
@@ -13,6 +13,7 @@ setup(
     author_email="daniele.inturri@sud.tu-darmstadt.de",
     description="Framework for simulating fmus and controller written in python.",
     long_description=long_description,
+    long_description_content_type="text/markdown",
     url="https://git.rwth-aachen.de/fst-tuda/projects/digitalization/fair_sim/fair_sim_release",
     packages= ["fair_sim", "fair_sim.fmu_export", "fair_sim.simulation", "fair_sim.project"],
     install_requires = ["FMPy",

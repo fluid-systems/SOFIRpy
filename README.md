@@ -1,4 +1,6 @@
  # FairSim
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
  ## Overview
  FairSim is a framework that can...
  - export fmus from Dymola and OpenModelica
@@ -7,7 +9,7 @@
  ## Install
 To install FairSim first download the repository. Then in the root directory of the downloaded package enter the following in the terminal:
 ```console
-$ python -m pip install .
+$ python -m pip install fair_sim
 ```
 ## Examples
 
