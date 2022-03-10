@@ -1,7 +1,7 @@
-fair_sim.simulation.simulate module
+fair_sim.simulation.simulation module
 =====================================
 
-.. automodule:: fair_sim.simulation.simulate
+.. automodule:: fair_sim.simulation.simulation
     :members:
     :no-undoc-members:
     :show-inheritance:
