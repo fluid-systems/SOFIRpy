@@ -1,6 +1,7 @@
 """This module allows to simulate multiple fmus and controllers."""
 
 from __future__ import annotations
+from dataclasses import dataclass
 from pathlib import Path
 from abc import ABC, abstractmethod
 from typing import Optional, Union
@@ -11,54 +12,50 @@ from fmpy import extract, read_model_description
 from fmpy.fmi2 import FMU2Slave
 
 
+@dataclass(frozen=True)
 class System:
-    """System object representing a simulation entity."""
+    """System object representing a simulation entity.
 
-    def __init__(self, simulation_entity: SimulationEntity, name: str) -> None:
-        """Initialize System object.
-
-        Args:
+    Args:
             simulation_entity (SimulationEntity): fmu or controller
             name (str): name of the system
-        """
-        self.simulation_entity = simulation_entity
-        self.name = name
+    """
+
+    simulation_entity: SimulationEntity
+    name: str
 
 
+@dataclass(frozen=True)
 class SystemParameter:
-    """SystemParameter object representing a parameter in a system."""
+    """SystemParameter object representing a parameter in a system.
 
-    def __init__(self, system: System, name: str) -> None:
-        """Initialize SystemParameter object.
-
-        Args:
+    Args:
             system (System): System object
             name (str): name of the paremeter
-        """
-        self.system = system
-        self.name = name
+    """
+
+    system: System
+    name: str
 
 
+@dataclass(frozen=True)
 class ConnectionPoint(SystemParameter):
     """ConnectionPoint object representing a parameter in a system that is an input our output."""
 
 
+@dataclass(frozen=True)
 class Connection:
-    """Object representing a connection between two systems."""
+    """Object representing a connection between two systems.
 
-    def __init__(
-        self, input_point: ConnectionPoint, output_point: ConnectionPoint
-    ) -> None:
-        """Initialize Connection object.
+    Args:
+        input_point (ConnectionPoint): ConnectionPoint object that
+            represents an input of a system
+        output_point (ConnectionPoint): ConnectionPoint object that
+            represents an output of a system
+    """
 
-        Args:
-            input_point (ConnectionPoint): ConnectionPoint object that
-                represents an input of a system
-            output_point (ConnectionPoint): ConnectionPoint object that
-                represents an output of a system
-        """
-        self.input_point = input_point
-        self.output_point = output_point
+    input_point: ConnectionPoint
+    output_point: ConnectionPoint
 
 
 class SimulationEntity(ABC):
