@@ -1,17 +1,21 @@
+"""This module allows to export a OpenModelica model as a fmu."""
+
 from pathlib import Path
-from fair_sim.fmu_export.fmu_export import FmuExport
-import fair_sim.utils as utils 
-from OMPython import ModelicaSystem
 from typing import Union
+from OMPython import ModelicaSystem
+from fair_sim.fmu_export.fmu_export import FmuExport
+from fair_sim import utils
+
 
 class OpenModelicaFmuExport(FmuExport):
-    """Object that performs the OpenModelica fmu export """
+    """Object that performs the OpenModelica fmu export"""
 
     def __init__(self, model_path: Union[Path, str]) -> None:
         """Initialize the OpenModelicaFmuExport object.
 
         Args:
-            model_path (Union[Path, str]): Path to the modelica model that should be exported
+            model_path (Union[Path, str]): Path to the modelica model that
+                should be exported
         """
 
         self.dump_directory = Path.cwd()
@@ -78,15 +82,22 @@ class OpenModelicaFmuExport(FmuExport):
             f"{self.model_name}_FMU.makefile",
         ]
 
-        self.paths_to_delete = map(lambda file_name: self.dump_directory / file_name, files_to_delete)
+        self.paths_to_delete = map(
+            lambda file_name: self.dump_directory / file_name, files_to_delete
+        )
 
     def export_fmu(self):
         """Exports the model as an fmu."""
 
-        om = ModelicaSystem(str(self.model_path).replace("\\", "//"), self.model_name)
-        om.convertMo2Fmu()
+        open_modelica = ModelicaSystem(
+            str(self.model_path).replace("\\", "//"), self.model_name
+        )
+        open_modelica.convertMo2Fmu()
 
-def export_open_modelica_model(model_path: Union[Path, str], output_directory: Union[Path, str]) -> OpenModelicaFmuExport:
+
+def export_open_modelica_model(
+    model_path: Union[Path, str], output_directory: Union[Path, str]
+) -> Union[OpenModelicaFmuExport, None]:
     """Exports a modelica model as an fmu and moves the fmu to the output directory
 
     Args:
@@ -97,7 +108,7 @@ def export_open_modelica_model(model_path: Union[Path, str], output_directory: U
         OpenModelicaFmuExport: OpenModelicaFmuExport object
     """
 
-    om_fmu_export = OpenModelicaFmuExport(model_path) 
+    om_fmu_export = OpenModelicaFmuExport(model_path)
     om_fmu_export.export_fmu()
 
     # delete unnecessary files

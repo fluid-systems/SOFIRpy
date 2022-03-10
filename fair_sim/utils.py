@@ -2,11 +2,12 @@ from pathlib import Path
 import shutil
 from typing import Union
 
+
 def delete_file_or_directory(path: Path, print_status: bool = False):
 
     if path.exists():
         if path.is_dir():
-            shutil.rmtree(str(path), ignore_errors = True)
+            shutil.rmtree(str(path), ignore_errors=True)
         else:
             path.unlink()
         if print_status:
@@ -15,18 +16,23 @@ def delete_file_or_directory(path: Path, print_status: bool = False):
         if print_status:
             print(f"{str(path)} does not exist")
 
-def delete_files_in_directory(file_names: list[str], directory: Path, print_status: bool = False) -> None:
-    
+
+def delete_files_in_directory(
+    file_names: list[str], directory: Path, print_status: bool = False
+) -> None:
+
     for file_name in file_names:
         path = directory / file_name
         delete_file_or_directory(path, print_status)
+
 
 def delete_paths(paths: list[Path]) -> None:
 
     for path in paths:
         delete_file_or_directory(path)
-            
-def move_file( source_path: Path, target_path: Path, print_status: bool = False) -> bool:
+
+
+def move_file(source_path: Path, target_path: Path, print_status: bool = False) -> bool:
 
     if source_path == target_path:
         return True
@@ -42,12 +48,16 @@ def move_file( source_path: Path, target_path: Path, print_status: bool = False)
         if print_status:
             print(f"{source_path} doesn't exists. Can't move file.")
         return False
-            
-def move_files( source_paths: list[Path], target_directory: Path, print_status: bool = False) -> None:
+
+
+def move_files(
+    source_paths: list[Path], target_directory: Path, print_status: bool = False
+) -> None:
 
     for source_path in source_paths:
         target_path = target_directory / source_path.name
         move_file(source_path, target_path, print_status)
+
 
 def copy_file(source_path: Path, target_path: Path) -> None:
 
@@ -66,12 +76,11 @@ def copy_file(source_path: Path, target_path: Path) -> None:
     else:
         raise FileNotFoundError(f"{source_path} does not exits.")
 
-def _get_user_input(target_path: Union[Path, str], type = "path") -> bool:
-    
+
+def _get_user_input(target_path: Union[Path, str], type="path") -> bool:
+
     while True:
-        overwrite = input(
-            f"The {type} {target_path} already exists. Overwrite? [y/n]"
-        )
+        overwrite = input(f"The {type} {target_path} already exists. Overwrite? [y/n]")
         if overwrite == "y" or overwrite == "n":
             if overwrite == "y":
                 return True
@@ -79,6 +88,7 @@ def _get_user_input(target_path: Union[Path, str], type = "path") -> bool:
                 return False
             else:
                 print("Enter 'y' or 'n'.")
+
 
 def rename_file(file_path: Path, new_name: str):
 

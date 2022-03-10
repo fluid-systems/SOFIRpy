@@ -20,7 +20,9 @@ for component_name, parameter_pairs in content.items():
     for parameter_name, parameter_value in parameter_pairs.items():
         parameters[f"{component_name}.{parameter_name}"] = parameter_value
 
-model_modifiers = ['redeclare package Medium = Modelica.Media.Water.ConstantPropertyLiquidWater']
+model_modifiers = [ 'redeclare package Medium = Modelica.Media.Water.ConstantPropertyLiquidWater', 
+                    'replaceable function flowCharacteristic = Custom_Pump_V2.BaseClasses_Custom.PumpCharacteristics.quadraticFlow;'
+]
 
 
 export_dymola_model(
@@ -29,4 +31,5 @@ export_dymola_model(
     output_direcotry,
     parameters=parameters,
     model_modifiers=model_modifiers,
-    packages = packages)
+    packages = packages, 
+    keep_mos=True)
