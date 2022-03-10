@@ -249,8 +249,6 @@ class Simulation:
         self.parameters_to_record = parameters_to_record
         self.results = self.create_result_df(self.parameters_to_record)
 
-        self.time_series = None
-
     def simulate(
         self, stop_time: float, step_size: float, start_time: float = 0.0
     ) -> pd.DataFrame:
@@ -266,12 +264,12 @@ class Simulation:
             pd.DataFrame: results dataframe with times series of logged
             parameters
         """
-        self.time_series = np.arange(start_time, stop_time + step_size, step_size)
+        time_series = np.arange(start_time, stop_time + step_size, step_size)
 
         print("Starting Simulation...")
 
-        with alive_bar(len(self.time_series), bar="blocks", spinner="classic") as bar:
-            for time_step, time in enumerate(self.time_series):
+        with alive_bar(len(time_series), bar="blocks", spinner="classic") as bar:
+            for time_step, time in enumerate(time_series):
 
                 self.log_values(time, time_step)
                 self.set_systems_inputs()
