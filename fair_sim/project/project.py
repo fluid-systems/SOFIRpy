@@ -31,7 +31,7 @@ class Project:
         Raises:
             error: If error occurs while creating the folder in the project directory.
         """
-        self.hdf5.create_folder(folder_name)
+        self.hdf5.create_group(folder_name)
         try:
             self.project_dir.create_folder(folder_name)
         except Exception as error:

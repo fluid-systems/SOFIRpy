@@ -55,42 +55,42 @@ class HDF5:
 
         self._hdf5_path = hdf5_path
 
-    def create_folder(self, folder_name: str) -> None:
-        """Creates a folder in the hdf5 file.
+    def create_group(self, group_path: str) -> None:
+        """Creates a group in the hdf5 file.
 
         Args:
-            folder_name (str): The name of the folder. Subfolders can be
-                created by seperating the folder names with '/'. Example:
+            group_path (str): The name of the group. Subgroups can be
+                created by seperating the group names with '/'. Example:
 
-                >>> # create a folder at the top level with the name "folder1"
-                ... folder_name = "folder1"
-                ... # create a folder with the name "subfolder1" in "folder1"
-                ... folder_name = "folder1/subfolder1"
+                >>> # create a group at the top level with the name "group1"
+                ... group_path = "group1"
+                ... # create a group with the name "subgroup1" in "group1"
+                ... group_path = "group1/subgroup1"
 
-                The parant folders does not need to exist to create a subfolder.
+                The parant groups does not need to exist to create a subgroup.
                 They will be created automatically. Example:
 
-                >>> folder_name = "folder2/subfolder1/subsubfolder1"
+                >>> group_path = "group2/subgroup1/subsubgroup1"
         """
         with h5py.File(str(self.hdf5_path), "a") as hdf5:
-            if folder_name in hdf5:
-                print(f"Folder {folder_name} already exists in hdf5.")
+            if group_path in hdf5:
+                print(f"Group {group_path} already exists in hdf5.")
                 return
-            hdf5.create_group(folder_name)
+            hdf5.create_group(group_path)
 
     def store_data(
         self,
         data_name: str,
         data: Any,
-        folder_path: str,
+        group_path: str,
         attributes: Optional[dict] = None,
     ) -> None:
-        """Stores data in a hdf5 folder. If the folder doesn't exist it will be created.
+        """Stores data in a hdf5 group. If the group doesn't exist it will be created.
 
         Args:
             data_name (str): Name of the data.
             data (Any): Data that should be stored.
-            folder_path (str): Path to the hdf5 folder.
+            group_path (str): Path to the hdf5 group.
             attributes (Optional[dict], optional): Data attributes dictionary
                 with attribute names as keys and the attributes as values.
                 Defaults to None.
@@ -99,14 +99,14 @@ class HDF5:
             ValueError: If data path already exists.
         """
         with h5py.File(str(self.hdf5_path), "a") as hdf5:
-            if folder_path:
-                if folder_path not in hdf5:
-                    folder = hdf5.create_group(folder_path)
+            if group_path:
+                if group_path not in hdf5:
+                    group = hdf5.create_group(group_path)
                 else:
-                    folder = hdf5[folder_path]
-                data_path = f"{folder_path}/{data_name}"
-            else:  # if folder path is empty, the data will be stored in the top level
-                folder = hdf5
+                    group = hdf5[group_path]
+                data_path = f"{group_path}/{data_name}"
+            else:  # if group path is empty, the data will be stored in the top level
+                group = hdf5
                 data_path = data_name
             if data_path in hdf5:
                 overwrite = utils._get_user_input(data_path, "hdf5 dataset at")
@@ -115,7 +115,7 @@ class HDF5:
                         f"Unable to create dataset, dataset at {data_path} already exists)"
                     )
                 del hdf5[data_path]
-            dset = folder.create_dataset(data_name, data=data)
+            dset = group.create_dataset(data_name, data=data)
             if attributes:
                 for name, attr in attributes.items():
                     dset.attrs[name] = attr
@@ -134,13 +134,13 @@ class HDF5:
                 dataset.attrs[name] = attr
 
     def read_data(
-        self, data_name: str, folder_path: str, get_attributes: Optional[bool] = False
+        self, data_name: str, group_path: str, get_attributes: Optional[bool] = False
     ) -> Union[Any, tuple[Any, dict[str, Any]]]:
         """Reads the data of at a given data path.
 
         Args:
             data_name (str): Name of the data.
-            folder_path (str): Path to the hdf5 folder.
+            group_path (str): Path to the hdf5 group.
             get_attributes (Optional[bool], optional): If True attributes will
                 be returned as well. Defaults to False.
 
@@ -152,8 +152,8 @@ class HDF5:
             the Dataset.
         """
         with h5py.File(str(self.hdf5_path), "a") as hdf5:
-            if folder_path:
-                data_path = f"{folder_path}/{data_name}"
+            if group_path:
+                data_path = f"{group_path}/{data_name}"
             else:
                 data_path = data_name
             dataset = hdf5.get(data_path)
@@ -285,8 +285,8 @@ class HDF5:
         mode: Optional[str] = None,
     ) -> dict[str, Any]:
         """Recursive function to achieve the following. If the path to a
-        dataset is "folder1/subfolder1/data" it will convert this path into a
-        structured dictionary --> {"folder1": {"subfolder1": {"data": <data>}}}.
+        dataset is "group1/subgroup1/data" it will convert this path into a
+        structured dictionary --> {"group1": {"subgroup1": {"data": <data>}}}.
         If mode is set to "full", the whole dataset is stored at <data>, if it
         is set to "short" only a description of the data is stored.
         """
