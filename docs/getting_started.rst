@@ -29,7 +29,7 @@ Simulating a fmu and a Controller
 Initializing a project and storing data
 ----------------------------------------
 
-.. literalinclude:: ../examples/store_results/project_example.py
+.. literalinclude:: ../examples/project/project_example.py
 
 Additional examples
 -------------------
