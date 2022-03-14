@@ -418,39 +418,39 @@ def export_dymola_model(
         if keep_log:
             dymola_fmu_export.move_log_file(output_directory)
         return dymola_fmu_export
-    else:
-        print("The FMU Export was not successful")
-        print("Dymola Error Message: ")
-        print("======================")
-        with open(dymola_fmu_export.error_log_path, "r") as error_log:
-            print(unescape(error_log.read()))
-        print("======================")
-        dymola_fmu_export.error_log_path.unlink()
-        if parameters:
-            print("Checking if added parameters exist in the model...")
-            print("Exporting model without parameters and model modifiers...")
 
-            # TODO export in temp instead of model dir
-            dymola_fmu_export = DymolaFmuExport(dymola_exe_path, model_path)
-            dymola_fmu_export.export_fmu(
-                export_simulator_log=False, export_error_log=False
+    print("The FMU Export was not successful")
+    print("Dymola Error Message: ")
+    print("======================")
+    with open(dymola_fmu_export.error_log_path, "r") as error_log:
+        print(unescape(error_log.read()))
+    print("======================")
+    dymola_fmu_export.error_log_path.unlink()
+    if parameters:
+        print("Checking if added parameters exist in the model...")
+        print("Exporting model without parameters and model modifiers...")
+
+        # TODO export in temp instead of model dir
+        dymola_fmu_export = DymolaFmuExport(dymola_exe_path, model_path)
+        dymola_fmu_export.export_fmu(
+            export_simulator_log=False, export_error_log=False
+        )
+        dymola_fmu_export.mos_file_path.unlink()
+        utils.delete_paths(dymola_fmu_export.paths_to_delete)
+        if dymola_fmu_export.fmu_path.exists():
+            print(
+                "FMU Export without added parameters and model modifiers was successfull."
             )
-            dymola_fmu_export.mos_file_path.unlink()
-            utils.delete_paths(dymola_fmu_export.paths_to_delete)
-            if dymola_fmu_export.fmu_path.exists():
-                print(
-                    "FMU Export without added parameters and model modifiers was successfull."
-                )
-                parameters_in_model = read_model_parameters(dymola_fmu_export.fmu_path)
-                not_valid_parameters = check_not_valid_parameters(
-                    list(parameters.keys()), parameters_in_model
-                )
-                print(f"Possible parameters that do not exist:\n{not_valid_parameters}")
-                dymola_fmu_export.fmu_path.unlink()
-            else:
-                print(
-                    "FMU Export without added parameters and model modifiers was not successfull."
-                )
+            parameters_in_model = read_model_parameters(dymola_fmu_export.fmu_path)
+            not_valid_parameters = check_not_valid_parameters(
+                list(parameters.keys()), parameters_in_model
+            )
+            print(f"Possible parameters that do not exist:\n{not_valid_parameters}")
+            dymola_fmu_export.fmu_path.unlink()
+        else:
+            print(
+                "FMU Export without added parameters and model modifiers was not successfull."
+            )
 
 
 def read_model_parameters(fmu_path: Path) -> list[str]:
