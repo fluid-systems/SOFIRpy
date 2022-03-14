@@ -15,6 +15,10 @@ parameters = {"damper.d": 0.1, "damper.useHeatPort": False}
 # Modelica syntax:
 # >>> parameters = {"damper.d": "0.1", "damper.useHeatPort": "false"}
 
+<<<<<<< HEAD
 export_dymola_model(
     dymola_exe_path, model_path, output_direcotry, parameters=parameters, keep_mos=False
 )
+=======
+export_dymola_model(dymola_exe_path, model_path, output_direcotry, parameters=parameters, keep_mos=False)
+>>>>>>> master
