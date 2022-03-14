@@ -301,6 +301,7 @@ def simulate(
         TypeError: fmu_infos type was invalid
         TypeError: control_infos type was invalid
         ValueError: fmu_infos and control_infos were 'None'
+        TypeError: control_classes type was invalid
         ValueError: start_time value was invalid
         ValueError: step_size value was invalid
 
@@ -317,16 +318,19 @@ def simulate(
         raise TypeError(f"'step_size' is {type(step_size)}; expected float, int")
     step_size = float(step_size)
 
-    if not isinstance(fmu_infos, list):
+    if fmu_infos and not isinstance(fmu_infos, list):
         raise TypeError(f"'fmu_infos' is {type(fmu_infos)}; expected list")
 
-    if not isinstance(control_infos, list):
+    if control_infos and not isinstance(control_infos, list):
         raise TypeError(f"'control_infos' is {type(control_infos)}; expected list")
 
     if not fmu_infos and not control_infos:
         raise ValueError(
             "'fmu_infos' and 'control_infos' are empty; expected al least one to be not empty"
         )
+
+    if control_classes and not isinstance(control_classes, dict):
+        raise TypeError(f"'control_classes' is {type(control_classes)}; expected dict")
 
     if stop_time <= 0:
         raise ValueError(f"stop_time is {stop_time}; expected > 0")
