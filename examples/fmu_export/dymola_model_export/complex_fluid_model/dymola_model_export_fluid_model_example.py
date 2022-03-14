@@ -6,6 +6,7 @@ dir_path = Path(__file__).parent
 model_path = dir_path / "Building.mo"
 package_custom_fittings = dir_path / "Custom_Fittings.mo"
 package_custom_pump = dir_path / "Custom_Pump_V2.mo"
+package_custom_pump = dir_path / "Custom_Pump.mo"
 package_custom_sensors = dir_path / "Custom_Sensors.mo"
 packages = [package_custom_fittings, package_custom_pump, package_custom_sensors]
 output_direcotry = dir_path
@@ -21,9 +22,7 @@ for component_name, parameter_pairs in content.items():
         parameters[f"{component_name}.{parameter_name}"] = parameter_value
 
 model_modifiers = [
-    "redeclare package Medium = Modelica.Media.Water.ConstantPropertyLiquidWater",
-    "replaceable function flowCharacteristic = Custom_Pump_V2.BaseClasses_Custom.PumpCharacteristics.quadraticFlow;",
-]
+    "redeclare package Medium = Modelica.Media.Water.ConstantPropertyLiquidWater"]
 
 
 export_dymola_model(
@@ -33,5 +32,5 @@ export_dymola_model(
     parameters=parameters,
     model_modifiers=model_modifiers,
     packages=packages,
-    keep_mos=True,
+    keep_mos=False,
 )

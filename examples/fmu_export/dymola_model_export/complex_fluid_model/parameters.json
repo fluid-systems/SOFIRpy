@@ -1,23 +1,17 @@
 {
     "YONOS": {
         "use_N_in": true,
-        "flowCharacteristic.c": [
-            -0.31462,
-            0.36629,
-            5.0907
-        ],
-        "powerCharacteristic.c": [
-            -0.32719,
-            0.36765,
-            16.4571,
-            16.2571,
-            3.5722
-        ],
         "p_a_start": 1,
         "p_b_start": 1
     },
     "Valve_floor1": {
         "Kv": 29.5,
         "m_flow_nominal": 1
+    },
+    "R9": {
+        "length": 0.5,
+        "diameter": 20e-3,
+        "roughness": 7e-6,
+        "height_ab": 0.5
     }
 }
