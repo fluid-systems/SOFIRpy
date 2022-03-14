@@ -63,9 +63,9 @@ class HDF5:
                 created by seperating the group names with '/'. Example:
 
                 >>> # create a group at the top level with the name "group1"
-                ... group_path = "group1"
-                ... # create a group with the name "subgroup1" in "group1"
-                ... group_path = "group1/subgroup1"
+                >>> group_path = "group1"
+                >>> # create a group with the name "subgroup1" in "group1"
+                >>> group_path = "group1/subgroup1"
 
                 The parant groups does not need to exist to create a subgroup.
                 They will be created automatically. Example:
