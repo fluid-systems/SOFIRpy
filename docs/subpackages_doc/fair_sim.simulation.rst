@@ -12,3 +12,5 @@ Submodules
 .. toctree::
 
    fair_sim.simulation.simulation
+   fair_sim.simulation.fmu
+   fair_sim.simulation.simulation_entity
