@@ -6,4 +6,4 @@ from .project.project import Project
 from .project.hdf5 import HDF5
 from .project.project_dir import ProjectDir
 from .project.store_input_arguments import store_input_arguments
-from .project.plot import plot_results
+from .simulation.plot import plot_results
