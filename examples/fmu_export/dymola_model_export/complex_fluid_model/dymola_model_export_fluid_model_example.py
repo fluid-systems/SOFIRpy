@@ -1,25 +1,29 @@
-from fair_sim import export_dymola_model
-
-from fair_sim import export_dymola_model
 from pathlib import Path
+import json
+from fair_sim import export_dymola_model
 
 dir_path = Path(__file__).parent
 model_path = dir_path / "Building.mo"
 package_custom_fittings = dir_path / "Custom_Fittings.mo"
 package_custom_pump = dir_path / "Custom_Pump_V2.mo"
+package_custom_pump = dir_path / "Custom_Pump.mo"
 package_custom_sensors = dir_path / "Custom_Sensors.mo"
 packages = [package_custom_fittings, package_custom_pump, package_custom_sensors]
 output_direcotry = dir_path
 dymola_exe_path = r"C:\Program Files\Dymola 2018 FD01\bin64\Dymola.exe"
 
-# To import paramater define the parameters and their values in a dictionary as
-# follows:
-
+# If many parameters have to be imported it is useful to store them in a JSON file.
+json_path = dir_path / "parameters.json"
+with open(json_path) as file:
+    content: dict[str, dict] = json.load(file)
 parameters = {}
-model_modifiers = ['redeclare package Medium = Modelica.Media.Water.ConstantPropertyLiquidWater']
-# Note: The values can also be strings, but then they must correspond to the
-# Modelica syntax: 
-# >>> parameters = {"damper.d": "0.1", "damper.useHeatPort": "false"} 
+for component_name, parameter_pairs in content.items():
+    for parameter_name, parameter_value in parameter_pairs.items():
+        parameters[f"{component_name}.{parameter_name}"] = parameter_value
+
+model_modifiers = [
+    "redeclare package Medium = Modelica.Media.Water.ConstantPropertyLiquidWater"]
+
 
 export_dymola_model(
     dymola_exe_path,
@@ -27,4 +31,6 @@ export_dymola_model(
     output_direcotry,
     parameters=parameters,
     model_modifiers=model_modifiers,
-    packages = packages)
+    packages=packages,
+    keep_mos=False,
+)

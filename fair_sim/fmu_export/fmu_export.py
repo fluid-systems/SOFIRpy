@@ -1,7 +1,8 @@
+"""This module contains the base class for a fmu export."""
+
 from pathlib import Path
 from typing import Union
-import fair_sim.utils as utils
-
+from fair_sim import utils
 
 class FmuExport:
     """Object that sets the paths for the fmu export."""
@@ -10,7 +11,8 @@ class FmuExport:
         """Initialize the FmuExport object.
 
         Args:
-            model_path (Union[Path, str]):  Path to the modelica model that should be exported.
+            model_path (Union[Path, str]):  Path to the modelica model that
+                should be exported.
             fmu_path (Path): Path the exported fmu is going to have.
         """
 
@@ -48,7 +50,7 @@ class FmuExport:
 
         if model_path.exists():
             self._model_path = model_path
-        else:    
+        else:
             raise FileNotFoundError(model_path)
 
     @property
@@ -86,15 +88,21 @@ class FmuExport:
                     if overwrite == "y":
                         break
                     elif overwrite == "n":
-                        raise FileExistsError(f"Stopping execution. Fmu at {fmu_path} already exists.")
+                        raise FileExistsError(
+                            f"Stopping execution. Fmu at {fmu_path} already exists."
+                            )
                     else:
                         print("Enter 'y' or 'n'")
 
         self._fmu_path = fmu_path
-    
+
     def move_fmu(self, target_directory: Path) -> None:
-        
+        """Move the log fmu to a target directory.
+
+        Args:
+            target_directory (Path): Path to the target directory.
+        """
         new_fmu_path =  target_directory / self.fmu_path.name
         moved = utils.move_file(self.fmu_path, new_fmu_path)
         if moved:
-            self.fmu_path = new_fmu_path
+            self._fmu_path = new_fmu_path

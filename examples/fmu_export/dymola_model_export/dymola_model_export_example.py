@@ -1,5 +1,5 @@
-from fair_sim import export_dymola_model
 from pathlib import Path
+from fair_sim import export_dymola_model
 
 dir_path = Path(__file__).parent
 model_path = dir_path.parent / "DC_Motor.mo"

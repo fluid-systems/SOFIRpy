@@ -1,0 +1,17 @@
+{
+    "YONOS": {
+        "use_N_in": true,
+        "p_a_start": 1,
+        "p_b_start": 1
+    },
+    "Valve_floor1": {
+        "Kv": 29.5,
+        "m_flow_nominal": 1
+    },
+    "R9": {
+        "length": 0.5,
+        "diameter": 20e-3,
+        "roughness": 7e-6,
+        "height_ab": 0.5
+    }
+}

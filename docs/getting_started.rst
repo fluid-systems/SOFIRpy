@@ -24,17 +24,18 @@ fair_sim allows to export a OpenModelica and Dymola model as a fmu.
 Simulating a fmu and a Controller
 ---------------------------------
 
-.. literalinclude:: ../examples/simulating/simulating_fmus_and_controllers/simulation_example.py
+.. literalinclude:: ../examples/simulating/simulating_fmu_and_controller/simulation_example.py
+
+The custom implemented pid controller is shown below.
+
+.. literalinclude:: ../examples/simulating/simulating_fmu_and_controller/discrete_pid.py
 
 Initializing a project and storing data
 ----------------------------------------
 
-.. literalinclude:: ../examples/store_results/project_example.py
+.. literalinclude:: ../examples/project/project_example.py
 
 Additional examples
 -------------------
 
-Additional examples are listed below:
-
-* `Export of a complex model <https://git.rwth-aachen.de/fst-tuda/projects/digitalization/fair_sim/fair_sim_release/-/tree/development/examples>`_
-* More coming soon...
+Additional examples can be found `here. <https://git.rwth-aachen.de/fst-tuda/projects/digitalization/fair_sim/fair_sim_release/-/tree/master/examples>`_
