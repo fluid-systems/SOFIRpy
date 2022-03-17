@@ -104,3 +104,13 @@ def rename_file(file_path: Path, new_name: str):
         target_path.unlink()
 
     return file_path.rename(target_path)
+
+
+def convert_str_to_path(path: Union[str, Path], variable_name: str) -> Path:
+
+    if not isinstance(path, (Path, str)):
+        raise TypeError(
+            f"'{variable_name}' is {type(path)};  expected Path, str"
+        )
+
+    return path if isinstance(path, Path) else Path(path)
