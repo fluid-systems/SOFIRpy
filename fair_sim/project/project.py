@@ -55,7 +55,7 @@ class Project:
         copy: Optional[bool] = True,
         new_file_name: Optional[Union[str, None]] = None,
     ) -> None:
-        """Store a file in the project directory and a reference to this file in the hdf5.
+        """Store a file in the project directory and a reference this file in the hdf5.
 
         Args:
             source_path (Union[str, Path]): Path to the file.
