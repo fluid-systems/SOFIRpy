@@ -7,7 +7,7 @@ from fair_sim import utils
 class FmuExport:
     """Object that sets the paths for the fmu export."""
 
-    def __init__(self, model_path: Union[Path, str], fmu_path: Path) -> None:
+    def __init__(self, model_path: Path, fmu_path: Path) -> None:
         """Initialize the FmuExport object.
 
         Args:
@@ -18,7 +18,6 @@ class FmuExport:
 
         self.model_path = model_path
         self.model_directory = model_path.parent
-        self.model_name = model_path.stem
         self.fmu_path = fmu_path
 
     @property
@@ -31,22 +30,19 @@ class FmuExport:
         return self._model_path
 
     @model_path.setter
-    def model_path(self, model_path: Union[Path, str]) -> None:
+    def model_path(self, model_path: Path) -> None:
         """Sets the path to the modelica model.
 
         Args:
-            model_path (Union[Path, str]): Path to the modelica model.
+            model_path (Path): Path to the modelica model.
 
         Raises:
-            TypeError: model_path type was not 'Path', 'str'
+            TypeError: model_path type was not 'Path'
             FileNotFoundError: File at model_path doesn't exist
         """
 
-        if not isinstance(model_path, (Path, str)):
-            raise TypeError(f"'model_path' is {type(model_path)}; expected Path, str")
-
-        if isinstance(model_path, str):
-            model_path = Path(model_path)
+        if not isinstance(model_path, Path):
+            raise TypeError(f"'model_path' is {type(model_path)}; expected Path")
 
         if model_path.exists():
             self._model_path = model_path

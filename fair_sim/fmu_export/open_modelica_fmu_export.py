@@ -10,18 +10,19 @@ from fair_sim import utils
 class OpenModelicaFmuExport(FmuExport):
     """Object that performs the OpenModelica fmu export"""
 
-    def __init__(self, model_path: Union[Path, str]) -> None:
+    def __init__(self, model_path: Path) -> None:
         """Initialize the OpenModelicaFmuExport object.
 
         Args:
-            model_path (Union[Path, str]): Path to the modelica model that
-                should be exported
+            model_path (Path): Path to the modelica model that should
+                be exported
         """
 
         self.dump_directory = Path.cwd()
         fmu_path = self.dump_directory / f"{model_path.stem}.fmu"
-
         super().__init__(model_path, fmu_path)
+        self.model_name = self.model_path.stem
+
         files_to_delete = [
             f"{self.model_name}.c",
             f"{self.model_name}.exe",
@@ -107,6 +108,8 @@ def export_open_modelica_model(
     Returns:
         OpenModelicaFmuExport: OpenModelicaFmuExport object
     """
+
+    model_path = utils.convert_str_to_path(model_path, "model_path")
 
     om_fmu_export = OpenModelicaFmuExport(model_path)
     om_fmu_export.export_fmu()

@@ -26,8 +26,9 @@ class DymolaFmuExport(FmuExport):
 
     def __init__(
         self,
-        dymola_exe_path: Union[Path, str],
-        model_path: Union[Path, str],
+        dymola_exe_path: Path,
+        model_path: Path,
+        model_name: str,
         parameters: Optional[dict[str, Union[str, int, float, list, bool]]] = None,
         model_modifiers: Optional[list[str]] = None,
         packages: Optional[list[Union[str, Path]]] = None,
@@ -35,9 +36,12 @@ class DymolaFmuExport(FmuExport):
         """Initialize the DymolaFmuExport object.
 
         Args:
-            dymola_exe_path (Union[Path, str]): Path to the dymola executable.
-            model_path (Union[Path, str]): Path to the modelica model that
+            dymola_exe_path (Path): Path to the dymola executable.
+            model_path (Path): Path to the modelica model that
                 should be exported.
+            model_name (str): Name of the model that should be exported. If the
+                model that should be exported is inside a package, separate the
+                package name and the model name with a '.'.
             parameters (dict[str, Union[str, int, float, list, bool]], optional):
                 Dictionary of parameter names and values.
                 Example:
@@ -58,15 +62,17 @@ class DymolaFmuExport(FmuExport):
             packages (list[str], optional): List of model/package paths that
                 need to be loaded as dependencies for the model.
         """
+
+        self.model_name = model_name
         self.dump_directory = model_path.parent
-        fmu_name = model_path.stem.replace("_", "_0")
+        fmu_name = self.model_name.replace("_", "_0").replace(".", "_")
         fmu_path = self.dump_directory / f"{fmu_name}.fmu"
 
         super().__init__(model_path, fmu_path)
 
         self.dymola_exe_path = dymola_exe_path
 
-        # add a time stamp to the mos file
+        # add a time stamp to the mos file and log files
         time_stamp = datetime.now().strftime("%y%m%d%H%M%S")
         self.mos_file_path = (
             self.model_directory / f"export_script_{self.model_name}_{time_stamp}.mos"
@@ -90,13 +96,13 @@ class DymolaFmuExport(FmuExport):
             packages = []
 
         # converts paths to strings if paths are given as Path object
-        self.packages = map(
-            lambda path: str(path) if isinstance(path, Path) else path, packages
-        )
+        self.packages = list(map(
+            lambda path: utils.convert_str_to_path(path, "package_path"), packages
+        ))
 
-        self.paths_to_delete = map(
+        self.paths_to_delete = list(map(
             lambda name: self.model_directory / name, DymolaFmuExport.files_to_delete
-        )
+        ))
 
     @property
     def dymola_exe_path(self) -> Path:
@@ -130,6 +136,20 @@ class DymolaFmuExport(FmuExport):
             raise ValueError(f"{dymola_exe_path} does not exit")
         self._dymola_exe_path = dymola_exe_path
 
+    @property
+    def model_name(self) -> str:
+        return self._model_name
+
+    @model_name.setter
+    def model_name(self, model_name: str) -> None:
+
+        if not isinstance(model_name, str):
+            raise TypeError(
+                f"'model_name' is {type(model_name)};  expected str"
+            )
+
+        self._model_name = model_name
+        
     @property
     def parameters(self) -> dict[str, Union[str, int, float, list, bool]]:
         """Dictionary of parameter names and values.
@@ -247,17 +267,21 @@ class DymolaFmuExport(FmuExport):
         parameters = self.format_parameters()
         input_par = ", ".join(parameters + self.model_modifiers)
 
-        mos_script = f'cd("{str(self.model_directory)}");\n'
+        model_dir_str = str(self.model_directory).replace("\\", "/")
+        model_path_str = str(self.model_path).replace("\\", "/")
+        log_path_str = str(self.simulator_log_path).replace("\\", "/")
+
+        mos_script = f'cd("{model_dir_str}");\n'
         if self.packages:
             for package in self.packages:
                 mos_script += f'openModel("{package}")\n'
-        mos_script += f'openModel("{str(self.model_path)}");\n'
+        mos_script += f'openModel("{model_path_str}");\n'
         mos_script += f'modelInstance = "{self.model_name}(' + input_par + ')";\n'
         mos_script += (
             'translateModelFMU(modelInstance, false, "", "2", "all", false, 2);\n'
         )
         if export_simulator_log:
-            mos_script += f'savelog("{str(self.simulator_log_path)}");\n'
+            mos_script += f'savelog("{log_path_str}");\n'
         if export_error_log:
             mos_script += "errors = getLastError();\n"
             mos_script += (
@@ -303,7 +327,7 @@ class DymolaFmuExport(FmuExport):
                     "{"
                     + ", ".join(convert_to_modelica_value(element) for element in value)
                     + "}"
-                )  # TODO check matrices exists in Dymola
+                )
 
         parameter_declaration = []
         for parameter_name, parameter_value in self.parameters.items():
@@ -338,6 +362,7 @@ class DymolaFmuExport(FmuExport):
 def export_dymola_model(
     dymola_exe_path: Union[Path, str],
     model_path: Union[Path, str],
+    model_name: str,
     output_directory: Union[Path, str],
     parameters: Optional[dict[str, Union[str, int, float, list, bool]]] = None,
     model_modifiers: Optional[list[str]] = None,
@@ -364,6 +389,9 @@ def export_dymola_model(
         dymola_exe_path (Union[Path, str]):  Path to the dymola executable.
         model_path (Union[Path, str]): Path to the dymola model that should be
             exported.
+        model_name (str): Name of the model that should be exported. If the
+            model that should be exported is inside a package, separate the
+            package name and the model name with a '.'.
         output_directory (Union[Path, str]): Path to the output directory.
         parameters (dict[str, Union[str, int, float, list, bool]], optional):
             Dictionary of parameter names and values.
@@ -379,8 +407,9 @@ def export_dymola_model(
             ...     "Modelica.Media.Water.ConstantPropertyLiquidWater"]
 
             Defaults to None.
-        packages (list[str], optional): List of model/package paths that
-                need to be loaded as dependencies for the model.
+        packages (Optional[list[Union[str, Path]]], optional): List of
+            model/package paths that need to be loaded as dependencies for the
+            model.
         keep_log (Optional[bool], optional): If True the simulator log is kept
             else it will be deleted. Defaults to True.
         keep_mos (Optional[bool], optional): If True the mos script is kept
@@ -389,17 +418,15 @@ def export_dymola_model(
     Returns:
         DymolaFmuExport: DymolaFmuExport object.
     """
+
+    dymola_exe_path = utils.convert_str_to_path(dymola_exe_path, "dymola_exe_path") 
+    model_path = utils.convert_str_to_path(model_path, "model_path")
+
     dymola_fmu_export = DymolaFmuExport(
-        dymola_exe_path, model_path, parameters, model_modifiers, packages
+        dymola_exe_path, model_path, model_name, parameters, model_modifiers, packages
     )
 
-    if not isinstance(output_directory, (Path, str)):
-        raise TypeError(
-            f"'output_directory' is {type(output_directory)};  expected Path, str"
-        )
-
-    if isinstance(output_directory, str):
-        output_directory = Path(output_directory)
+    output_directory = utils.convert_str_to_path(output_directory, "output_directory")
 
     dymola_fmu_export.export_fmu(keep_log)
 
