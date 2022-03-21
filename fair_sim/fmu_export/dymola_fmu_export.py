@@ -272,9 +272,11 @@ class DymolaFmuExport(FmuExport):
         log_path_str = str(self.simulator_log_path).replace("\\", "/")
 
         mos_script = f'cd("{model_dir_str}");\n'
+        
         if self.packages:
             for package in self.packages:
-                mos_script += f'openModel("{package}")\n'
+                package_path_str = str(package).replace("\\", "/")
+                mos_script += f'openModel("{package_path_str}")\n'
         mos_script += f'openModel("{model_path_str}");\n'
         mos_script += f'modelInstance = "{self.model_name}(' + input_par + ')";\n'
         mos_script += (
