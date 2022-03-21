@@ -72,11 +72,8 @@ class ProjectDir:
         Returns:
             Path: Path to the directory.
         """
-        if not isinstance(dir_path, (Path, str)):
-            raise TypeError(f"'{name}' is {type(dir_path)}; expected Path, str")
 
-        if isinstance(dir_path, str):
-            dir_path = Path(dir_path)
+        dir_path = utils.convert_str_to_path(dir_path, name)
 
         if not dir_path.exists():
             dir_path.mkdir(parents=True)
@@ -153,8 +150,8 @@ class ProjectDir:
         Returns:
             Path: Path to the moved file.
         """
-        if isinstance(source_path, str):
-            source_path = Path(source_path)
+
+        source_path = utils.convert_str_to_path(source_path, "source_path")
 
         if target_directory is None:
             if self.current_folder is None:
@@ -162,7 +159,7 @@ class ProjectDir:
                 return
             target_directory = self.current_folder
 
-        target_directory = self._dir_setter(target_directory, "target directroy")
+        target_directory = self._dir_setter(target_directory, "target_directroy")
         target_path = target_directory / source_path.name
         utils.move_file(source_path, target_path, print_status=True)
 
@@ -184,7 +181,7 @@ class ProjectDir:
         """
         source_paths = list(
             map(
-                lambda path: Path(path) if isinstance(path, str) else path, source_paths
+                lambda path: utils.convert_str_to_path(path, "source_paths"), source_paths
             )
         )
 
@@ -193,7 +190,7 @@ class ProjectDir:
                 print("'current_folder' is not set")
                 return
             target_directory = self.current_folder
-        target_directory = self._dir_setter(target_directory, "target directroy")
+        target_directory = self._dir_setter(target_directory, "target_directroy")
 
         utils.move_files(source_paths, target_directory, print_status=True)
 
@@ -214,8 +211,8 @@ class ProjectDir:
         Returns:
             Path: Path to the copied file.
         """
-        if isinstance(source_path, str):
-            source_path = Path(source_path)
+        
+        source_path = utils.convert_str_to_path(source_path, "source_path")
 
         if target_directory is None:
             if self.current_folder is None:
@@ -241,8 +238,7 @@ class ProjectDir:
         Returns:
             Path: Path to the renamed file.
         """
-        if isinstance(file_path, str):
-            file_path = Path(file_path)
+        file_path = utils.convert_str_to_path(file_path, "file_path")
 
         return utils.rename_file(file_path, new_name)
 

@@ -38,10 +38,7 @@ class HDF5:
             TypeError: hdf5_path type was not 'Path'
             ValueError: suffix of hdf5_path was invalid
         """
-        if not isinstance(hdf5_path, (Path, str)):
-            raise TypeError(f"'hdf5_path' is {type(hdf5_path)}; expected Path")
-        if isinstance(hdf5_path, str):
-            hdf5_path = Path(hdf5_path)
+        hdf5_path = utils.convert_str_to_path(hdf5_path, "hdf5_path")
 
         hdf_suffixes = [".hdf", ".h4", ".hdf4", ".he2", ".h5", ".hdf5", ".he5"]
 
