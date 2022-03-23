@@ -13,7 +13,7 @@ $ pip install .
 ```
 ## Examples
 
-Multiple examples can be found here: [examples](https://git.rwth-aachen.de/fst-tuda/projects/digitalization/fair_sim/fair_sim_release/-/tree/master/examples/motor_control)
+Multiple examples can be found here: [examples](https://git.rwth-aachen.de/fst-tuda/projects/digitalization/fair_sim/fair_sim_release/-/tree/master/examples)
 
 ## Documentation
 coming soon...
