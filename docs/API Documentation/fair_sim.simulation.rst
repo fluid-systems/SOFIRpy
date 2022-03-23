@@ -9,7 +9,7 @@ fair_sim.simulation package
 UML Diagram of the simulation package
 -------------------------------------
 
-    
+.. image:: uml_diagram_simulation.svg
 
 Submodules
 ----------
