@@ -38,7 +38,7 @@ class SystemParameter:
 
 @dataclass(frozen=True)
 class LoggedParameter(SystemParameter):
-    """RecordedParameter object representing a parameter in a system that is logged."""
+    """LoggedParameter object representing a parameter in a system that is logged."""
 
 @dataclass(frozen=True)
 class ConnectionPoint(SystemParameter):
