@@ -1,4 +1,4 @@
-.. _subpackeges_doc:
+.. _API Documentation:
 
 Packages Documentation
 ======================

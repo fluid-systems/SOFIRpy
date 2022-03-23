@@ -7,7 +7,7 @@ Welcome to FairSim's documentation!
    overview
    installation
    getting_started
-   packages doc <subpackages_doc/fair_sim>
+   API Documentation <API Documentation/fair_sim>
 
 
 

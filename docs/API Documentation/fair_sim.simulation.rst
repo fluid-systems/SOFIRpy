@@ -6,6 +6,11 @@ fair_sim.simulation package
     :no-undoc-members:
     :show-inheritance:
 
+UML Diagram of the simulation package
+-------------------------------------
+
+    
+
 Submodules
 ----------
 
