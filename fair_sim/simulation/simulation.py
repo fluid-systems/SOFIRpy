@@ -36,6 +36,9 @@ class SystemParameter:
     system: System
     name: str
 
+@dataclass(frozen=True)
+class LoggedParameter(SystemParameter):
+    """RecordedParameter object representing a parameter in a system that is logged."""
 
 @dataclass(frozen=True)
 class ConnectionPoint(SystemParameter):
@@ -64,7 +67,7 @@ class Simulation:
         self,
         systems: list[System],
         connections: list[Connection],
-        parameters_to_record: Optional[list[SystemParameter]] = None,
+        parameters_to_log: Optional[list[LoggedParameter]] = None,
     ) -> None:
         """Initialize Simulation object.
 
@@ -72,15 +75,15 @@ class Simulation:
             systems (list[System]): list of systems which are to be simulated
             connections (list[Connection]): list of connections between the
                  systems
-            parameters_to_record (list[SystemParameter], optional): List of
+            parameters_to_log (list[LoggedParameter], optional): List of
                 Parameters that should be logged. Defaults to None.
         """
         self.systems = systems
         self.connections = connections
-        if parameters_to_record is None:
-            parameters_to_record = []
-        self.parameters_to_record = parameters_to_record
-        self.results = self.create_result_df(self.parameters_to_record)
+        if parameters_to_log is None:
+            parameters_to_log = []
+        self.parameters_to_log = parameters_to_log
+        self.results = self.create_result_df(self.parameters_to_log)
 
     def simulate(
         self, stop_time: float, step_size: float, start_time: float = 0.0
@@ -108,6 +111,10 @@ class Simulation:
                 self.set_systems_inputs()
                 self.do_step(time)
                 bar()
+
+        for system in self.systems:
+            if isinstance(system.simulation_entity, Fmu):
+                system.simulation_entity.conclude_simulation_process()
 
         return self.results
 
@@ -141,7 +148,7 @@ class Simulation:
             time_step (int): current time step
         """
         new_value_row = [time]
-        for parameter in self.parameters_to_record:
+        for parameter in self.parameters_to_log:
             system = parameter.system
             parameter_name = parameter.name
             value = system.simulation_entity.get_parameter_value(parameter_name)
@@ -150,12 +157,12 @@ class Simulation:
         self.results.loc[time_step] = new_value_row
 
     def create_result_df(
-        self, parameters_to_log: list[SystemParameter]
+        self, parameters_to_log: list[LoggedParameter]
     ) -> pd.DataFrame:
         """Initialise the result dataframe. By default the first column contains the time.
 
         Args:
-            parameters_to_log (list[SystemParameter]): list of parameters that
+            parameters_to_log (list[LoggedParameter]): list of parameters that
                 should be logged
 
         Returns:
@@ -176,7 +183,7 @@ class Simulation:
             not be obtained it is set to None.
         """
         units = {}
-        for parameter in self.parameters_to_record:
+        for parameter in self.parameters_to_log:
             system = parameter.system
             parameter_name = parameter.name
             try:
@@ -446,7 +453,7 @@ def init_connections(
 
 def init_parameter_list(
     parameters_to_log: Optional[dict[str, list[str]]], systems: dict[str, System]
-) -> list[SystemParameter]:
+) -> list[LoggedParameter]:
     """Initialize all parameters that should be logged.
 
     Args:
@@ -456,9 +463,9 @@ def init_parameter_list(
             the corresponding System instance as values.
 
     Returns:
-        list[SystemParameter]: List of system parameters that should be logged.
+        list[LoggedParameter]: List of system parameters that should be logged.
     """
-    log: list[SystemParameter] = []
+    log: list[LoggedParameter] = []
 
     if parameters_to_log is None:
         return log
@@ -466,7 +473,7 @@ def init_parameter_list(
     for system_name in list(parameters_to_log.keys()):
         system = systems[system_name]
         for parameter_name in parameters_to_log[system_name]:
-            parameter_to_log = SystemParameter(system, parameter_name)
+            parameter_to_log = LoggedParameter(system, parameter_name)
             log.append(parameter_to_log)
 
     return log
