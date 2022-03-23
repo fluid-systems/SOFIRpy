@@ -19,7 +19,6 @@ class Fmu(SimulationEntity):
         self.step_size = step_size
         self.model_description = None
         self.fmu = None
-        self.model_description = None
         self.model_vars = None
         self.unit_vars = None
 
