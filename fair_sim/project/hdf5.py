@@ -287,7 +287,6 @@ class HDF5:
         If mode is set to "full", the whole dataset is stored at <data>, if it
         is set to "short" only a description of the data is stored.
         """
-        # TODO test '/' in name
         if "/" in name:
             split_name = name.split("/", 1)
             base_name = split_name[0]
