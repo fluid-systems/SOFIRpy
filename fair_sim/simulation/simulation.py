@@ -1,4 +1,4 @@
-"""This module allows to simulate multiple fmus and controllers."""
+"""This module allows to co-simulate multiple fmus and models written in python."""
 
 from __future__ import annotations
 from dataclasses import dataclass
@@ -16,7 +16,7 @@ class System:
     """System object representing a simulation entity.
 
     Args:
-            simulation_entity (SimulationEntity): fmu or controller
+            simulation_entity (SimulationEntity): fmu or python model
             name (str): name of the system
     """
 
@@ -199,15 +199,15 @@ def simulate(
     stop_time: Union[float, int],
     step_size: float,
     fmu_infos: Optional[list[dict[str, Union[str, list[dict[str, str]]]]]] = None,
-    control_infos: Optional[list[dict[str, Union[str, list[dict[str, str]]]]]] = None,
-    control_classes: Optional[dict[str, SimulationEntity]] = None,
+    model_infos: Optional[list[dict[str, Union[str, list[dict[str, str]]]]]] = None,
+    model_classes: Optional[dict[str, SimulationEntity]] = None,
     parameters_to_log: Optional[dict[str, list[str]]] = None,
     get_units: Optional[bool] = False,
 ) -> Union[pd.DataFrame, tuple[pd.DataFrame, dict[str, str]]]:
-    """Simulate fmus and controllers."
+    """Simulate fmus and models written in python."
 
-    Any number of controllers and fmus can be simulated, but at least one
-    controller or fmu has to be simulated.
+    Any number of python models and fmus can be simulated, but at least one
+    python model or fmu has to be simulated.
 
     Args:
         stop_time (Union[float,int]): stop time for the simulation
@@ -264,20 +264,20 @@ def simulate(
             ... ]
 
             Note: The name of the fmus can be chosen arbitrarily, but each name
-            in the controllers and the fmus must occur only once.
+            in 'fmu_infos' and 'model_infos' must occur only once.
             Defaults to None.
-        control_infos (Optional[list[dict[str, Union[str, list[dict[str, str]]]]]], optional):
-            Defines which controllers should be simulated and how they are
+        model_infos (Optional[list[dict[str, Union[str, list[dict[str, str]]]]]], optional):
+            Defines which python models should be simulated and how they are
             connected to other systems. It needs to have the same format as
             'fmu_infos' with the difference that
             the key "path" is not part of the dictionaries.
-            Note: The name of the controllers can be chosen arbitrarily, but
-            each name in the controllers and the fmus must occur only once.
+            Note: The name of the models can be chosen arbitrarily, but each
+            name in 'fmu_infos' and 'model_infos' must occur only once.
             Defaults to None.
-        control_classes (Optional[dict[str, SimulationEntity]], optional): Dictionary
-            with the name of the controller as keys and a instance of the
-            controller class as values. The name in the dictionary must be
-            chosen according to the names specified in 'control_infos'.
+        model_classes (Optional[dict[str, SimulationEntity]], optional): Dictionary
+            with the name of the python model as keys and a instance of the
+            model class as values. The name in the dictionary must be
+            chosen according to the names specified in 'model_infos'.
             Defaults to None.
         parameters_to_log (Optional[dict[str, list[str]]], optional):
             Dictionary that defines which parameters should be logged.
@@ -286,7 +286,7 @@ def simulate(
             >>> parameters_to_log =
             ... {
             ...     "<name of system 1 (corresponding to the names specified in"
-            ...     "'control_infos' or 'fmu_infos')>":
+            ...     "'model_infos' or 'fmu_infos')>":
             ...     [
             ...         "<name of parameter 1>",
             ...         "<name of parameter 2>",
@@ -306,9 +306,9 @@ def simulate(
         TypeError: start_time type was invalid
         TypeError: step_size type was invalid
         TypeError: fmu_infos type was invalid
-        TypeError: control_infos type was invalid
-        ValueError: fmu_infos and control_infos were 'None'
-        TypeError: control_classes type was invalid
+        TypeError: model_infos type was invalid
+        ValueError: fmu_infos and model_infos were 'None'
+        TypeError: model_classes type was invalid
         ValueError: start_time value was invalid
         ValueError: step_size value was invalid
 
@@ -328,16 +328,16 @@ def simulate(
     if fmu_infos and not isinstance(fmu_infos, list):
         raise TypeError(f"'fmu_infos' is {type(fmu_infos)}; expected list")
 
-    if control_infos and not isinstance(control_infos, list):
-        raise TypeError(f"'control_infos' is {type(control_infos)}; expected list")
+    if model_infos and not isinstance(model_infos, list):
+        raise TypeError(f"'model_infos' is {type(model_infos)}; expected list")
 
-    if not fmu_infos and not control_infos:
+    if not fmu_infos and not model_infos:
         raise ValueError(
-            "'fmu_infos' and 'control_infos' are empty; expected al least one to be not empty"
+            "'fmu_infos' and 'model_infos' are empty; expected al least one to be not empty"
         )
 
-    if control_classes and not isinstance(control_classes, dict):
-        raise TypeError(f"'control_classes' is {type(control_classes)}; expected dict")
+    if model_classes and not isinstance(model_classes, dict):
+        raise TypeError(f"'model_classes' is {type(model_classes)}; expected dict")
 
     if stop_time <= 0:
         raise ValueError(f"stop_time is {stop_time}; expected > 0")
@@ -347,13 +347,13 @@ def simulate(
 
     if fmu_infos is None:
         fmu_infos = []
-    if control_infos is None:
-        control_infos = []
-    if control_classes is None:
-        control_classes = {}
+    if model_infos is None:
+        model_infos = []
+    if model_classes is None:
+        model_classes = {}
 
-    systems = init_systems(fmu_infos, control_infos, control_classes, step_size)
-    connections = init_connections(fmu_infos + control_infos, systems)
+    systems = init_systems(fmu_infos, model_infos, model_classes, step_size)
+    connections = init_connections(fmu_infos + model_infos, systems)
     _parameters_to_log = init_parameter_list(parameters_to_log, systems)
 
     simulator = Simulation(list(systems.values()), connections, _parameters_to_log)
@@ -369,8 +369,8 @@ def simulate(
 
 def init_systems(
     fmu_infos: list[dict[str, Union[str, list[dict[str, str]]]]],
-    control_infos: list[dict[str, Union[str, list[dict[str, str]]]]],
-    control_classes: dict[str, SimulationEntity],
+    model_infos: list[dict[str, Union[str, list[dict[str, str]]]]],
+    model_classes: dict[str, SimulationEntity],
     step_size: float,
 ) -> dict[str, System]:
     """Initialize all System object and stores them in a dictionary.
@@ -379,11 +379,11 @@ def init_systems(
         fmu_infos (list[dict[str, Union[str, list[dict[str, str]]]]]): Defines
             which fmus should be simulated and how they are connected to other
             systems.
-        control_infos (list[dict[str, Union[str, list[dict[str, str]]]]]):
-            Defines which controllers should be simulated and how they are
+        model_infos (list[dict[str, Union[str, list[dict[str, str]]]]]):
+            Defines which python models should be simulated and how they are
             connected to other systems.
-        control_classes (dict[str, SimulationEntity]): Dictionary with the name of
-            the controller as keys and a instance of the controller class as
+        model_classes (dict[str, SimulationEntity]): Dictionary with the name of
+            the models as keys and a instance of the model class as
             values.
         step_size (float): step size of the simulation
 
@@ -402,12 +402,12 @@ def init_systems(
         systems[fmu_name] = system
         print(f"FMU '{fmu_name}' initialized.")
 
-    for control_info in control_infos:
-        control_name: str = control_info["name"]
-        controller = control_classes[control_name]
-        system = System(controller, control_name)
-        systems[control_name] = system
-        print(f"Controller '{control_name}' initialized.")
+    for model_info in model_infos:
+        model_name: str = model_info["name"]
+        py_model = model_classes[model_name]
+        system = System(py_model, model_name)
+        systems[model_name] = system
+        print(f"Python model '{model_name}' initialized.")
 
     return systems
 
