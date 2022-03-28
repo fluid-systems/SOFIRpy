@@ -36,7 +36,7 @@ data2_group_name = "constants"
 hdf5.store_data(data3_name, data3, data2_group_name)
 
 # get the file structure
-file_structure = hdf5.get_hdf5_structure()
+file_structure = hdf5.read_hdf5_structure()
 print(file_structure)
 
 # get the entire hdf5 data content
