@@ -7,8 +7,10 @@ Welcome to FairSim's documentation!
    overview
    installation
    getting_started
+   connect_systems
+   limitations
+   release_notes
    API Documentation <API Documentation/fair_sim>
-
 
 
 Indices and tables

@@ -2,7 +2,7 @@ Overview
 ========
 
 This package provides a framework to co-simulate Functional Mock-up Units (FMU)
-with custom models written in python, e.g. controllers and to store the data and
+with custom models written in python and to store the data and
 meta data of the simulation according to the Research Data Management (RDM).
 Additionally the package provides functionalities to export a OpenModelica or
 Dymola model as a fmu.
