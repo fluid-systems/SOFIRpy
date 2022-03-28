@@ -130,6 +130,20 @@ class HDF5:
             for name, attr in attributes.items():
                 dataset.attrs[name] = attr
 
+    def delete_attribute(self, path: str, attribute_name: str) -> None:
+        """Deletes a attribute of a hdf5 Dataset or Group.
+
+        Args:
+            path (str): hdf5 path to the dataset or group.
+            attribute_name (str): Name of the attribute.
+        """
+        with h5py.File(str(self.hdf5_path), "a") as hdf5:
+            dataset = hdf5[path]
+            if attribute_name not in dataset.attrs.keys():
+                print(f"Attribute name '{attribute_name}' does not exit at '{path}'.")
+                return
+            del dataset.attrs[attribute_name]
+
     def read_data(
         self, data_name: str, group_path: str, get_attributes: Optional[bool] = False
     ) -> Union[Any, tuple[Any, dict[str, Any]]]:
@@ -241,7 +255,7 @@ class HDF5:
                 raise ValueError(f"'{path}' does not lead to a dataset.")
             del hdf5[path]
 
-    def get_hdf5_structure(
+    def read_hdf5_structure(
         self, group_path: Optional[str] = None
     ) -> Union[None, dict[str, Any]]:
         """Reads the structure of a hdf5 group.
