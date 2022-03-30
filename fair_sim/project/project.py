@@ -1,5 +1,6 @@
 """This module allows to take actions on a given hdf5 file and directory simultaneously."""
 
+from os import rename
 from pathlib import Path
 from typing import Optional, Union
 from fair_sim.project.hdf5 import HDF5
@@ -53,7 +54,7 @@ class Project:
         source_path: Union[str, Path],
         folder_name: str,
         copy: Optional[bool] = True,
-        new_file_name: Optional[Union[str, None]] = None,
+        new_file_name: Optional[str] = None,
     ) -> None:
         """Store a file in the project directory and a reference this file in the hdf5.
 
@@ -62,21 +63,26 @@ class Project:
             folder_name (str): Name of the folder the file should be stored in.
             copy (Optional[bool], optional): If true the file will be copied
                 from it's source path else it will be moved. Defaults to True.
-            new_file_name (Optional[Union[str, None]], optional): If specified
+            new_file_name (Optional[str], optional): If specified
                 the file will be renamed accordingly. Defaults to None.
         """
+
+        file_name = new_file_name if new_file_name else source_path.stem
+
         if copy:
-            target_path = self.project_dir.copy_file(
-                source_path, self.project_dir.project_directory / folder_name
+            target_path = self.project_dir.copy_and_rename_file(
+                source_path,
+                self.project_dir.project_directory / folder_name,
+                file_name
             )
         else:
-            target_path = self.project_dir.move_file(
-                source_path, self.project_dir.project_directory / folder_name
+            target_path = self.project_dir.move_and_rename_file(
+                source_path,
+                self.project_dir.project_directory / folder_name,
+                file_name
             )
-        if new_file_name:
-            target_path = self.project_dir.rename_file(target_path, new_file_name)
 
-        self.hdf5.store_data(target_path.stem, str(target_path), folder_name)
+        self.hdf5.store_data(target_path.name, str(target_path), folder_name)
 
     def __repr__(self) -> str:
         return f"Project with project directory '{str(self.project_dir.project_directory)}' and hdf5 path '{str(self.hdf5.hdf5_path)}'"

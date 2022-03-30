@@ -345,9 +345,8 @@ class DymolaFmuExport(FmuExport):
             target_directory (Path): Path to the target directory.
         """
         new_mos_path = target_directory / self.mos_file_path.name
-        moved = utils.move_file(self.mos_file_path, new_mos_path)
-        if moved:
-            self.mos_file_path = new_mos_path
+        utils.move_file(self.mos_file_path, new_mos_path)
+        self.mos_file_path = new_mos_path
 
     def move_log_file(self, target_directory: Path) -> None:
         """Move the log file to a target directory.
@@ -356,9 +355,8 @@ class DymolaFmuExport(FmuExport):
             target_directory (Path): Path to the target directory.
         """
         new_log_path = target_directory / self.simulator_log_path.name
-        moved = utils.move_file(self.simulator_log_path, new_log_path)
-        if moved:
-            self.simulator_log_path = new_log_path
+        utils.move_file(self.simulator_log_path, new_log_path)
+        self.simulator_log_path = new_log_path
 
 
 def export_dymola_model(

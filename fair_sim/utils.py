@@ -32,50 +32,44 @@ def delete_paths(paths: list[Path]) -> None:
         delete_file_or_directory(path)
 
 
-def move_file(source_path: Path, target_path: Path, print_status: bool = False) -> bool:
+def move_file(source_path: Path, target_path: Path) -> None:
 
     if source_path == target_path:
-        return True
-    if source_path.exists():
-        if target_path.exists():
-            overwrite = _get_user_input(target_path)
-            if not overwrite:
-                raise FileExistsError(f"{target_path} already exists")
+        return
+    if not source_path.exists():
+        raise FileNotFoundError(f"{source_path} does not exits.")
+    if target_path.exists():
+        overwrite = _get_user_input(target_path)
+        if not overwrite:
+            raise FileExistsError(f"{target_path} already exists")
+    if not target_path.parent.exists():
+        target_path.parent.mkdir(parents=True)
 
-        source_path.replace(target_path)
-        return True
-    else:
-        if print_status:
-            print(f"{source_path} doesn't exists. Can't move file.")
-        return False
+    source_path.replace(target_path)
 
-
-def move_files(
-    source_paths: list[Path], target_directory: Path, print_status: bool = False
-) -> None:
+def move_files(source_paths: list[Path], target_directory: Path) -> None:
 
     for source_path in source_paths:
         target_path = target_directory / source_path.name
-        move_file(source_path, target_path, print_status)
+        move_file(source_path, target_path)
 
 
 def copy_file(source_path: Path, target_path: Path) -> None:
 
-    if source_path.exists():
-        if source_path.is_file():
-            if source_path == target_path:
-                return
-            if target_path.exists():
-                overwrite = _get_user_input(target_path)
-                if not overwrite:
-                    raise FileExistsError(f"{target_path} already exists")
-
-            shutil.copy(source_path, target_path)
-        else:
-            raise ValueError(f"{source_path} is a directory; expected file")
-    else:
+    if not source_path.exists():
         raise FileNotFoundError(f"{source_path} does not exits.")
+    if not source_path.is_file():
+        raise ValueError(f"{source_path} is a directory; expected file")
+    if source_path == target_path:
+        return
+    if target_path.exists():
+        overwrite = _get_user_input(target_path)
+        if not overwrite:
+            raise FileExistsError(f"{target_path} already exists")
+    if not target_path.parent.exists():
+        target_path.parent.mkdir(parents=True)
 
+    shutil.copy(source_path, target_path)
 
 def _get_user_input(target_path: Union[Path, str], type="path") -> bool:
 
@@ -90,7 +84,7 @@ def _get_user_input(target_path: Union[Path, str], type="path") -> bool:
                 print("Enter 'y' or 'n'.")
 
 
-def rename_file(file_path: Path, new_name: str):
+def rename_file(file_path: Path, new_name: str) -> Path:
 
     if not file_path.exists():
         raise FileNotFoundError(f"{file_path} does not exist")

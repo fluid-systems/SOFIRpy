@@ -161,7 +161,7 @@ class ProjectDir:
 
         target_directory = self._dir_setter(target_directory, "target_directroy")
         target_path = target_directory / source_path.name
-        utils.move_file(source_path, target_path, print_status=True)
+        utils.move_file(source_path, target_path)
 
         return target_path
 
@@ -192,7 +192,7 @@ class ProjectDir:
             target_directory = self.current_folder
         target_directory = self._dir_setter(target_directory, "target_directroy")
 
-        utils.move_files(source_paths, target_directory, print_status=True)
+        utils.move_files(source_paths, target_directory)
 
     def copy_file(
         self,
@@ -252,3 +252,21 @@ class ProjectDir:
         """
         folder_path = self.project_directory / folder_name
         utils.delete_file_or_directory(folder_path, print_status=True)
+
+    def copy_and_rename_file(self, source_path: Union[Path, str], target_dir: Union[Path, str], new_name: str) -> Path:
+
+        source_path = utils.convert_str_to_path(source_path, "source_path")
+        target_dir = utils.convert_str_to_path(target_dir, "target_dir")
+        target_path = target_dir / f"{new_name}{source_path.suffix}"
+        utils.copy_file(source_path, target_path)
+        
+        return target_path 
+
+    def move_and_rename_file(self, source_path: Union[Path, str], target_dir: Union[Path, str], new_name: str) -> Path:
+
+        source_path = utils.convert_str_to_path(source_path, "source_path")
+        target_dir = utils.convert_str_to_path(target_dir, "target_dir")
+        target_path = target_dir / f"{new_name}{source_path.suffix}"
+        utils.move_file(source_path, target_path)
+
+        return target_path

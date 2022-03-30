@@ -99,6 +99,5 @@ class FmuExport:
             target_directory (Path): Path to the target directory.
         """
         new_fmu_path =  target_directory / self.fmu_path.name
-        moved = utils.move_file(self.fmu_path, new_fmu_path)
-        if moved:
-            self._fmu_path = new_fmu_path
+        utils.move_file(self.fmu_path, new_fmu_path)
+        self._fmu_path = new_fmu_path
