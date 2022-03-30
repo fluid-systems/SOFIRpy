@@ -4,7 +4,7 @@
 
 from pathlib import Path
 import numpy as np
-from fair_sim import HDF5
+from sofirpy import HDF5
 
 hdf5_path = Path(__file__).parent / "example.hdf5"
 

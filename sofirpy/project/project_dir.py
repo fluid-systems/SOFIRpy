@@ -2,7 +2,7 @@
 
 from pathlib import Path
 from typing import Optional, Union
-import fair_sim.utils as utils
+import sofirpy.utils as utils
 
 
 class ProjectDir:

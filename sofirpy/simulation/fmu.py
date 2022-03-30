@@ -2,7 +2,7 @@ from pathlib import Path
 from typing import Optional, Union
 from fmpy import extract, read_model_description
 from fmpy.fmi2 import FMU2Slave
-from fair_sim.simulation.simulation_entity import SimulationEntity
+from sofirpy.simulation.simulation_entity import SimulationEntity
 
 
 class Fmu(SimulationEntity):

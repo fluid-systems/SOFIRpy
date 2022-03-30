@@ -3,8 +3,8 @@
 from os import rename
 from pathlib import Path
 from typing import Optional, Union
-from fair_sim.project.hdf5 import HDF5
-from fair_sim.project.project_dir import ProjectDir
+from sofirpy.project.hdf5 import HDF5
+from sofirpy.project.project_dir import ProjectDir
 
 
 class Project:

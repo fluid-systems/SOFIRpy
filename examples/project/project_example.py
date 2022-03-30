@@ -1,5 +1,5 @@
 from pathlib import Path
-from fair_sim import Project
+from sofirpy import Project
 
 # Initialize a project by giving it the path to a project directory and the
 # path to a hdf5. If the given pathts do not exist, they will be created.

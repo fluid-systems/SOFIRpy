@@ -7,8 +7,8 @@ from html import unescape
 import re
 from datetime import datetime
 import fmpy
-from fair_sim.fmu_export.fmu_export import FmuExport
-import fair_sim.utils as utils
+from sofirpy.fmu_export.fmu_export import FmuExport
+import sofirpy.utils as utils
 
 
 class DymolaFmuExport(FmuExport):

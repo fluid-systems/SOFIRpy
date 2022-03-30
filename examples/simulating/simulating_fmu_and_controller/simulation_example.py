@@ -1,5 +1,5 @@
 from pathlib import Path
-from fair_sim import simulate
+from sofirpy import simulate
 from discrete_pid import PID # custom implemented pid controller 
 
 fmu_path = Path(__file__).parent / "DC_Motor.fmu"

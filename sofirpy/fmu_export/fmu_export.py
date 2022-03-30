@@ -2,7 +2,7 @@
 
 from pathlib import Path
 from typing import Union
-from fair_sim import utils
+from sofirpy import utils
 
 class FmuExport:
     """Object that sets the paths for the fmu export."""

@@ -7,8 +7,8 @@ from typing import Optional, Union
 import numpy as np
 import pandas as pd
 from alive_progress import alive_bar
-from fair_sim.simulation.simulation_entity import SimulationEntity
-from fair_sim.simulation.fmu import Fmu
+from sofirpy.simulation.simulation_entity import SimulationEntity
+from sofirpy.simulation.fmu import Fmu
 
 
 @dataclass(frozen=True)

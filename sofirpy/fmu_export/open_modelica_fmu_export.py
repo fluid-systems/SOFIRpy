@@ -3,8 +3,8 @@
 from pathlib import Path
 from typing import Union
 from OMPython import ModelicaSystem
-from fair_sim.fmu_export.fmu_export import FmuExport
-from fair_sim import utils
+from sofirpy.fmu_export.fmu_export import FmuExport
+from sofirpy import utils
 
 
 class OpenModelicaFmuExport(FmuExport):

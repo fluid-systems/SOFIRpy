@@ -1,6 +1,6 @@
 from pathlib import Path
 import json
-from fair_sim import export_dymola_model
+from sofirpy import export_dymola_model
 
 dir_path = Path(__file__).parent
 model_path = dir_path / "Building.mo"

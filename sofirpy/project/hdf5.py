@@ -3,7 +3,7 @@
 from pathlib import Path
 from typing import Any, Optional, Union
 import h5py
-from fair_sim import utils
+from sofirpy import utils
 
 
 class HDF5:
