@@ -179,20 +179,8 @@ class ProjectDir:
                 Target Directory the file should be moved to. If not specified
                 the file is moved to the current folder. Defaults to None.
         """
-        source_paths = list(
-            map(
-                lambda path: utils.convert_str_to_path(path, "source_paths"), source_paths
-            )
-        )
-
-        if target_directory is None:
-            if self.current_folder is None:
-                print("'current_folder' is not set")
-                return
-            target_directory = self.current_folder
-        target_directory = self._dir_setter(target_directory, "target_directroy")
-
-        utils.move_files(source_paths, target_directory)
+        for source_path in source_paths:
+            self.move_file(source_path, target_directory)
 
     def copy_file(
         self,
@@ -205,7 +193,7 @@ class ProjectDir:
             source_path (Union[Path, str]): Source path of the file that should
                 be copied.
             target_directory (Optional[Union[Path, str]], optional): Target
-                Directory the file should be moved to. If not specified the
+                directory the file should be moved to. If not specified the
                 file is moved to the current folder. Defaults to None.
 
         Returns:
@@ -254,7 +242,18 @@ class ProjectDir:
         utils.delete_file_or_directory(folder_path, print_status=True)
 
     def copy_and_rename_file(self, source_path: Union[Path, str], target_dir: Union[Path, str], new_name: str) -> Path:
+        """Copy and rename a file.
 
+        Args:
+            source_path (Union[Path, str]): Source path of the file that should
+                be copied and renamed.
+            target_dir (Union[Path, str]): Target directory the file should be
+                copied to.
+            new_name (str): New file name.
+
+        Returns:
+            Path: Path to the copied file.
+        """
         source_path = utils.convert_str_to_path(source_path, "source_path")
         target_dir = utils.convert_str_to_path(target_dir, "target_dir")
         target_path = target_dir / f"{new_name}{source_path.suffix}"
@@ -263,7 +262,18 @@ class ProjectDir:
         return target_path 
 
     def move_and_rename_file(self, source_path: Union[Path, str], target_dir: Union[Path, str], new_name: str) -> Path:
+        """Move and rename a file.s
 
+        Args:
+            source_path (Union[Path, str]): Source path of the file that should
+                be moved and renamed.
+            target_dir (Union[Path, str]): Target directory the file should be
+                moved to.
+            new_name (str): New file name.
+
+        Returns:
+            Path: Path to the moved file.
+        """
         source_path = utils.convert_str_to_path(source_path, "source_path")
         target_dir = utils.convert_str_to_path(target_dir, "target_dir")
         target_path = target_dir / f"{new_name}{source_path.suffix}"
