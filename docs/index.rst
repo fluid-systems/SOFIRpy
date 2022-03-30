@@ -11,6 +11,7 @@ Welcome to FairSim's documentation!
    limitations
    release_notes
    API Documentation <API Documentation/fair_sim>
+   contribution
 
 
 Indices and tables
