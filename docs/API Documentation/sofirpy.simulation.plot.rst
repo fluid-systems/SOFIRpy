@@ -1,7 +1,7 @@
-fair_sim.simulation.plot module
+sofirpy.simulation.plot module
 ===============================
 
-.. automodule:: fair_sim.simulation.plot
+.. automodule:: sofirpy.simulation.plot
     :members:
     :no-undoc-members:
     :show-inheritance:

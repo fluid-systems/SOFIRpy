@@ -1,7 +1,7 @@
-fair_sim.simulation package
+sofirpy.simulation package
 ===========================
 
-.. automodule:: fair_sim.simulation
+.. automodule:: sofirpy.simulation
     :members:
     :no-undoc-members:
     :show-inheritance:
@@ -16,7 +16,7 @@ Submodules
 
 .. toctree::
 
-   fair_sim.simulation.simulation
-   fair_sim.simulation.fmu
-   fair_sim.simulation.simulation_entity
-   fair_sim.simulation.plot
+   sofirpy.simulation.simulation
+   sofirpy.simulation.fmu
+   sofirpy.simulation.simulation_entity
+   sofirpy.simulation.plot

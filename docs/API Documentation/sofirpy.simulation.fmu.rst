@@ -1,7 +1,7 @@
-fair_sim.simulation.fmu module
+sofirpy.simulation.fmu module
 ==============================
 
-.. automodule:: fair_sim.simulation.fmu
+.. automodule:: sofirpy.simulation.fmu
     :members:
     :no-undoc-members:
     :show-inheritance:

@@ -11,7 +11,7 @@ For each input of a system it must be defined with which output of another syste
 input is to be connected. 
 For the shown system the variables 'fmu_infos' and 'model_infos' must be defined as follows. 
 The variables 'fmu_infos' and 'model_infos' are inputs for the 
-:py:func:`simulate() <fair_sim.simulation.simulation.simulate>`
+:py:func:`simulate() <sofirpy.simulation.simulation.simulate>`
 function.
 
 .. code-block:: python3

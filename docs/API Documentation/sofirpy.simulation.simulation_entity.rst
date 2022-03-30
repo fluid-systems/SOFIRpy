@@ -1,7 +1,7 @@
-fair_sim.simulation.simulation_entity module
+sofirpy.simulation.simulation_entity module
 ============================================
 
-.. automodule:: fair_sim.simulation.simulation_entity
+.. automodule:: sofirpy.simulation.simulation_entity
     :members:
     :no-undoc-members:
     :show-inheritance:

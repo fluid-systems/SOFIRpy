@@ -1,4 +1,4 @@
-Welcome to FairSim's documentation!
+Welcome to SOFIRpy's documentation!
 ====================================
 
 .. toctree::
@@ -10,7 +10,7 @@ Welcome to FairSim's documentation!
    connect_systems
    limitations
    release_notes
-   API Documentation <API Documentation/fair_sim>
+   API Documentation <API Documentation/sofirpy>
    contribution
 
 

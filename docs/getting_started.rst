@@ -1,9 +1,9 @@
 Getting started
 ===============
 
-To start using fair_sim, import the package::
+To start using sofirpy, import the package::
 
-	import fair_sim	
+	import sofirpy	
 
 The following 3 examples demonstrate how to export a Modelica model as a fmu,
 simulate a fmu and a controller and how to initialize a project.
@@ -11,7 +11,7 @@ simulate a fmu and a controller and how to initialize a project.
 Exporting a modelica model
 --------------------------
 
-fair_sim allows to export a OpenModelica and Dymola model as a fmu.
+sofirpy allows to export a OpenModelica and Dymola model as a fmu.
 
 **Exporting a OpenModelica model**
 
@@ -38,4 +38,4 @@ Initializing a project and storing data
 Additional examples
 -------------------
 
-Additional examples can be found `here. <https://git.rwth-aachen.de/fst-tuda/projects/digitalization/fair_sim/fair_sim_release/-/tree/master/examples>`_
+Additional examples can be found `here. <https://git.rwth-aachen.de/sofirpy/sofirpy/-/tree/master/examples>`_

@@ -1,7 +1,7 @@
-fair_sim.project.project module
+sofirpy.project.project module
 ===================================
 
-.. automodule:: fair_sim.project.project
+.. automodule:: sofirpy.project.project
     :members:
     :no-undoc-members:
     :show-inheritance:

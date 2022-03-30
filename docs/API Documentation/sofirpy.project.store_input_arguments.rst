@@ -1,7 +1,7 @@
-fair_sim.project.store_input_arguments module
+sofirpy.project.store_input_arguments module
 =============================================
 
-.. automodule:: fair_sim.project.store_input_arguments
+.. automodule:: sofirpy.project.store_input_arguments
     :members:
     :no-undoc-members:
     :show-inheritance:

@@ -3,7 +3,7 @@ Release notes
 
 v0.1.0
 ------
-The first release of fair_sim. fair_sim provides functionalities to:
+The first release of sofirpy. sofirpy provides functionalities to:
 
 - export Dymola and OpenModelica models as FMUs
 - co-simulate FMUs with custom python models

@@ -1,6 +1,6 @@
 # The hdf5 module makes is easy to browse a hdf5 file by providing 
 # methodes to read the content of entire hdf5 groups.
-# Start by importing the HDF5 class from fair_sim.
+# Start by importing the HDF5 class from sofirpy.
 
 from pathlib import Path
 import numpy as np
