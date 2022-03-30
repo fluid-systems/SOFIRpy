@@ -204,7 +204,7 @@ def simulate(
     parameters_to_log: Optional[dict[str, list[str]]] = None,
     get_units: Optional[bool] = False,
 ) -> Union[pd.DataFrame, tuple[pd.DataFrame, dict[str, str]]]:
-    """Simulate fmus and models written in python."
+    """Simulate fmus and models written in python.
 
     Any number of python models and fmus can be simulated, but at least one
     python model or fmu has to be simulated.
