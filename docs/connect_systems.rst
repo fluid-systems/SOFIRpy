@@ -5,7 +5,7 @@ The following example demonstrates how multiple systems can be connected for the
 
 Consider the following systems. 
 
-.. image:: Images/connection_diagram.png
+.. image:: Images/connection_diagram.svg
 
 For each input of a system it must be defined with which output of another system the
 input is to be connected. 
