@@ -1,6 +1,7 @@
  # SOFIRpy
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
+[![Documentation Status](https://readthedocs.org/projects/sofirpy/badge/?version=latest)](https://sofirpy.readthedocs.io/en/latest/?badge=latest)
 
 Co-**S**imulation **O**f **F**unctional Mock-up Units (FMU) with **I**ntegrated
 **R**esearch Data Management (SOFIRpy) is a python package that lets you
