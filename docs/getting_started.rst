@@ -3,15 +3,15 @@ Getting started
 
 To start using sofirpy, import the package::
 
-	import sofirpy	
+	import sofirpy
 
-The following 3 examples demonstrate how to export a Modelica model as a fmu,
-simulate a fmu and a controller and how to initialize a project.
+The following 3 examples demonstrate how to export a Modelica model as a FMU,
+simulate a FMU and a controller and how to initialize a project.
 
 Exporting a modelica model
 --------------------------
 
-sofirpy allows to export a OpenModelica and Dymola model as a fmu.
+sofirpy allows to export a OpenModelica and Dymola model as a FMU.
 
 **Exporting a OpenModelica model**
 
@@ -21,7 +21,7 @@ sofirpy allows to export a OpenModelica and Dymola model as a fmu.
 
 .. literalinclude:: ../examples/fmu_export/dymola_model_export/dymola_model_export_parameter_import_example.py
 
-Simulating a fmu and a Controller
+Simulating a FMU and a Controller
 ---------------------------------
 
 .. literalinclude:: ../examples/simulating/simulating_fmu_and_controller/simulation_example.py

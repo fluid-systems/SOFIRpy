@@ -1,11 +1,15 @@
 Overview
 ========
 
-This package provides a framework to co-simulate Functional Mock-up Units (FMU)
-with custom models written in python and to store the data and
-meta data of the simulation according to the Research Data Management (RDM).
-Additionally the package provides functionalities to export a OpenModelica or
-Dymola model as a fmu.
+Co- **S**\imulation **O**\f **F**\unctional Mock-up Units (FMU) with **I**\ntegrated
+**R**\esearch Data Management (SOFIRpy) is a python package that lets you
+co-simulate FMUs with custom models written in python.
+
+The package provides functionalities to:
+
+- Export Dymola and OpenModelica models as a FMU
+- Co-simulate FMUs with custom written models in python
+- Store data and meta data of the simulation inside a hdf5 file
 
 Use Cases
 ---------
@@ -19,3 +23,7 @@ the development of control systems, such as machine learning toolboxes, so that
 complex control strategies can be implemented.
 
 **Automation of Simulation workflow**
+
+Easy to use functionalities to store data inside a hdf5 allows to implement a
+automated simulation workflow (Example illustrating possible workflow coming in
+the future).
