@@ -24,6 +24,6 @@ complex control strategies can be implemented.
 
 **Automation of Simulation workflow**
 
-Easy to use functionalities to store data inside a hdf5 allows to implement a
-automated simulation workflow (Example illustrating possible workflow coming in
+Easy-to-use functionalities for storing data and meta data in a hdf5 file allows to implement
+custom automated simulation workflows. (Example illustrating possible workflow coming in
 the future).
