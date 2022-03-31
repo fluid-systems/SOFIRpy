@@ -10,18 +10,19 @@ from sofirpy import utils
 class OpenModelicaFmuExport(FmuExport):
     """Object that performs the OpenModelica fmu export"""
 
-    def __init__(self, model_path: Path) -> None:
+    def __init__(self, model_path: Path, model_name: str) -> None:
         """Initialize the OpenModelicaFmuExport object.
 
         Args:
             model_path (Path): Path to the modelica model that should
                 be exported
+            model_name (str): Name of the model.
         """
 
         self.dump_directory = Path.cwd()
         fmu_path = self.dump_directory / f"{model_path.stem}.fmu"
         super().__init__(model_path, fmu_path)
-        self.model_name = self.model_path.stem
+        self.model_name = model_name
 
         files_to_delete = [
             f"{self.model_name}.c",
@@ -97,12 +98,13 @@ class OpenModelicaFmuExport(FmuExport):
 
 
 def export_open_modelica_model(
-    model_path: Union[Path, str], output_directory: Union[Path, str]
+    model_path: Union[Path, str], model_name: str, output_directory: Union[Path, str]
 ) -> Union[OpenModelicaFmuExport, None]:
     """Exports a modelica model as an fmu and moves the fmu to the output directory
 
     Args:
         model_path (Union[Path, str]): Path to the modelica model that should be exported
+        model_name (str): Name of the model.
         output_directory (Union[Path, str]): Path to the output directory.
 
     Returns:
@@ -111,7 +113,7 @@ def export_open_modelica_model(
 
     model_path = utils.convert_str_to_path(model_path, "model_path")
 
-    om_fmu_export = OpenModelicaFmuExport(model_path)
+    om_fmu_export = OpenModelicaFmuExport(model_path, model_name)
     om_fmu_export.export_fmu()
 
     # delete unnecessary files
