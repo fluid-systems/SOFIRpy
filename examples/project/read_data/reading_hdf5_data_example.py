@@ -1,10 +1,10 @@
 # The hdf5 module makes is easy to browse a hdf5 file by providing 
 # methodes to read the content of entire hdf5 groups.
-# Start by importing the HDF5 class from fair_sim.
+# Start by importing the HDF5 class from sofirpy.
 
 from pathlib import Path
 import numpy as np
-from fair_sim import HDF5
+from sofirpy import HDF5
 
 hdf5_path = Path(__file__).parent / "example.hdf5"
 
@@ -36,7 +36,7 @@ data2_group_name = "constants"
 hdf5.store_data(data3_name, data3, data2_group_name)
 
 # get the file structure
-file_structure = hdf5.get_hdf5_structure()
+file_structure = hdf5.read_hdf5_structure()
 print(file_structure)
 
 # get the entire hdf5 data content

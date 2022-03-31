@@ -1,6 +1,6 @@
 from pathlib import Path
 import json
-from fair_sim import export_dymola_model
+from sofirpy import export_dymola_model
 
 dir_path = Path(__file__).parent
 model_path = dir_path / "Building.mo"
@@ -11,6 +11,7 @@ package_custom_sensors = dir_path / "Custom_Sensors.mo"
 packages = [package_custom_fittings, package_custom_pump, package_custom_sensors]
 output_direcotry = dir_path
 dymola_exe_path = r"C:\Program Files\Dymola 2018 FD01\bin64\Dymola.exe"
+model_name = "Building"
 
 # If many parameters have to be imported it is useful to store them in a JSON file.
 json_path = dir_path / "parameters.json"
@@ -28,9 +29,10 @@ model_modifiers = [
 export_dymola_model(
     dymola_exe_path,
     model_path,
+    model_name,
     output_direcotry,
     parameters=parameters,
     model_modifiers=model_modifiers,
     packages=packages,
-    keep_mos=False,
+    keep_mos=True,
 )

@@ -7,15 +7,15 @@ with open(rootdir / "README.md", 'r') as f:
     long_description = f.read()
 
 setup(
-    name="fair_sim",
+    name="SOFIRpy",
     version="0.1.0",
     author="Daniele Inturri",
-    author_email="daniele.inturri@sud.tu-darmstadt.de",
-    description="Framework for simulating fmus and controllers written in python.",
+    author_email="daniele.inturri@stud.tu-darmstadt.de",
+    description="Framework for simulating FMUs and custom models written in python.",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://git.rwth-aachen.de/fst-tuda/projects/digitalization/fair_sim/fair_sim_release",
-    packages= ["fair_sim", "fair_sim.fmu_export", "fair_sim.simulation", "fair_sim.project"],
+    url="https://git.rwth-aachen.de/sofirpy/sofirpy",
+    packages= ["sofirpy", "sofirpy.fmu_export", "sofirpy.simulation", "sofirpy.project"],
     install_requires = ["FMPy",
                         "alive_progress",
                         "h5py",

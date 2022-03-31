@@ -1,5 +1,5 @@
 from pathlib import Path
-from fair_sim import simulate
+from sofirpy import simulate
 from discrete_pid import PID # custom implemented pid controller 
 
 fmu_path = Path(__file__).parent / "DC_Motor.fmu"
@@ -39,8 +39,8 @@ results, units = simulate(
     stop_time=10,
     step_size=1e-3,
     fmu_infos=fmu_info,
-    control_infos=control_infos,
-    control_classes=control_class,
+    model_infos=control_infos,
+    model_classes=control_class,
     parameters_to_log=parameters_to_log,
     get_units=True,
 )

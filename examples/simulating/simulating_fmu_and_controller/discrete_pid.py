@@ -1,4 +1,4 @@
-from fair_sim import SimulationEntity
+from sofirpy import SimulationEntity
 
 
 class PID(SimulationEntity):

@@ -1,4 +1,4 @@
-Welcome to FairSim's documentation!
+Welcome to SOFIRpy's documentation!
 ====================================
 
 .. toctree::
@@ -7,8 +7,11 @@ Welcome to FairSim's documentation!
    overview
    installation
    getting_started
-   packages doc <subpackages_doc/fair_sim>
-
+   connect_systems
+   limitations
+   release_notes
+   API Documentation <API Documentation/sofirpy>
+   contribution
 
 
 Indices and tables
