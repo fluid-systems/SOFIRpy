@@ -1,3 +1,4 @@
 build:
-  tools:
-    python: "3.9"
+  image: testing
+python:
+  version: 3.9
