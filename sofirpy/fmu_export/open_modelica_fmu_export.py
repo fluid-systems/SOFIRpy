@@ -112,12 +112,13 @@ def export_open_modelica_model(
     """
 
     model_path = utils.convert_str_to_path(model_path, "model_path")
-
-    om_fmu_export = OpenModelicaFmuExport(model_path, model_name)
-    om_fmu_export.export_fmu()
-
-    # delete unnecessary files
-    utils.delete_paths(om_fmu_export.paths_to_delete)
+    
+    try:
+        om_fmu_export = OpenModelicaFmuExport(model_path, model_name)
+        om_fmu_export.export_fmu()
+    finally:
+        # delete unnecessary files
+        utils.delete_paths(om_fmu_export.paths_to_delete)
 
     if om_fmu_export.fmu_path.exists():
         print("The FMU Export was successful.")
