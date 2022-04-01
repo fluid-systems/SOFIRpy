@@ -16,5 +16,8 @@ SOFIRpy can be installed from PyPI using the following command.
 ```console
 $ pip install sofirpy
 ```
+## Documentation
+The documentation can be found [here](https://sofirpy.readthedocs.io).
+
 ## Examples
 Multiple examples can be found here: [examples](https://git.rwth-aachen.de/sofirpy/sofirpy/-/tree/master/examples)
