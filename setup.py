@@ -22,7 +22,7 @@ setup(
                         "matplotlib",
                         "numpy",
                         "pandas",
-                        "OMpython @ git+https://git@github.com/OpenModelica/OMPython.git"],
+                        "OMpython"],
 
     python_requires=">=3.9",
 )
