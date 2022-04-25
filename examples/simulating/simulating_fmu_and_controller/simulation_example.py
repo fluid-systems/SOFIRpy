@@ -1,8 +1,13 @@
+import sys
+import os
 from pathlib import Path
 from sofirpy import simulate
+
+sys.path.append(os.path.join(os.path.dirname(__file__),'../../'))
+
 from discrete_pid import PID # custom implemented pid controller 
 
-fmu_path = Path(__file__).parent / "DC_Motor.fmu"
+fmu_path = Path(__file__).parent.parent.parent / "DC_Motor.fmu"
 
 fmu_info = [
     {
