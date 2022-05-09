@@ -194,12 +194,14 @@ class Simulation:
 
         return units
 
+ConnectionsInfo = list[dict[str,str]]
+SystemInfo = list[dict[str, Union[str, ConnectionsInfo]]]
 
 def simulate(
     stop_time: Union[float, int],
     step_size: float,
-    fmu_infos: Optional[list[dict[str, Union[str, list[dict[str, str]]]]]] = None,
-    model_infos: Optional[list[dict[str, Union[str, list[dict[str, str]]]]]] = None,
+    fmu_infos: Optional[SystemInfo] = None,
+    model_infos: Optional[SystemInfo] = None,
     model_classes: Optional[dict[str, SimulationEntity]] = None,
     parameters_to_log: Optional[dict[str, list[str]]] = None,
     get_units: Optional[bool] = False,
@@ -212,7 +214,7 @@ def simulate(
     Args:
         stop_time (Union[float,int]): stop time for the simulation
         step_size (float): step size for the simulation
-        fmu_infos (Optional[list[dict[str, Union[str, list[dict[str, str]]]]]], optional):
+        fmu_infos (Optional[SystemInfo], optional):
             Defines which fmus should be simulated and how they are connected
             to other systems. It needs to have the following formart:
 
@@ -266,7 +268,7 @@ def simulate(
             Note: The name of the fmus can be chosen arbitrarily, but each name
             in 'fmu_infos' and 'model_infos' must occur only once.
             Defaults to None.
-        model_infos (Optional[list[dict[str, Union[str, list[dict[str, str]]]]]], optional):
+        model_infos (Optional[SystemInfo], optional):
             Defines which python models should be simulated and how they are
             connected to other systems. It needs to have the same format as
             'fmu_infos' with the difference that
@@ -368,18 +370,18 @@ def simulate(
 
 
 def init_systems(
-    fmu_infos: list[dict[str, Union[str, list[dict[str, str]]]]],
-    model_infos: list[dict[str, Union[str, list[dict[str, str]]]]],
+    fmu_infos: SystemInfo,
+    model_infos: SystemInfo,
     model_classes: dict[str, SimulationEntity],
     step_size: float,
 ) -> dict[str, System]:
     """Initialize all System object and stores them in a dictionary.
 
     Args:
-        fmu_infos (list[dict[str, Union[str, list[dict[str, str]]]]]): Defines
+        fmu_infos (SystemInfo): Defines
             which fmus should be simulated and how they are connected to other
             systems.
-        model_infos (list[dict[str, Union[str, list[dict[str, str]]]]]):
+        model_infos (SystemInfo):
             Defines which python models should be simulated and how they are
             connected to other systems.
         model_classes (dict[str, SimulationEntity]): Dictionary with the name of
@@ -413,13 +415,13 @@ def init_systems(
 
 
 def init_connections(
-    system_infos: list[dict[str, Union[str, list[dict[str, str]]]]],
+    system_infos: SystemInfo,
     systems: dict[str, System],
 ) -> list[Connection]:
     """Initialize all the connections.
 
     Args:
-        system_infos (list[dict[str, Union[str, list[dict[str, str]]]]]):
+        system_infos (SystemInfo):
             Defines how all systems are connected.
         systems (dict[str, System]): Dictrionary with system names as keys and
             the corresponding System instance as values.
