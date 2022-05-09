@@ -68,11 +68,13 @@ class HDF5:
                 They will be created automatically. Example:
 
                 >>> group_path = "group2/subgroup1/subsubgroup1"
+
+        Raises:
+            ValueError: If the group already exists. 
         """
         with h5py.File(str(self.hdf5_path), "a") as hdf5:
             if group_path in hdf5:
-                print(f"Group {group_path} already exists in hdf5.")
-                return
+                raise ValueError(f"Group {group_path} already exists in hdf5.")
             hdf5.create_group(group_path)
 
     def store_data(
@@ -118,7 +120,7 @@ class HDF5:
                     dset.attrs[name] = attr
 
     def append_attributes(self, path: str, attributes: dict[str, Any]) -> None:
-        """Append attributes to a hdf5 Dataset or a Group.
+        """Append attributes to a hdf5 Dataset or Group.
 
         Args:
             path (str): hdf5 path to the dataset or group.
@@ -136,14 +138,33 @@ class HDF5:
         Args:
             path (str): hdf5 path to the dataset or group.
             attribute_name (str): Name of the attribute.
+
+        Raises:
+            KeyError: If the attribute does not exist. 
         """
         with h5py.File(str(self.hdf5_path), "a") as hdf5:
-            dataset = hdf5[path]
-            if attribute_name not in dataset.attrs.keys():
-                print(f"Attribute name '{attribute_name}' does not exit at '{path}'.")
-                return
-            del dataset.attrs[attribute_name]
+            hdf5_object: Union[h5py.Group, h5py.Dataset] = hdf5[path]
+            if attribute_name not in hdf5_object.attrs.keys():
+                raise KeyError(
+                    f"Attribute name '{attribute_name}' is not a attribute at '{path}'."
+                    )
+            del hdf5_object.attrs[attribute_name]
 
+    def read_attributes(self, path: str) -> dict[str, Any]:
+        """Reads the attributes of a dataset or group.
+
+        Args:
+            path (str): Path to a hdf5 group or dataset. If None or empty string the attributes
+                of the root will be returned.
+
+        Returns:
+            dict[str, Any]: Attributes of the given hdf5 group or dataset.
+        """
+        with h5py.File(str(self.hdf5_path), "a") as hdf5:
+            
+            hdf5_object: Union[h5py.Group, h5py.Dataset] = hdf5.get(path) if path else hdf5
+            return dict(hdf5_object.attrs)
+            
     def read_data(
         self, data_name: str, group_path: str, get_attributes: Optional[bool] = False
     ) -> Union[Any, tuple[Any, dict[str, Any]]]:
