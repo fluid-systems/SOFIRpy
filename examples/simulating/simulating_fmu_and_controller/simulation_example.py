@@ -19,7 +19,7 @@ fmu_info = [
                 "connect to system": "pid",
                 "connect to external parameter": "u",
             }
-        ],
+        ]
     }
 ]
 
@@ -31,9 +31,9 @@ control_infos = [
             {
                 "parameter name": "speed",
                 "connect to system": "DC_Motor",
-                "connect to external parameter": "y",
+                "connect to external parameter": "y"
             }
-        ],
+        ]
     }
 ]
 pid = PID(1e-3, 3, 20, 0.1, set_point=100, u_max=100, u_min=0)
