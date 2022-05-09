@@ -19,8 +19,8 @@ class OpenModelicaFmuExport(FmuExport):
             model_name (str): Name of the model.
         """
 
-        self.dump_directory = Path.cwd()
-        fmu_path = self.dump_directory / f"{model_path.stem}.fmu"
+        self._dump_directory = Path.cwd()
+        fmu_path = self._dump_directory / f"{model_path.stem}.fmu"
         super().__init__(model_path, fmu_path)
         self.model_name = model_name
 
@@ -84,8 +84,8 @@ class OpenModelicaFmuExport(FmuExport):
             f"{self.model_name}_FMU.makefile",
         ]
 
-        self.paths_to_delete = map(
-            lambda file_name: self.dump_directory / file_name, files_to_delete
+        self._paths_to_delete = map(
+            lambda file_name: self._dump_directory / file_name, files_to_delete
         )
 
     def export_fmu(self):
@@ -118,7 +118,7 @@ def export_open_modelica_model(
         om_fmu_export.export_fmu()
     finally:
         # delete unnecessary files
-        utils.delete_paths(om_fmu_export.paths_to_delete)
+        utils.delete_paths(om_fmu_export._paths_to_delete)
 
     if om_fmu_export.fmu_path.exists():
         print("The FMU Export was successful.")
