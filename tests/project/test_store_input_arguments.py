@@ -1,12 +1,9 @@
 import sys
 import os
-from pathlib import Path
-import pytest
 
 sys.path.append(os.path.join(os.path.dirname(__file__),'../../'))
 from sofirpy import store_input_arguments
 
-# %%
 
 class TestClass:
 
