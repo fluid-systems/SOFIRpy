@@ -70,7 +70,7 @@ class HDF5:
                 >>> group_path = "group2/subgroup1/subsubgroup1"
 
         Raises:
-            ValueError: If the group already exists. 
+            ValueError: If the group already exists.
         """
         with h5py.File(str(self.hdf5_path), "a") as hdf5:
             if group_path in hdf5:
@@ -140,7 +140,7 @@ class HDF5:
             attribute_name (str): Name of the attribute.
 
         Raises:
-            KeyError: If the attribute does not exist. 
+            KeyError: If the attribute does not exist.
         """
         with h5py.File(str(self.hdf5_path), "a") as hdf5:
             hdf5_object: Union[h5py.Group, h5py.Dataset] = hdf5[path]
@@ -161,10 +161,10 @@ class HDF5:
             dict[str, Any]: Attributes of the given hdf5 group or dataset.
         """
         with h5py.File(str(self.hdf5_path), "a") as hdf5:
-            
+
             hdf5_object: Union[h5py.Group, h5py.Dataset] = hdf5.get(path) if path else hdf5
             return dict(hdf5_object.attrs)
-            
+
     def read_data(
         self, data_name: str, group_path: str, get_attributes: Optional[bool] = False
     ) -> Union[Any, tuple[Any, dict[str, Any]]]:
@@ -269,6 +269,8 @@ class HDF5:
                 Dataset.
         """
         with h5py.File(str(self.hdf5_path), "a") as hdf5:
+            if not group_path:
+                group_path  = ""
             path = group_path + "/" + data_name
             if not hdf5.get(path):
                 raise KeyError(f"'{path}' does not exist in hdf5.")
@@ -308,6 +310,21 @@ class HDF5:
             group.visititems(append_name)
 
             return file_structure
+
+    def check_path_exists(self, path: str) -> bool:
+        """Check if a given group oder data path exists in the hdf5.
+
+        Args:
+            path (str): Path to a group oder dataset.
+
+        Returns:
+            bool: True if the path exists else False.
+        """
+        with h5py.File(str(self.hdf5_path), "a") as hdf5:
+            if hdf5.get(path) is None:
+                return False
+        return True
+
 
     def _place(
         self,
