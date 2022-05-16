@@ -44,10 +44,10 @@ class FmuExport:
         if not isinstance(model_path, Path):
             raise TypeError(f"'model_path' is {type(model_path)}; expected Path")
 
-        if model_path.exists():
-            self._model_path = model_path
-        else:
+        if not model_path.exists():
             raise FileNotFoundError(model_path)
+
+        self._model_path = model_path
 
     @property
     def fmu_path(self) -> Path:
