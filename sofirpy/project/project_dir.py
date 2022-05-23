@@ -15,7 +15,8 @@ class ProjectDir:
             project_directory (Union[Path, str]): Path to the project directory.
         """
         self.project_directory = project_directory
-        self.current_folder = None
+        self.current_folder: str = None
+        self.current_folder_path: Path = None
 
     @property
     def project_directory(self) -> Path:
@@ -38,16 +39,16 @@ class ProjectDir:
         )
 
     @property
-    def current_folder(self) -> Path:
+    def current_folder_path(self) -> Path:
         """Path to the current folder.
 
         Returns:
             Path: Path to the current folder.
         """
-        return self._current_folder
+        return self._current_folder_path
 
-    @current_folder.setter
-    def current_folder(self, folder_path: Union[Path, str]) -> None:
+    @current_folder_path.setter
+    def current_folder_path(self, folder_path: Union[Path, str]) -> None:
         """Path to the current folder.
 
         Args:
@@ -56,7 +57,28 @@ class ProjectDir:
         if folder_path is not None:
             folder_path = self._dir_setter(folder_path, "folder_path")
 
-        self._current_folder = folder_path
+        self._current_folder_path = folder_path
+        self._current_folder = str(folder_path.relative_to(self.project_directory))
+
+    @property
+    def current_folder(self) -> str:
+        """Name of the current folder relative to the project directory.
+
+        Returns:
+            str: Name of the current folder relative to the project directory.
+        """
+        return self._current_folder
+
+    @current_folder.setter
+    def current_folder(self, folder_name: str) -> None:
+        """Name of the current folder relative to the project directory.
+
+        Args:
+            folder_name (str): Name of the current folder relative to the
+                project directory.
+        """
+        self.current_folder_path = self.project_directory / folder_name
+
 
     def _dir_setter(self, dir_path: Union[Path, str], name: str) -> Path:
         """Set the path to a directory. If it doesn't exit, create it.
@@ -88,11 +110,14 @@ class ProjectDir:
 
         Args:
             folder_name (str): Name of the folder. Subfolders can be created by
-                seperating the folder names with '/'.
+                separating the folder names with '/'.
+
+        Raises:
+            ValueError: folder already exists
         """
         folder_path = self.project_directory / folder_name
         if folder_path.exists():
-            print(f"Folder at {folder_path} already exists.")
+            raise ValueError(f"Folder at {folder_path} already exists.")
         self.current_folder = folder_path
 
     def set_current_folder(self, folder_name: str) -> None:
@@ -116,11 +141,12 @@ class ProjectDir:
         Args:
             name (str): Name of the file/directory that should be deleted.
         """
-        if self.current_folder is not None:
-            path = self.current_folder / name
-            utils.delete_file_or_directory(path, print_status=True)
-        else:
+        if self.current_folder is None:
             print("'current_folder' is not set")
+            return
+
+        path = self.current_folder / name
+        utils.delete_file_or_directory(path, print_status=True)
 
     def delete_files(self, file_names: list[str]) -> None:
         """Delete multiple files in the current folder.
@@ -128,12 +154,13 @@ class ProjectDir:
         Args:
             file_names (list[str]): List with file names.
         """
-        if self.current_folder is not None:
-            utils.delete_files_in_directory(
-                file_names, self.current_folder, print_status=True
-            )
-        else:
+        if self.current_folder is None:
             print("'current_folder' is not set")
+            return
+
+        utils.delete_files_in_directory(
+            file_names, self.current_folder, print_status=True
+        )
 
     def move_file(
         self, source_path: Union[Path, str], target_directory: Union[Path, str] = None
@@ -159,7 +186,7 @@ class ProjectDir:
                 return
             target_directory = self.current_folder
 
-        target_directory = self._dir_setter(target_directory, "target_directroy")
+        target_directory = self._dir_setter(target_directory, "target_directory")
         target_path = target_directory / source_path.name
         utils.move_file(source_path, target_path)
 
@@ -199,7 +226,6 @@ class ProjectDir:
         Returns:
             Path: Path to the copied file.
         """
-        
         source_path = utils.convert_str_to_path(source_path, "source_path")
 
         if target_directory is None:
@@ -208,7 +234,7 @@ class ProjectDir:
                 return
             target_directory = self.current_folder
 
-        target_directory = self._dir_setter(target_directory, "target directroy")
+        target_directory = self._dir_setter(target_directory, "target directory")
         target_path = target_directory / source_path.name
 
         utils.copy_file(source_path, target_path)
@@ -235,7 +261,7 @@ class ProjectDir:
 
         Args:
             folder_name (str): Name of the folder that should be deleted.
-                Subfolders can be deleted by seperating the folder names
+                Subfolders can be deleted by separating the folder names
                 with '/'.
         """
         folder_path = self.project_directory / folder_name
@@ -258,8 +284,8 @@ class ProjectDir:
         target_dir = utils.convert_str_to_path(target_dir, "target_dir")
         target_path = target_dir / f"{new_name}{source_path.suffix}"
         utils.copy_file(source_path, target_path)
-        
-        return target_path 
+
+        return target_path
 
     def move_and_rename_file(self, source_path: Union[Path, str], target_dir: Union[Path, str], new_name: str) -> Path:
         """Move and rename a file.s
