@@ -54,9 +54,11 @@ class ProjectDir:
         Args:
             folder_path (Union[Path, str]): Path to the current folder.
         """
-        if folder_path is not None:
-            folder_path = self._dir_setter(folder_path, "folder_path")
-
+        if folder_path is None:
+            self._current_folder_path = None
+            self._current_folder = None
+            return
+        folder_path = self._dir_setter(folder_path, "folder_path")
         self._current_folder_path = folder_path
         self._current_folder = str(folder_path.relative_to(self.project_directory))
 
@@ -77,8 +79,10 @@ class ProjectDir:
             folder_name (str): Name of the current folder relative to the
                 project directory.
         """
+        if folder_name is None:
+            self.current_folder_path = None
+            return
         self.current_folder_path = self.project_directory / folder_name
-
 
     def _dir_setter(self, dir_path: Union[Path, str], name: str) -> Path:
         """Set the path to a directory. If it doesn't exit, create it.
