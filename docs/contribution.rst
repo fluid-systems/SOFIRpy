@@ -1,7 +1,7 @@
 Contributions
 =============
 
-**Jonas Boder**: Conceptualization, Methodology
+**Jonas Bodner**: Conceptualization, Methodology
 **Julius Breuer**: Validation
 **Lara Doß**: Conceptualization, Methodology
 **Hendrick Gockel**: Conceptualization, Methodology
