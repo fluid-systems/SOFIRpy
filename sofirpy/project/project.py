@@ -27,7 +27,7 @@ class Project:
 
         Args:
             folder_name (str): Name of the folder. Subfolders can be created by
-                seperating the folder names with '/'.
+                separating the folder names with '/'.
 
         Raises:
             error: If error occurs while creating the folder in the project directory.
@@ -44,7 +44,7 @@ class Project:
 
         Args:
             folder_name (str): Name of the folder. Subfolders can be deleted by
-                seperating the folder names with '/'.
+                separating the folder names with '/'.
         """
         self.hdf5.delete_group(folder_name)
         self.project_dir.delete_folder(folder_name)
