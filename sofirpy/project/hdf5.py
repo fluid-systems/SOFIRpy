@@ -57,14 +57,14 @@ class HDF5:
 
         Args:
             group_path (str): The name of the group. Subgroups can be
-                created by seperating the group names with '/'. Example:
+                created by separating the group names with '/'. Example:
 
                 >>> # create a group at the top level with the name "group1"
                 >>> group_path = "group1"
                 >>> # create a group with the name "subgroup1" in "group1"
                 >>> group_path = "group1/subgroup1"
 
-                The parant groups does not need to exist to create a subgroup.
+                The parent groups does not need to exist to create a subgroup.
                 They will be created automatically. Example:
 
                 >>> group_path = "group2/subgroup1/subsubgroup1"
@@ -284,7 +284,7 @@ class HDF5:
         """Reads the structure of a hdf5 group.
 
         The file structure is represented by a nested dictionary. If group_path
-        is not given the structure of the wholen hdf5 will be returned.
+        is not given the structure of the whole hdf5 will be returned.
 
         Args:
             group_path (Optional[str], optional): Path to the hdf5 group which
