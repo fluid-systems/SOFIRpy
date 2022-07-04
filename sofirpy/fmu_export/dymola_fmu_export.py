@@ -149,7 +149,7 @@ class DymolaFmuExport(FmuExport):
             )
 
         self._model_name = model_name
-        
+
     @property
     def parameters(self) -> dict[str, Union[str, int, float, list, bool]]:
         """Dictionary of parameter names and values.
@@ -272,7 +272,7 @@ class DymolaFmuExport(FmuExport):
         log_path_str = str(self._simulator_log_path).replace("\\", "/")
 
         mos_script = f'cd("{model_dir_str}");\n'
-        
+
         if self._packages:
             for package in self._packages:
                 package_path_str = str(package).replace("\\", "/")
@@ -382,7 +382,7 @@ def export_dymola_model(
     5. If the export was not successful the model is exported without imported
     parameters.
     6. If the export without imported parameters was successful a list of
-    parameters is genereted that were tried to be imported but are not part of
+    parameters is generated that were tried to be imported but are not part of
     the model.
 
     Args:
@@ -419,7 +419,7 @@ def export_dymola_model(
         DymolaFmuExport: DymolaFmuExport object.
     """
 
-    dymola_exe_path = utils.convert_str_to_path(dymola_exe_path, "dymola_exe_path") 
+    dymola_exe_path = utils.convert_str_to_path(dymola_exe_path, "dymola_exe_path")
     model_path = utils.convert_str_to_path(model_path, "model_path")
 
     dymola_fmu_export = DymolaFmuExport(
