@@ -38,19 +38,19 @@ class HDF5:
             TypeError: hdf5_path type was not 'Path'
             ValueError: suffix of hdf5_path was invalid
         """
-        hdf5_path = utils.convert_str_to_path(hdf5_path, "hdf5_path")
+        _hdf5_path = utils.convert_str_to_path(hdf5_path, "hdf5_path")
 
         hdf_suffixes = [".hdf", ".h4", ".hdf4", ".he2", ".h5", ".hdf5", ".he5"]
 
-        if hdf5_path.suffix not in hdf_suffixes:
+        if _hdf5_path.suffix not in hdf_suffixes:
             raise ValueError(
                 f'Invalid path name, expected one of the following file extensions: {", ".join(hdf_suffixes)}'
             )
-        if not hdf5_path.exists():
-            hdf5_path.touch()
-            print(f"hdf5 file at {str(hdf5_path)} created.")
+        if not _hdf5_path.exists():
+            _hdf5_path.touch()
+            print(f"hdf5 file at {str(_hdf5_path)} created.")
 
-        self._hdf5_path = hdf5_path
+        self._hdf5_path = _hdf5_path
 
     def create_group(self, group_path: str) -> None:
         """Creates a group in the hdf5 file.
