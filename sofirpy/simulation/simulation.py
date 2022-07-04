@@ -467,10 +467,10 @@ def init_parameter_list(
     Returns:
         list[LoggedParameter]: List of system parameters that should be logged.
     """
-    log: list[LoggedParameter] = []
-
     if parameters_to_log is None:
-        return log
+        return
+
+    log: list[LoggedParameter] = []
 
     for system_name in list(parameters_to_log.keys()):
         system = systems[system_name]
