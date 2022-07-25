@@ -1,7 +1,6 @@
 """This module contains the base class for a fmu export."""
 
 from pathlib import Path
-from typing import Union
 from sofirpy import utils
 
 class FmuExport:
@@ -11,7 +10,7 @@ class FmuExport:
         """Initialize the FmuExport object.
 
         Args:
-            model_path (Union[Path, str]):  Path to the modelica model that
+            model_path (Path):  Path to the modelica model that
                 should be exported.
             fmu_path (Path): Path the exported fmu is going to have.
         """
