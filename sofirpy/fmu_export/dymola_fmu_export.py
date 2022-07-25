@@ -458,7 +458,7 @@ def export_dymola_model(
         print("Exporting model without parameters and model modifiers...")
 
         # TODO export in temp instead of model dir
-        dymola_fmu_export = DymolaFmuExport(dymola_exe_path, model_path)
+        dymola_fmu_export = DymolaFmuExport(dymola_exe_path, model_path, model_name)
         dymola_fmu_export.export_fmu(
             export_simulator_log=False, export_error_log=False
         )
