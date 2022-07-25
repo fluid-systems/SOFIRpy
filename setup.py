@@ -17,7 +17,7 @@ setup(
     url="https://git.rwth-aachen.de/sofirpy/sofirpy",
     packages= ["sofirpy", "sofirpy.fmu_export", "sofirpy.simulation", "sofirpy.project"],
     install_requires = ["FMPy",
-                        "alive_progress",
+                        "tqdm",
                         "h5py",
                         "matplotlib",
                         "numpy",
