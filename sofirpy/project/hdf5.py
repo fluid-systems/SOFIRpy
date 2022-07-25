@@ -166,14 +166,14 @@ class HDF5:
             return dict(hdf5_object.attrs)
 
     def read_data(
-        self, data_name: str, group_path: str, get_attributes: Optional[bool] = False
+        self, data_name: str, group_path: str, get_attributes: bool = False
     ) -> Union[Any, tuple[Any, dict[str, Any]]]:
         """Reads the data of at a given data path.
 
         Args:
             data_name (str): Name of the data.
             group_path (str): Path to the hdf5 group.
-            get_attributes (Optional[bool], optional): If True attributes will
+            get_attributes (bool, optional): If True attributes will
                 be returned as well. Defaults to False.
 
         Raises:
