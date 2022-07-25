@@ -53,7 +53,7 @@ class Project:
         self,
         source_path: Union[str, Path],
         folder_name: str,
-        copy: Optional[bool] = True,
+        copy: bool = True,
         new_file_name: Optional[str] = None,
     ) -> None:
         """Store a file in the project directory and a reference this file in the hdf5.
@@ -61,7 +61,7 @@ class Project:
         Args:
             source_path (Union[str, Path]): Path to the file.
             folder_name (str): Name of the folder the file should be stored in.
-            copy (Optional[bool], optional): If true the file will be copied
+            copy (bool, optional): If true the file will be copied
                 from it's source path else it will be moved. Defaults to True.
             new_file_name (Optional[str], optional): If specified
                 the file will be renamed accordingly. Defaults to None.
