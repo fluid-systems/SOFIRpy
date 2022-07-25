@@ -246,6 +246,8 @@ class ProjectDir:
         """
         folder_path = self.project_directory / folder_name
         utils.delete_file_or_directory(folder_path, print_status=True)
+        if folder_path == self.current_folder_path:
+            self.current_folder = "."
 
     def copy_and_rename_file(
         self, source_path: Union[Path, str], target_dir: Union[Path, str], new_name: str
@@ -290,3 +292,6 @@ class ProjectDir:
         utils.move_file(_source_path, target_path)
 
         return target_path
+
+    def __repr__(self) -> str:
+        return  f"Project directory at '{str(self.project_directory)}'"
