@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Any, Optional, Union
 import numpy as np
 import pandas as pd
-from alive_progress import alive_bar
+from tqdm import tqdm
 from sofirpy.simulation.simulation_entity import SimulationEntity
 from sofirpy.simulation.fmu import Fmu
 import sofirpy.utils as utils
@@ -108,13 +108,11 @@ class Simulation:
 
         print("Starting Simulation...")
 
-        with alive_bar(len(time_series), bar="blocks", spinner="classic") as bar:
-            for time_step, time in enumerate(time_series):
+        for time_step, time in enumerate(tqdm(time_series)):
 
-                self.log_values(time, time_step)
-                self.set_systems_inputs()
-                self.do_step(time)
-                bar()
+            self.log_values(time, time_step)
+            self.set_systems_inputs()
+            self.do_step(time)
 
         for system in self.systems:
             if isinstance(system.simulation_entity, Fmu):
@@ -210,7 +208,7 @@ def simulate(
     model_infos: Optional[SystemInfo] = None,
     model_classes: Optional[dict[str, SimulationEntity]] = None,
     parameters_to_log: Optional[dict[str, list[str]]] = None,
-    get_units: Optional[bool] = False,
+    get_units: bool = False,
 ) -> Union[pd.DataFrame, tuple[pd.DataFrame, dict[str, str]]]:
     """Simulate fmus and models written in python.
 
@@ -307,7 +305,7 @@ def simulate(
             ... }
 
             Defaults to None.
-        get_units (Optional[bool], optional): Determines whether the units of
+        get_units (bool, optional): Determines whether the units of
             the logged parameter should be returned. Defaults to False.
 
     Raises:
@@ -493,21 +491,21 @@ def _validate_input(
     if step_size <= 0 or step_size >= stop_time:
         raise ValueError(f"'step_size' is {step_size}; expected (0, {stop_time})")
 
-    fmu_names = _validate_fmu_infos(fmu_infos)
-    model_names = _validate_model_infos(model_infos)
-    all_system_names = [*fmu_names, *model_names]
+    # fmu_names = _validate_fmu_infos(fmu_infos)
+    # model_names = _validate_model_infos(model_infos)
+    # all_system_names = [*fmu_names, *model_names]
 
-    if len(set(all_system_names)) < len(all_system_names):
-        raise ValueError(
-            f"Duplicate names in system infos."
-        )
+    # if len(set(all_system_names)) < len(all_system_names):
+    #     raise ValueError(
+    #         f"Duplicate names in system infos."
+    #     )
 
     if not fmu_infos and not model_infos:
         raise ValueError(
             "'fmu_infos' and 'model_infos' are empty; expected al least one to be not empty"
         )
 
-    _validate_model_classes(model_classes, model_names)
+    # _validate_model_classes(model_classes, model_names)
 
 
 
