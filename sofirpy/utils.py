@@ -5,16 +5,16 @@ from typing import Union
 
 def delete_file_or_directory(path: Path, print_status: bool = False):
 
-    if path.exists():
-        if path.is_dir():
-            shutil.rmtree(str(path), ignore_errors=True)
-        else:
-            path.unlink()
-        if print_status:
-            print(f"{str(path)} has been deleted")
+    if not path.exists():
+        raise ValueError(f"{str(path)} does not exist")
+
+    if path.is_dir():
+        shutil.rmtree(str(path), ignore_errors=True)
     else:
-        if print_status:
-            print(f"{str(path)} does not exist")
+        path.unlink()
+
+    if print_status:
+        print(f"{str(path)} has been deleted")
 
 
 def delete_files_in_directory(
@@ -47,6 +47,7 @@ def move_file(source_path: Path, target_path: Path) -> None:
 
     source_path.replace(target_path)
 
+
 def move_files(source_paths: list[Path], target_directory: Path) -> None:
 
     for source_path in source_paths:
@@ -71,17 +72,17 @@ def copy_file(source_path: Path, target_path: Path) -> None:
 
     shutil.copy(source_path, target_path)
 
+
 def _get_user_input(target_path: Union[Path, str], type="path") -> bool:
 
     while True:
         overwrite = input(f"The {type} {target_path} already exists. Overwrite? [y/n]")
-        if overwrite == "y" or overwrite == "n":
-            if overwrite == "y":
-                return True
-            elif overwrite == "n":
-                return False
-            else:
-                print("Enter 'y' or 'n'.")
+        if overwrite == "y":
+            return True
+        elif overwrite == "n":
+            return False
+        else:
+            print("Enter 'y' or 'n'.")
 
 
 def rename_file(file_path: Path, new_name: str) -> Path:
@@ -103,8 +104,6 @@ def rename_file(file_path: Path, new_name: str) -> Path:
 def convert_str_to_path(path: Union[str, Path], variable_name: str) -> Path:
 
     if not isinstance(path, (Path, str)):
-        raise TypeError(
-            f"'{variable_name}' is {type(path)};  expected Path, str"
-        )
+        raise TypeError(f"'{variable_name}' is {type(path)};  expected Path, str")
 
     return path if isinstance(path, Path) else Path(path)

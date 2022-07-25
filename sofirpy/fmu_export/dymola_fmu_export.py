@@ -46,7 +46,7 @@ class DymolaFmuExport(FmuExport):
                 Dictionary of parameter names and values.
                 Example:
 
-                >>> paremeters = {"Resistor.R" : "1",
+                >>> parameters = {"Resistor.R" : "1",
                 ...     "Resistor.useHeatPort": True}
 
                 Defaults to None.
@@ -397,7 +397,7 @@ def export_dymola_model(
             Dictionary of parameter names and values.
             Example:
 
-            >>> paremeters = {"Resistor.R" : "1", "Resistor.useHeatPort": True}
+            >>> parameters = {"Resistor.R" : "1", "Resistor.useHeatPort": True}
 
                                 Defaults to None.
         model_modifiers (list[str]], optional): List of model modifiers.
@@ -466,7 +466,7 @@ def export_dymola_model(
         utils.delete_paths(dymola_fmu_export._paths_to_delete)
         if dymola_fmu_export.fmu_path.exists():
             print(
-                "FMU Export without added parameters and model modifiers was successfull."
+                "FMU Export without added parameters and model modifiers was successful."
             )
             parameters_in_model = read_model_parameters(dymola_fmu_export.fmu_path)
             not_valid_parameters = check_not_valid_parameters(
@@ -476,7 +476,7 @@ def export_dymola_model(
             dymola_fmu_export.fmu_path.unlink()
         else:
             print(
-                "FMU Export without added parameters and model modifiers was not successfull."
+                "FMU Export without added parameters and model modifiers was not successful."
             )
 
 

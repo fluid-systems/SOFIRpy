@@ -15,8 +15,7 @@ class ProjectDir:
             project_directory (Union[Path, str]): Path to the project directory.
         """
         self.project_directory = project_directory
-        self.current_folder: str = None
-        self.current_folder_path: Path = None
+        self.current_folder: str = "."
 
     @property
     def project_directory(self) -> Path:
@@ -47,19 +46,24 @@ class ProjectDir:
         """
         return self._current_folder_path
 
-    @current_folder_path.setter
-    def current_folder_path(self, folder_path: Union[Path, str]) -> None:
+    @property
+    def _current_folder_path(self) -> Path:
+        """Path to the current folder.
+
+        Returns:
+            Path: Path to the current folder.
+        """
+        return self.__current_folder_path
+
+    @_current_folder_path.setter
+    def _current_folder_path(self, folder_path: Union[Path, str]) -> None:
         """Path to the current folder.
 
         Args:
             folder_path (Union[Path, str]): Path to the current folder.
         """
-        if folder_path is None:
-            self._current_folder_path = None
-            self._current_folder = None
-            return
         folder_path = self._dir_setter(folder_path, "folder_path")
-        self._current_folder_path = folder_path
+        self.__current_folder_path = folder_path
         self._current_folder = str(folder_path.relative_to(self.project_directory))
 
     @property
@@ -78,11 +82,13 @@ class ProjectDir:
         Args:
             folder_name (str): Name of the current folder relative to the
                 project directory.
+
+        Raises:
+            TypeError: 'folder_name' type was not 'str'
         """
-        if folder_name is None:
-            self.current_folder_path = None
-            return
-        self.current_folder_path = self.project_directory / folder_name
+        if not isinstance(folder_name, str):
+            raise TypeError(f"'folder_name' is {type(folder_name)}; expected str")
+        self._current_folder_path = self.project_directory / folder_name
 
     def _dir_setter(self, dir_path: Union[Path, str], name: str) -> Path:
         """Set the path to a directory. If it doesn't exit, create it.
@@ -98,16 +104,15 @@ class ProjectDir:
         Returns:
             Path: Path to the directory.
         """
+        _dir_path = utils.convert_str_to_path(dir_path, name)
 
-        dir_path = utils.convert_str_to_path(dir_path, name)
-
-        if not dir_path.exists():
-            dir_path.mkdir(parents=True)
+        if not _dir_path.exists():
+            _dir_path.mkdir(parents=True)
         else:
-            if not dir_path.is_dir():
-                raise ValueError(f"{dir_path} is a file; expected directory")
+            if not _dir_path.is_dir():
+                raise ValueError(f"{_dir_path} is a file; expected directory")
 
-        return dir_path
+        return _dir_path
 
     def create_folder(self, folder_name: str) -> None:
         """Create a folder in the project directory.
@@ -122,22 +127,7 @@ class ProjectDir:
         folder_path = self.project_directory / folder_name
         if folder_path.exists():
             raise ValueError(f"Folder at {folder_path} already exists.")
-        self.current_folder = folder_path
-
-    def set_current_folder(self, folder_name: str) -> None:
-        """Set the current folder.
-
-        Args:
-            folder_name (str): Name of the folder.
-        """
-        folder_path = self.project_directory / folder_name
-        if not folder_path.exists():
-            print(f"Folder at {folder_path} doesn't exist.")
-            return
-        if not folder_path.is_dir():
-            print(f"{folder_path} does not lead to a directory.")
-            return
-        self.current_folder = folder_path
+        self.current_folder = folder_name
 
     def delete_element(self, name: str) -> None:
         """Delete file or directory in the current folder.
@@ -145,11 +135,7 @@ class ProjectDir:
         Args:
             name (str): Name of the file/directory that should be deleted.
         """
-        if self.current_folder is None:
-            print("'current_folder' is not set")
-            return
-
-        path = self.current_folder / name
+        path = self._current_folder_path / name
         utils.delete_file_or_directory(path, print_status=True)
 
     def delete_files(self, file_names: list[str]) -> None:
@@ -158,12 +144,8 @@ class ProjectDir:
         Args:
             file_names (list[str]): List with file names.
         """
-        if self.current_folder is None:
-            print("'current_folder' is not set")
-            return
-
         utils.delete_files_in_directory(
-            file_names, self.current_folder, print_status=True
+            file_names, self._current_folder_path, print_status=True
         )
 
     def move_file(
@@ -182,17 +164,14 @@ class ProjectDir:
             Path: Path to the moved file.
         """
 
-        source_path = utils.convert_str_to_path(source_path, "source_path")
+        _source_path = utils.convert_str_to_path(source_path, "source_path")
 
         if target_directory is None:
-            if self.current_folder is None:
-                print("'current_folder' is not set")
-                return
-            target_directory = self.current_folder
+            target_directory = self._current_folder_path
 
         target_directory = self._dir_setter(target_directory, "target_directory")
-        target_path = target_directory / source_path.name
-        utils.move_file(source_path, target_path)
+        target_path = target_directory / _source_path.name
+        utils.move_file(_source_path, target_path)
 
         return target_path
 
@@ -230,18 +209,15 @@ class ProjectDir:
         Returns:
             Path: Path to the copied file.
         """
-        source_path = utils.convert_str_to_path(source_path, "source_path")
+        _source_path = utils.convert_str_to_path(source_path, "source_path")
 
         if target_directory is None:
-            if self.current_folder is None:
-                print("'current_folder' is not set")
-                return
-            target_directory = self.current_folder
+            target_directory = self._current_folder_path
 
         target_directory = self._dir_setter(target_directory, "target directory")
-        target_path = target_directory / source_path.name
+        target_path = target_directory / _source_path.name
 
-        utils.copy_file(source_path, target_path)
+        utils.copy_file(_source_path, target_path)
 
         return target_path
 
@@ -271,7 +247,9 @@ class ProjectDir:
         folder_path = self.project_directory / folder_name
         utils.delete_file_or_directory(folder_path, print_status=True)
 
-    def copy_and_rename_file(self, source_path: Union[Path, str], target_dir: Union[Path, str], new_name: str) -> Path:
+    def copy_and_rename_file(
+        self, source_path: Union[Path, str], target_dir: Union[Path, str], new_name: str
+    ) -> Path:
         """Copy and rename a file.
 
         Args:
@@ -284,14 +262,16 @@ class ProjectDir:
         Returns:
             Path: Path to the copied file.
         """
-        source_path = utils.convert_str_to_path(source_path, "source_path")
-        target_dir = utils.convert_str_to_path(target_dir, "target_dir")
-        target_path = target_dir / f"{new_name}{source_path.suffix}"
-        utils.copy_file(source_path, target_path)
+        _source_path = utils.convert_str_to_path(source_path, "source_path")
+        _target_dir = utils.convert_str_to_path(target_dir, "target_dir")
+        target_path = _target_dir / f"{new_name}{_source_path.suffix}"
+        utils.copy_file(_source_path, target_path)
 
         return target_path
 
-    def move_and_rename_file(self, source_path: Union[Path, str], target_dir: Union[Path, str], new_name: str) -> Path:
+    def move_and_rename_file(
+        self, source_path: Union[Path, str], target_dir: Union[Path, str], new_name: str
+    ) -> Path:
         """Move and rename a file.s
 
         Args:
@@ -304,9 +284,9 @@ class ProjectDir:
         Returns:
             Path: Path to the moved file.
         """
-        source_path = utils.convert_str_to_path(source_path, "source_path")
-        target_dir = utils.convert_str_to_path(target_dir, "target_dir")
-        target_path = target_dir / f"{new_name}{source_path.suffix}"
-        utils.move_file(source_path, target_path)
+        _source_path = utils.convert_str_to_path(source_path, "source_path")
+        _target_dir = utils.convert_str_to_path(target_dir, "target_dir")
+        target_path = _target_dir / f"{new_name}{_source_path.suffix}"
+        utils.move_file(_source_path, target_path)
 
         return target_path
