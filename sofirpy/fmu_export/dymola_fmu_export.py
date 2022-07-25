@@ -367,8 +367,8 @@ def export_dymola_model(
     parameters: Optional[dict[str, Union[str, int, float, list, bool]]] = None,
     model_modifiers: Optional[list[str]] = None,
     packages: Optional[list[Union[str, Path]]] = None,
-    keep_log: Optional[bool] = True,
-    keep_mos: Optional[bool] = True,
+    keep_log: bool = True,
+    keep_mos: bool = True,
 ) -> DymolaFmuExport:
     """Export a dymola model as a fmu.
 
@@ -410,9 +410,9 @@ def export_dymola_model(
         packages (Optional[list[Union[str, Path]]], optional): List of
             model/package paths that need to be loaded as dependencies for the
             model.
-        keep_log (Optional[bool], optional): If True the simulator log is kept
+        keep_log (bool, optional): If True the simulator log is kept
             else it will be deleted. Defaults to True.
-        keep_mos (Optional[bool], optional): If True the mos script is kept
+        keep_mos (bool, optional): If True the mos script is kept
             else it will be deleted. Defaults to True.
 
     Returns:
