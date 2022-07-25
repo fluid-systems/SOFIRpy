@@ -40,10 +40,11 @@ def store_input_arguments(func: Callable):
             for name, val in zip(insp.args[::-1], insp.defaults[::-1]):
                 if name not in list(inputs.keys()):
                     inputs[name] = val
-        func(*args, **kwargs)
+        return_value = func(*args, **kwargs)
         method_input_info = {func.__name__: inputs}
         if hasattr(args[0], "__input_arguments__"):
             args[0].__input_arguments__ = {**args[0].__input_arguments__, **method_input_info}
         else:
             args[0].__input_arguments__ = method_input_info
+        return return_value
     return wrapper
