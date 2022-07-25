@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Optional, Union
+from typing import Union
 from fmpy import extract, read_model_description
 from fmpy.fmi2 import FMU2Slave
 from sofirpy.simulation.simulation_entity import SimulationEntity
@@ -45,7 +45,7 @@ class Fmu(SimulationEntity):
             raise FileNotFoundError(f"The path '{fmu_path}' does not exist")
         self._fmu_path = fmu_path
 
-    def initialize_fmu(self, start_time: Optional[float] = 0) -> None:
+    def initialize_fmu(self, start_time: float = 0) -> None:
         """Initialize the fmu.
 
         Args:
