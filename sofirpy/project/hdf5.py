@@ -280,7 +280,7 @@ class HDF5:
 
     def read_hdf5_structure(
         self, group_path: Optional[str] = None
-    ) -> Union[None, dict[str, Any]]:
+    ) -> Optional[dict[str, Any]]:
         """Reads the structure of a hdf5 group.
 
         The file structure is represented by a nested dictionary. If group_path
@@ -291,7 +291,7 @@ class HDF5:
                 file structure should be returned. Defaults to None.
 
         Returns:
-            Union[None, dict[str, Any]]: Returns a dictionary with the
+            Optional[dict[str, Any]]: Returns a dictionary with the
             structure corresponding to the structure of the hdf5 group.
         """
         file_structure: dict[str, Any] = {}
@@ -303,7 +303,7 @@ class HDF5:
             if group_path:
                 group = hdf5.get(group_path)
                 if not isinstance(group, h5py.Group):
-                    return
+                    return None
             else:
                 group = hdf5
 
@@ -348,7 +348,7 @@ class HDF5:
             )
         else:
             if name not in _dict:
-                value = {}
+                value: Union[None, str, dict] = {}
                 if isinstance(hdf5_object, h5py.Dataset):
                     if mode == "full":
                         value = hdf5_object[()]
