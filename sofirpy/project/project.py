@@ -1,8 +1,8 @@
 """This module allows to take actions on a given hdf5 file and directory simultaneously."""
 
-from os import rename
 from pathlib import Path
 from typing import Optional, Union
+import sofirpy.utils as utils
 from sofirpy.project.hdf5 import HDF5
 from sofirpy.project.project_dir import ProjectDir
 
@@ -67,17 +67,19 @@ class Project:
                 the file will be renamed accordingly. Defaults to None.
         """
 
-        file_name = new_file_name if new_file_name else source_path.stem
+        _source_path: Path = utils.convert_str_to_path(source_path)
+
+        file_name = new_file_name if new_file_name else _source_path.stem
 
         if copy:
             target_path = self.project_dir.copy_and_rename_file(
-                source_path,
+                _source_path,
                 self.project_dir.project_directory / folder_name,
                 file_name
             )
         else:
             target_path = self.project_dir.move_and_rename_file(
-                source_path,
+                _source_path,
                 self.project_dir.project_directory / folder_name,
                 file_name
             )
