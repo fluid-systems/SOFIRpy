@@ -389,7 +389,9 @@ def init_systems(
     systems = {}
     for fmu_info in fmu_infos:
         fmu_name: str = fmu_info[SystemInfoKeys.SYSTEM_NAME.value]
-        fmu_path: Path = utils.convert_str_to_path(fmu[SystemInfoKeys.FMU_PATH.value])
+        fmu_path: Path = utils.convert_str_to_path(
+            fmu_info[SystemInfoKeys.FMU_PATH.value], "fmu_path"
+        )
         fmu = Fmu(fmu_path, step_size)
         fmu.initialize_fmu()
         system = System(fmu, fmu_name)
@@ -498,9 +500,7 @@ def _validate_input(
     all_system_names = [*fmu_names, *model_names]
 
     if len(set(all_system_names)) < len(all_system_names):
-        raise ValueError(
-            f"Duplicate names in system infos."
-        )
+        raise ValueError(f"Duplicate names in system infos.")
 
     if not fmu_infos and not model_infos:
         raise ValueError(
@@ -508,8 +508,6 @@ def _validate_input(
         )
 
     _validate_model_classes(model_classes, model_names)
-
-
 
 
 def _validate_fmu_infos(fmu_infos: SystemInfo) -> list[str]:
@@ -525,12 +523,16 @@ def _validate_fmu_infos(fmu_infos: SystemInfo) -> list[str]:
     for fmu_info in fmu_infos:
         _check_key_exists(SystemInfoKeys.SYSTEM_NAME.value, fmu_info)
         _check_value_type(
-            SystemInfoKeys.SYSTEM_NAME.value, fmu_info[SystemInfoKeys.SYSTEM_NAME.value], str
+            SystemInfoKeys.SYSTEM_NAME.value,
+            fmu_info[SystemInfoKeys.SYSTEM_NAME.value],
+            str,
         )
         fmu_names.append(fmu_info[SystemInfoKeys.SYSTEM_NAME.value])
         _check_key_exists(SystemInfoKeys.FMU_PATH.value, fmu_info)
-        _check_key_exists(
-            SystemInfoKeys.FMU_PATH.value, fmu_info[SystemInfoKeys.FMU_PATH.value], (str, Path)
+        _check_value_type(
+            SystemInfoKeys.FMU_PATH.value,
+            fmu_info[SystemInfoKeys.FMU_PATH.value],
+            (str, Path),
         )
         if fmu_info.get(SystemInfoKeys.CONNECTIONS.value) is not None:
             _validate_connection_infos(fmu_info[SystemInfoKeys.CONNECTIONS.value])
@@ -551,7 +553,9 @@ def _validate_model_infos(model_infos: SystemInfo) -> list[str]:
     for model_info in model_infos:
         _check_key_exists(SystemInfoKeys.SYSTEM_NAME.value, model_info)
         _check_value_type(
-            SystemInfoKeys.SYSTEM_NAME.value, model_info[SystemInfoKeys.SYSTEM_NAME.value], str
+            SystemInfoKeys.SYSTEM_NAME.value,
+            model_info[SystemInfoKeys.SYSTEM_NAME.value],
+            str,
         )
         model_names.append(model_info[SystemInfoKeys.SYSTEM_NAME.value])
         if model_info.get(SystemInfoKeys.CONNECTIONS.value) is not None:
@@ -570,7 +574,7 @@ def _validate_connection_infos(connection_infos: ConnectionsInfo) -> None:
         for key in (
             SystemInfoKeys.INPUT_PARAMETER.value,
             SystemInfoKeys.OUTPUT_PARAMETER.value,
-            SystemInfoKeys.SYSTEM_NAME.value,
+            SystemInfoKeys.CONNECTED_SYSTEM.value,
         ):
             _check_key_exists(key, connection)
             _check_value_type(key, connection[key], str)
@@ -588,15 +592,17 @@ def _check_value_type(key: str, value: Any, _type: Any) -> None:
             type_name = ", ".join([t.name for t in _type])
         raise TypeError(f"value of key '{key}' is {type(value)}; expected {type_name}")
 
-def _validate_model_classes(model_classes: Union[dict[str, SimulationEntity], None], model_names: list[str]):
 
-        if model_classes is None:
-            if model_names:
-                raise ValueError("Models are defined but 'model_classes' is 'None'")
-            return
+def _validate_model_classes(
+    model_classes: Union[dict[str, SimulationEntity], None], model_names: list[str]
+):
 
-        if not isinstance(model_classes, dict):
-            raise TypeError(f"'model_classes' is {type(model_classes)}; expected dict")
+    if model_classes is None:
+        if model_names:
+            raise ValueError("Models are defined but 'model_classes' is 'None'")
+        return
 
-        #TODO check if names in models classes are defined in model names
-# %%
+    if not isinstance(model_classes, dict):
+        raise TypeError(f"'model_classes' is {type(model_classes)}; expected dict")
+
+    # TODO check if names in models classes are defined in model names
