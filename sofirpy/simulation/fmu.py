@@ -71,7 +71,7 @@ class Fmu(SimulationEntity):
         """Create a dictionary for the variables of the fmu.
 
         The keys of this dictionary are the names of the variables and the
-        values are the coresponding reference numbers."""
+        values are the corresponding reference numbers."""
         self.model_vars = {
             variable.name: variable.valueReference
             for variable in self.model_description.modelVariables
@@ -81,7 +81,7 @@ class Fmu(SimulationEntity):
         """Create a dictionary for the units of the fmu variables.
 
         The keys of this dictionary are the names of the variables and the
-        values are the coresponding units."""
+        values are the corresponding units."""
         self.unit_vars = {
             variable.name: variable.unit
             for variable in self.model_description.modelVariables
