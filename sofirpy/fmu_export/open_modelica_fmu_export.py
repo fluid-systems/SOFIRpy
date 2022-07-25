@@ -112,7 +112,7 @@ def export_open_modelica_model(
     """
 
     model_path = utils.convert_str_to_path(model_path, "model_path")
-    
+
     try:
         om_fmu_export = OpenModelicaFmuExport(model_path, model_name)
         om_fmu_export.export_fmu()
@@ -123,6 +123,6 @@ def export_open_modelica_model(
     if om_fmu_export.fmu_path.exists():
         print("The FMU Export was successful.")
         om_fmu_export.move_fmu(output_directory)
-        return OpenModelicaFmuExport
+        return om_fmu_export
     else:
         print("The FMU Export was not successful")
