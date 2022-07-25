@@ -493,9 +493,9 @@ def _validate_input(
     if step_size <= 0 or step_size >= stop_time:
         raise ValueError(f"'step_size' is {step_size}; expected (0, {stop_time})")
 
-    # fmu_names = _validate_fmu_infos(fmu_infos)
-    # model_names = _validate_model_infos(model_infos)
-    # all_system_names = [*fmu_names, *model_names]
+    fmu_names = _validate_fmu_infos(fmu_infos)
+    model_names = _validate_model_infos(model_infos)
+    all_system_names = [*fmu_names, *model_names]
 
     if len(set(all_system_names)) < len(all_system_names):
         raise ValueError(f"Duplicate names in system infos.")
@@ -505,7 +505,7 @@ def _validate_input(
             "'fmu_infos' and 'model_infos' are empty; expected al least one to be not empty"
         )
 
-    # _validate_model_classes(model_classes, model_names)
+    _validate_model_classes(model_classes, model_names)
 
 
 def _validate_fmu_infos(fmu_infos: SystemInfo) -> list[str]:
