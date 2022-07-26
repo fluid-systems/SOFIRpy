@@ -17,10 +17,6 @@ class Fmu(SimulationEntity):
         """
         self.fmu_path = fmu_path
         self.step_size = step_size
-        self.model_description = None
-        self.fmu = None
-        self.model_vars = None
-        self.unit_vars = None
 
     @property
     def fmu_path(self) -> Path:
