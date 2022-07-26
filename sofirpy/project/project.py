@@ -67,7 +67,7 @@ class Project:
                 the file will be renamed accordingly. Defaults to None.
         """
 
-        _source_path: Path = utils.convert_str_to_path(source_path)
+        _source_path: Path = utils.convert_str_to_path(source_path, "source_path")
 
         file_name = new_file_name if new_file_name else _source_path.stem
 
