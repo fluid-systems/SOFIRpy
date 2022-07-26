@@ -4,7 +4,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
-from typing import Any, Optional, Union
+from typing import Any, Optional, Union, TypedDict
 import numpy as np
 import pandas as pd
 from tqdm import tqdm
@@ -197,15 +197,29 @@ class Simulation:
         return units
 
 
-ConnectionsInfo = list[dict[str, str]]
-SystemInfo = list[dict[str, Union[str, ConnectionsInfo]]]
+class ConnectionInfo(TypedDict):
+    parameter_name: str
+    connect_to_system: str
+    connect_to_external_parameter: str
+
+
+ConnectionInfos = list[ConnectionInfo]
+
+
+class SystemInfo(TypedDict, total=False):
+    name: str
+    path: Union[str, Path]
+    connections: ConnectionInfos
+
+
+SystemInfos = list[SystemInfo]
 
 
 def simulate(
     stop_time: Union[float, int],
     step_size: float,
-    fmu_infos: Optional[SystemInfo] = None,
-    model_infos: Optional[SystemInfo] = None,
+    fmu_infos: Optional[SystemInfos] = None,
+    model_infos: Optional[SystemInfos] = None,
     model_classes: Optional[dict[str, SimulationEntity]] = None,
     parameters_to_log: Optional[dict[str, list[str]]] = None,
     get_units: bool = False,
@@ -218,7 +232,7 @@ def simulate(
     Args:
         stop_time (Union[float,int]): stop time for the simulation
         step_size (float): step size for the simulation
-        fmu_infos (Optional[SystemInfo], optional):
+        fmu_infos (Optional[SystemInfos], optional):
             Defines which fmus should be simulated and how they are connected
             to other systems. It needs to have the following format:
 
@@ -228,22 +242,22 @@ def simulate(
             ...  "connections":
             ...     [
             ...     {
-            ...         "parameter name":       "<name of the input"
+            ...         "parameter_name":       "<name of the input"
             ...                                 "parameter of the fmu>",
-            ...         "connect to system":    "<name of the system the input"
+            ...         "connect_to_system":    "<name of the system the input"
             ...                                 "parameter should be connected to>",
-            ...         "connect to external parameter":    "<name of the output"
+            ...         "connect_to_external_parameter":    "<name of the output"
             ...                                             "parameter in the"
             ...                                             "connected system the"
             ...                                             "input parameter should"
             ...                                             "be connected to>"
             ...         },
             ...         {
-            ...         "parameter name":       "<name of the input"
+            ...         "parameter_name":       "<name of the input"
             ...                                 "parameter of the fmu>",
-            ...         "connect to system":    "<name of the system the input"
+            ...         "connect_to_system":    "<name of the system the input"
             ...                                  "parameter should be connected to>",
-            ...         "connect to external parameter":    "<name of the output"
+            ...         "connect_to_external_parameter":    "<name of the output"
             ...                                             "parameter in the"
             ...                                             "connected system the"
             ...                                             "input parameter should"
@@ -256,11 +270,11 @@ def simulate(
             ...  "connections":
             ...     [
             ...     {
-            ...         "parameter name":       "<name of the input"
+            ...         "parameter_name":       "<name of the input"
             ...                                 "parameter of the fmu>",
-            ...         "connect to system":    "<name of the system the input"
+            ...         "connect_to_system":    "<name of the system the input"
             ...                                  "parameter should be connected to>",
-            ...         "connect to external parameter":    "<name of the output"
+            ...         "connect_to_external_parameter":    "<name of the output"
             ...                                             "parameter in the"
             ...                                             "connected system the"
             ...                                             "input parameter should"
@@ -272,7 +286,7 @@ def simulate(
             Note: The name of the fmus can be chosen arbitrarily, but each name
             in 'fmu_infos' and 'model_infos' must occur only once.
             Defaults to None.
-        model_infos (Optional[SystemInfo], optional):
+        model_infos (Optional[SystemInfos], optional):
             Defines which python models should be simulated and how they are
             connected to other systems. It needs to have the same format as
             'fmu_infos' with the difference that
@@ -355,24 +369,24 @@ class SystemInfoKeys(Enum):
     SYSTEM_NAME = "name"
     FMU_PATH = "path"
     CONNECTIONS = "connections"
-    INPUT_PARAMETER = "parameter name"
-    CONNECTED_SYSTEM = "connect to system"
-    OUTPUT_PARAMETER = "connect to external parameter"
+    INPUT_PARAMETER = "parameter_name"
+    CONNECTED_SYSTEM = "connect_to_system"
+    OUTPUT_PARAMETER = "connect_to_external_parameter"
 
 
 def init_systems(
-    fmu_infos: SystemInfo,
-    model_infos: SystemInfo,
+    fmu_infos: SystemInfos,
+    model_infos: SystemInfos,
     model_classes: dict[str, SimulationEntity],
     step_size: float,
 ) -> dict[str, System]:
     """Initialize all System object and stores them in a dictionary.
 
     Args:
-        fmu_infos (SystemInfo): Defines
+        fmu_infos (SystemInfos): Defines
             which fmus should be simulated and how they are connected to other
             systems.
-        model_infos (SystemInfo):
+        model_infos (SystemInfos):
             Defines which python models should be simulated and how they are
             connected to other systems.
         model_classes (dict[str, SimulationEntity]): Dictionary with the name of
@@ -407,13 +421,13 @@ def init_systems(
 
 
 def init_connections(
-    system_infos: SystemInfo,
+    system_infos: SystemInfos,
     systems: dict[str, System],
 ) -> list[Connection]:
     """Initialize all the connections.
 
     Args:
-        system_infos (SystemInfo):
+        system_infos (SystemInfos):
             Defines how all systems are connected.
         systems (dict[str, System]): Dictionary with system names as keys and
             the corresponding System instance as values.
@@ -446,21 +460,21 @@ def init_connections(
 
 
 def init_parameter_list(
-    parameters_to_log: dict[str, list[str]], systems: dict[str, System]
-) -> list[LoggedParameter]:
+    parameters_to_log: Optional[dict[str, list[str]]], systems: dict[str, System]
+) -> Optional[list[LoggedParameter]]:
     """Initialize all parameters that should be logged.
 
     Args:
-        parameters_to_log (dict[str, list[str]]): Defines which
+        parameters_to_log (Optional[dict[str, list[str]]]): Defines which
             parameters should be logged.
         systems (dict[str, System]): Dictionary with system names as keys and
             the corresponding System instance as values.
 
     Returns:
-        list[LoggedParameter]: List of system parameters that should be logged.
+        Optional[list[LoggedParameter]]: List of system parameters that should be logged.
     """
     if parameters_to_log is None:
-        return
+        return None
 
     log: list[LoggedParameter] = []
 
@@ -476,8 +490,8 @@ def init_parameter_list(
 def _validate_input(
     stop_time: Union[float, int],
     step_size: float,
-    fmu_infos: Optional[SystemInfo] = None,
-    model_infos: Optional[SystemInfo] = None,
+    fmu_infos: Optional[SystemInfos] = None,
+    model_infos: Optional[SystemInfos] = None,
     model_classes: Optional[dict[str, SimulationEntity]] = None,
 ) -> None:
 
@@ -493,25 +507,26 @@ def _validate_input(
     if step_size <= 0 or step_size >= stop_time:
         raise ValueError(f"'step_size' is {step_size}; expected (0, {stop_time})")
 
-    fmu_names = _validate_fmu_infos(fmu_infos)
-    model_names = _validate_model_infos(model_infos)
-    all_system_names = [*fmu_names, *model_names]
-
-    if len(set(all_system_names)) < len(all_system_names):
-        raise ValueError(f"Duplicate names in system infos.")
-
     if not fmu_infos and not model_infos:
         raise ValueError(
             "'fmu_infos' and 'model_infos' are empty; expected al least one to be not empty"
         )
 
+    fmu_names = _validate_fmu_infos(fmu_infos)
+    model_names = _validate_model_infos(model_infos)
+
+    all_system_names = _get_all_system_names(fmu_names, model_names)
+
+    if len(set(all_system_names)) < len(all_system_names):
+        raise ValueError(f"Duplicate names in system infos.")
+
     _validate_model_classes(model_classes, model_names)
 
 
-def _validate_fmu_infos(fmu_infos: SystemInfo) -> list[str]:
+def _validate_fmu_infos(fmu_infos: Optional[SystemInfos]) -> Optional[list[str]]:
 
     if fmu_infos is None:
-        return
+        return None
 
     if not isinstance(fmu_infos, list):
         raise TypeError(f"'fmu_infos' is {type(fmu_infos)}; expected list")
@@ -538,10 +553,10 @@ def _validate_fmu_infos(fmu_infos: SystemInfo) -> list[str]:
     return fmu_names
 
 
-def _validate_model_infos(model_infos: SystemInfo) -> list[str]:
+def _validate_model_infos(model_infos: Optional[SystemInfos]) -> Optional[list[str]]:
 
     if model_infos is None:
-        return
+        return None
 
     if model_infos and not isinstance(model_infos, list):
         raise TypeError(f"'model_infos' is {type(model_infos)}; expected list")
@@ -562,7 +577,7 @@ def _validate_model_infos(model_infos: SystemInfo) -> list[str]:
     return model_names
 
 
-def _validate_connection_infos(connection_infos: ConnectionsInfo) -> None:
+def _validate_connection_infos(connection_infos: ConnectionInfos) -> None:
 
     if not isinstance(connection_infos, list):
         raise TypeError(
@@ -575,10 +590,10 @@ def _validate_connection_infos(connection_infos: ConnectionsInfo) -> None:
             SystemInfoKeys.CONNECTED_SYSTEM.value,
         ):
             _check_key_exists(key, connection)
-            _check_value_type(key, connection[key], str)
+            _check_value_type(key, connection[key], str)  # type: ignore
 
 
-def _check_key_exists(key: str, info_dict: dict) -> None:
+def _check_key_exists(key: str, info_dict: Union[SystemInfo, ConnectionInfo]) -> None:
     if key not in info_dict:
         raise KeyError(f"missing key '{key}' in {info_dict}")
 
@@ -591,8 +606,21 @@ def _check_value_type(key: str, value: Any, _type: Any) -> None:
         raise TypeError(f"value of key '{key}' is {type(value)}; expected {type_name}")
 
 
+def _get_all_system_names(
+    fmu_names: Optional[list[str]], model_names: Optional[list[str]]
+) -> list[str]:
+    if fmu_names is not None and model_names is not None:
+        return [*fmu_names, *model_names]
+    if fmu_names is not None:
+        return fmu_names
+    if model_names is not None:
+        return model_names
+    return []
+
+
 def _validate_model_classes(
-    model_classes: Union[dict[str, SimulationEntity], None], model_names: list[str]
+    model_classes: Optional[dict[str, SimulationEntity]],
+    model_names: Optional[list[str]],
 ):
 
     if model_classes is None:
