@@ -369,7 +369,7 @@ def export_dymola_model(
     packages: Optional[list[Union[str, Path]]] = None,
     keep_log: bool = True,
     keep_mos: bool = True,
-) -> DymolaFmuExport:
+) -> Optional[DymolaFmuExport]:
     """Export a dymola model as a fmu.
 
     The following steps are performed:
@@ -416,17 +416,17 @@ def export_dymola_model(
             else it will be deleted. Defaults to True.
 
     Returns:
-        DymolaFmuExport: DymolaFmuExport object.
+        Optional[DymolaFmuExport]: DymolaFmuExport object.
     """
 
-    dymola_exe_path = utils.convert_str_to_path(dymola_exe_path, "dymola_exe_path")
-    model_path = utils.convert_str_to_path(model_path, "model_path")
+    _dymola_exe_path = utils.convert_str_to_path(dymola_exe_path, "dymola_exe_path")
+    _model_path = utils.convert_str_to_path(model_path, "model_path")
 
     dymola_fmu_export = DymolaFmuExport(
-        dymola_exe_path, model_path, model_name, parameters, model_modifiers, packages
+        _dymola_exe_path, _model_path, model_name, parameters, model_modifiers, packages
     )
 
-    output_directory = utils.convert_str_to_path(output_directory, "output_directory")
+    _output_directory = utils.convert_str_to_path(output_directory, "output_directory")
 
     dymola_fmu_export.export_fmu(keep_log)
 
@@ -439,11 +439,11 @@ def export_dymola_model(
     if dymola_fmu_export.fmu_path.exists():
         print("The FMU Export was successful.")
         dymola_fmu_export._error_log_path.unlink()
-        dymola_fmu_export.move_fmu(output_directory)
+        dymola_fmu_export.move_fmu(_output_directory)
         if keep_mos:
-            dymola_fmu_export.move_mos_script(output_directory)
+            dymola_fmu_export.move_mos_script(_output_directory)
         if keep_log:
-            dymola_fmu_export.move_log_file(output_directory)
+            dymola_fmu_export.move_log_file(_output_directory)
         return dymola_fmu_export
 
     print("The FMU Export was not successful")
@@ -458,7 +458,7 @@ def export_dymola_model(
         print("Exporting model without parameters and model modifiers...")
 
         # TODO export in temp instead of model dir
-        dymola_fmu_export = DymolaFmuExport(dymola_exe_path, model_path, model_name)
+        dymola_fmu_export = DymolaFmuExport(_dymola_exe_path, _model_path, model_name)
         dymola_fmu_export.export_fmu(
             export_simulator_log=False, export_error_log=False
         )
@@ -479,6 +479,7 @@ def export_dymola_model(
                 "FMU Export without added parameters and model modifiers was not successful."
             )
 
+    return None
 
 def read_model_parameters(fmu_path: Path) -> list[str]:
     """Read the models parameters of the given fmu.
