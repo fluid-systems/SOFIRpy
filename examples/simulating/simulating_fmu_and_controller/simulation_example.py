@@ -15,9 +15,9 @@ fmu_info = [
         "path": str(fmu_path),
         "connections": [
             {
-                "parameter name": "u",
-                "connect to system": "pid",
-                "connect to external parameter": "u",
+                "parameter_name": "u",
+                "connect_to_system": "pid",
+                "connect_to_external_parameter": "u",
             }
         ]
     }
@@ -29,9 +29,9 @@ control_infos = [
         "name": "pid",
         "connections": [
             {
-                "parameter name": "speed",
-                "connect to system": "DC_Motor",
-                "connect to external parameter": "y"
+                "parameter_name": "speed",
+                "connect_to_system": "DC_Motor",
+                "connect_to_external_parameter": "y"
             }
         ]
     }

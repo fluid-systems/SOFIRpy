@@ -72,9 +72,9 @@ def fmu_info() -> dict:
             "path": str(Path(__file__).parent / "DC_Motor.fmu"),
             "connections": [
                 {
-                    "parameter name": "u",
-                    "connect to system": "pid",
-                    "connect to external parameter": "u",
+                    "parameter_name": "u",
+                    "connect_to_system": "pid",
+                    "connect_to_external_parameter": "u",
                 }
             ],
         }
@@ -87,9 +87,9 @@ def model_info() -> dict:
             "name": "pid",
             "connections": [
                 {
-                    "parameter name": "speed",
-                    "connect to system": "DC_Motor",
-                    "connect to external parameter": "y",
+                    "parameter_name": "speed",
+                    "connect_to_system": "DC_Motor",
+                    "connect_to_external_parameter": "y",
                 }
             ],
         }
@@ -160,9 +160,9 @@ def test_simulate_with_no_parameters_to_log(fmu_info: list[dict], model_info: li
             "path": str(Path(__file__).parent / "DC_Motor.fmu"),
             "connections": [
                 {
-                    "parameter name": "u",
-                    "connect to system": "pid",
-                    "connect to external parameter": "u",
+                    "parameter_name": "u",
+                    "connect_to_system": "pid",
+                    "connect_to_external_parameter": "u",
                 }
             ],
         }
@@ -173,9 +173,9 @@ def test_simulate_with_no_parameters_to_log(fmu_info: list[dict], model_info: li
             "path": str(Path(__file__).parent / "DC_Motor.fmu"),
             "connections": [
                 {
-                    "parameter name": "u",
-                    "connect to system": "pid",
-                    "connect to external parameter": "u",
+                    "parameter_name": "u",
+                    "connect_to_system": "pid",
+                    "connect_to_external_parameter": "u",
                 }
             ],
         },
@@ -183,9 +183,9 @@ def test_simulate_with_no_parameters_to_log(fmu_info: list[dict], model_info: li
             "name": "DC_Motor",
             "connections": [
                 {
-                    "parameter name": "u",
-                    "connect to system": "pid",
-                    "connect to external parameter": "u",
+                    "parameter_name": "u",
+                    "connect_to_system": "pid",
+                    "connect_to_external_parameter": "u",
                 }
             ],
         }
@@ -195,8 +195,8 @@ def test_simulate_with_no_parameters_to_log(fmu_info: list[dict], model_info: li
             "path": str(Path(__file__).parent / "DC_Motor.fmu"),
             "connections": [
                 {
-                    "connect to system": "pid",
-                    "connect to external parameter": "u",
+                    "connect_to_system": "pid",
+                    "connect_to_external_parameter": "u",
                 }
             ],
         },
@@ -206,8 +206,8 @@ def test_simulate_with_no_parameters_to_log(fmu_info: list[dict], model_info: li
             "path": str(Path(__file__).parent / "DC_Motor.fmu"),
             "connections": [
                 {
-                    "parameter name": "u",
-                    "connect to external parameter": "u",
+                    "parameter_name": "u",
+                    "connect_to_external_parameter": "u",
                 }
             ],
         },
@@ -217,8 +217,8 @@ def test_simulate_with_no_parameters_to_log(fmu_info: list[dict], model_info: li
             "path": str(Path(__file__).parent / "DC_Motor.fmu"),
             "connections": [
                 {
-                    "parameter name": "u",
-                    "connect to system": "pid"
+                    "parameter_name": "u",
+                    "connect_to_system": "pid"
                 }
             ],
         },
