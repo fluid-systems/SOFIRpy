@@ -1,7 +1,7 @@
 """This module allows to export a OpenModelica model as a fmu."""
 
 from pathlib import Path
-from typing import Union
+from typing import Optional, Union
 from OMPython import ModelicaSystem
 from sofirpy.fmu_export.fmu_export import FmuExport
 from sofirpy import utils
@@ -84,9 +84,9 @@ class OpenModelicaFmuExport(FmuExport):
             f"{self.model_name}_FMU.makefile",
         ]
 
-        self._paths_to_delete = map(
+        self._paths_to_delete = list(map(
             lambda file_name: self._dump_directory / file_name, files_to_delete
-        )
+        ))
 
     def export_fmu(self):
         """Exports the model as an fmu."""
@@ -99,7 +99,7 @@ class OpenModelicaFmuExport(FmuExport):
 
 def export_open_modelica_model(
     model_path: Union[Path, str], model_name: str, output_directory: Union[Path, str]
-) -> Union[OpenModelicaFmuExport, None]:
+) -> Optional[OpenModelicaFmuExport]:
     """Exports a modelica model as an fmu and moves the fmu to the output directory
 
     Args:
@@ -108,13 +108,14 @@ def export_open_modelica_model(
         output_directory (Union[Path, str]): Path to the output directory.
 
     Returns:
-        OpenModelicaFmuExport: OpenModelicaFmuExport object
+        Optional[OpenModelicaFmuExport]: OpenModelicaFmuExport object
     """
 
-    model_path = utils.convert_str_to_path(model_path, "model_path")
+    _model_path = utils.convert_str_to_path(model_path, "model_path")
+    _output_directory = utils.convert_str_to_path(output_directory, "output_directory")
 
     try:
-        om_fmu_export = OpenModelicaFmuExport(model_path, model_name)
+        om_fmu_export = OpenModelicaFmuExport(_model_path, model_name)
         om_fmu_export.export_fmu()
     finally:
         # delete unnecessary files
@@ -122,7 +123,9 @@ def export_open_modelica_model(
 
     if om_fmu_export.fmu_path.exists():
         print("The FMU Export was successful.")
-        om_fmu_export.move_fmu(output_directory)
+        om_fmu_export.move_fmu(_output_directory)
         return om_fmu_export
     else:
         print("The FMU Export was not successful")
+
+    return None
