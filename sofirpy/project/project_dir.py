@@ -294,4 +294,4 @@ class ProjectDir:
         return target_path
 
     def __repr__(self) -> str:
-        return  f"Project directory at '{str(self.project_directory)}'"
+        return f"Project directory at '{str(self.project_directory)}'"

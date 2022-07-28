@@ -28,6 +28,7 @@ def store_input_arguments(func: Callable):
     Returns:
         Callable: Decorated Method
     """
+
     @wraps(func)
     def wrapper(*args, **kwargs):
         insp = getfullargspec(func)
@@ -43,8 +44,12 @@ def store_input_arguments(func: Callable):
         return_value = func(*args, **kwargs)
         method_input_info = {func.__name__: inputs}
         if hasattr(args[0], "__input_arguments__"):
-            args[0].__input_arguments__ = {**args[0].__input_arguments__, **method_input_info}
+            args[0].__input_arguments__ = {
+                **args[0].__input_arguments__,
+                **method_input_info,
+            }
         else:
             args[0].__input_arguments__ = method_input_info
         return return_value
+
     return wrapper

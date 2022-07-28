@@ -75,13 +75,13 @@ class Project:
             target_path = self.project_dir.copy_and_rename_file(
                 _source_path,
                 self.project_dir.project_directory / folder_name,
-                file_name
+                file_name,
             )
         else:
             target_path = self.project_dir.move_and_rename_file(
                 _source_path,
                 self.project_dir.project_directory / folder_name,
-                file_name
+                file_name,
             )
 
         self.hdf5.store_data(target_path.name, str(target_path), folder_name)

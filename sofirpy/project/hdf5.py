@@ -147,7 +147,7 @@ class HDF5:
             if attribute_name not in hdf5_object.attrs.keys():
                 raise KeyError(
                     f"Attribute name '{attribute_name}' is not a attribute at '{path}'."
-                    )
+                )
             del hdf5_object.attrs[attribute_name]
 
     def read_attributes(self, path: str) -> dict[str, Any]:
@@ -162,7 +162,9 @@ class HDF5:
         """
         with h5py.File(str(self.hdf5_path), "a") as hdf5:
 
-            hdf5_object: Union[h5py.Group, h5py.Dataset] = hdf5.get(path) if path else hdf5
+            hdf5_object: Union[h5py.Group, h5py.Dataset] = (
+                hdf5.get(path) if path else hdf5
+            )
             return dict(hdf5_object.attrs)
 
     def read_data(
@@ -270,7 +272,7 @@ class HDF5:
         """
         with h5py.File(str(self.hdf5_path), "a") as hdf5:
             if not group_path:
-                group_path  = ""
+                group_path = ""
             path = group_path + "/" + data_name
             if not hdf5.get(path):
                 raise KeyError(f"'{path}' does not exist in hdf5.")
@@ -324,7 +326,6 @@ class HDF5:
             if hdf5.get(path) is None:
                 return False
         return True
-
 
     def _place(
         self,
