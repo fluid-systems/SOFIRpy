@@ -189,7 +189,7 @@ class Simulation:
             system = parameter.system
             parameter_name = parameter.name
             try:
-                unit = system.simulation_entity.get_unit(parameter_name)
+                unit = system.simulation_entity.get_unit(parameter_name)  # type: ignore
             except AttributeError:
                 unit = None
             units[f"{system.name}.{parameter_name}"] = unit
@@ -197,11 +197,7 @@ class Simulation:
         return units
 
 
-class ConnectionInfo(TypedDict):
-    parameter_name: str
-    connect_to_system: str
-    connect_to_external_parameter: str
-
+ConnectionInfo = dict[str, str]
 
 ConnectionInfos = list[ConnectionInfo]
 
@@ -590,7 +586,7 @@ def _validate_connection_infos(connection_infos: ConnectionInfos) -> None:
             SystemInfoKeys.CONNECTED_SYSTEM.value,
         ):
             _check_key_exists(key, connection)
-            _check_value_type(key, connection[key], str)  # type: ignore
+            _check_value_type(key, connection[key], str)
 
 
 def _check_key_exists(key: str, info_dict: Union[SystemInfo, ConnectionInfo]) -> None:
