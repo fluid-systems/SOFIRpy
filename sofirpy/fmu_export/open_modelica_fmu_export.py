@@ -84,9 +84,9 @@ class OpenModelicaFmuExport(FmuExport):
             f"{self.model_name}_FMU.makefile",
         ]
 
-        self._paths_to_delete = list(map(
-            lambda file_name: self._dump_directory / file_name, files_to_delete
-        ))
+        self._paths_to_delete = list(
+            map(lambda file_name: self._dump_directory / file_name, files_to_delete)
+        )
 
     def export_fmu(self):
         """Exports the model as an fmu."""

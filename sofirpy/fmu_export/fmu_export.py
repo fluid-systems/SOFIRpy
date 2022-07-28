@@ -3,6 +3,7 @@
 from pathlib import Path
 from sofirpy import utils
 
+
 class FmuExport:
     """Object that sets the paths for the fmu export."""
 
@@ -79,15 +80,14 @@ class FmuExport:
                 overwrite = input(
                     "The new fmu will have the same path as an existing fmu. Overwrite? [y/n]"
                 )
-                if overwrite == "y" or overwrite == "n":
-                    if overwrite == "y":
-                        break
-                    elif overwrite == "n":
-                        raise FileExistsError(
-                            f"Stopping execution. Fmu at {fmu_path} already exists."
-                            )
-                    else:
-                        print("Enter 'y' or 'n'")
+                if overwrite == "y":
+                    break
+                elif overwrite == "n":
+                    raise FileExistsError(
+                        f"Stopping execution. Fmu at {fmu_path} already exists."
+                    )
+                else:
+                    print("Enter 'y' or 'n'")
 
         self._fmu_path = fmu_path
 
@@ -97,6 +97,6 @@ class FmuExport:
         Args:
             target_directory (Path): Path to the target directory.
         """
-        new_fmu_path =  target_directory / self.fmu_path.name
+        new_fmu_path = target_directory / self.fmu_path.name
         utils.move_file(self.fmu_path, new_fmu_path)
         self._fmu_path = new_fmu_path

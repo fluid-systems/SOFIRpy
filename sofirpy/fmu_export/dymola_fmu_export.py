@@ -96,13 +96,16 @@ class DymolaFmuExport(FmuExport):
             packages = []
 
         # converts paths to strings if paths are given as Path object
-        self._packages = list(map(
-            lambda path: utils.convert_str_to_path(path, "package_path"), packages
-        ))
+        self._packages = list(
+            map(lambda path: utils.convert_str_to_path(path, "package_path"), packages)
+        )
 
-        self._paths_to_delete = list(map(
-            lambda name: self.model_directory / name, DymolaFmuExport.files_to_delete
-        ))
+        self._paths_to_delete = list(
+            map(
+                lambda name: self.model_directory / name,
+                DymolaFmuExport.files_to_delete,
+            )
+        )
 
     @property
     def dymola_exe_path(self) -> Path:
@@ -144,9 +147,7 @@ class DymolaFmuExport(FmuExport):
     def model_name(self, model_name: str) -> None:
 
         if not isinstance(model_name, str):
-            raise TypeError(
-                f"'model_name' is {type(model_name)};  expected str"
-            )
+            raise TypeError(f"'model_name' is {type(model_name)};  expected str")
 
         self._model_name = model_name
 
@@ -459,9 +460,7 @@ def export_dymola_model(
 
         # TODO export in temp instead of model dir
         dymola_fmu_export = DymolaFmuExport(_dymola_exe_path, _model_path, model_name)
-        dymola_fmu_export.export_fmu(
-            export_simulator_log=False, export_error_log=False
-        )
+        dymola_fmu_export.export_fmu(export_simulator_log=False, export_error_log=False)
         dymola_fmu_export._mos_file_path.unlink()
         utils.delete_paths(dymola_fmu_export._paths_to_delete)
         if dymola_fmu_export.fmu_path.exists():
@@ -480,6 +479,7 @@ def export_dymola_model(
             )
 
     return None
+
 
 def read_model_parameters(fmu_path: Path) -> list[str]:
     """Read the models parameters of the given fmu.
