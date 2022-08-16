@@ -1,5 +1,5 @@
 FMPy
-alive_progress
+tqdm
 h5py
 matplotlib
 numpy
