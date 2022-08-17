@@ -3,7 +3,7 @@ from setuptools import setup
 
 rootdir = Path(__file__).parent
 
-with open(rootdir / "README.md", 'r') as f:
+with open(rootdir / "README.md", "r") as f:
     long_description = f.read()
 
 setup(
@@ -15,14 +15,26 @@ setup(
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://git.rwth-aachen.de/sofirpy/sofirpy",
-    packages= ["sofirpy", "sofirpy.fmu_export", "sofirpy.simulation", "sofirpy.project"],
-    install_requires = ["FMPy",
-                        "tqdm",
-                        "h5py",
-                        "matplotlib",
-                        "numpy",
-                        "pandas",
-                        "OMpython"],
-
+        classifiers=[
+        "License :: OSI Approved :: MIT License",
+        "Programming Language :: Python :: 3",
+        "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
+        "Programming Language :: Python :: 3 :: Only",
+    ],
+    keywords="simulation",
+    packages=["sofirpy", "sofirpy.fmu_export", "sofirpy.simulation", "sofirpy.project"],
     python_requires=">=3.9",
+    install_requires=[
+        "FMPy",
+        "tqdm",
+        "h5py",
+        "matplotlib",
+        "numpy",
+        "pandas",
+        "OMpython",
+    ],
+    extras_require={
+        "test": ["pytest", "pytest-cov"],
+    },
 )
