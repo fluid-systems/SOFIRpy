@@ -1,9 +1,9 @@
 from pathlib import Path
 from setuptools import setup
 
-rootdir = Path(__file__).parent
+root_dir = Path(__file__).parent
 
-with open(rootdir / "README.md", "r") as f:
+with open(root_dir / "README.md", "r") as f:
     long_description = f.read()
 
 setup(
@@ -22,7 +22,7 @@ setup(
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3 :: Only",
     ],
-    keywords="simulation",
+    keywords=["simulation", "fmu"],
     packages=["sofirpy", "sofirpy.fmu_export", "sofirpy.simulation", "sofirpy.project"],
     python_requires=">=3.9",
     install_requires=[
