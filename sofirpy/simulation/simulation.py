@@ -617,12 +617,12 @@ def _get_all_system_names(
 def _validate_model_classes(
     model_classes: Optional[dict[str, SimulationEntity]],
     model_names: Optional[list[str]],
-):
+) -> None:
 
     if model_classes is None:
         if model_names:
             raise ValueError("Models are defined but 'model_classes' is 'None'")
-        return
+        return None
 
     if not isinstance(model_classes, dict):
         raise TypeError(f"'model_classes' is {type(model_classes)}; expected dict")
