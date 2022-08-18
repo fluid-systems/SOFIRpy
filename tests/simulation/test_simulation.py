@@ -8,7 +8,7 @@ from sofirpy.simulation.simulation import (
     simulate,
     _validate_fmu_infos,
     _validate_input
-    )
+)
 
 
 class PID(SimulationEntity):
@@ -64,6 +64,7 @@ class PID(SimulationEntity):
     def get_parameter_value(self, output_name):
         return self.outputs[output_name]
 
+
 @pytest.fixture
 def fmu_info() -> dict:
     return [
@@ -80,6 +81,7 @@ def fmu_info() -> dict:
         }
     ]
 
+
 @pytest.fixture
 def model_info() -> dict:
     return [
@@ -95,9 +97,11 @@ def model_info() -> dict:
         }
     ]
 
+
 @pytest.fixture
 def pid() -> PID:
     return PID(1e-3, 3, 20, 0.1, set_point=100, u_max=100, u_min=0)
+
 
 def test_simulation(fmu_info: list[dict], model_info: list[dict], pid: PID) -> None:
 
@@ -123,20 +127,19 @@ def test_simulation(fmu_info: list[dict], model_info: list[dict], pid: PID) -> N
     results = results.to_numpy()
     assert np.isclose(results, test_results, atol=1e-6).all()
 
-def test_validate_input_duplicate_name_value_error(fmu_info: list[dict], model_info: list[dict]) -> None:
+
+def test_validate_input_duplicate_name_value_error(
+    fmu_info: list[dict], model_info: list[dict]
+) -> None:
 
     model_info[0]["name"] = fmu_info[0]["name"]
-    with pytest.raises(ValueError, match= "Duplicate names in system infos."):
-        _validate_input(
-            1,
-            0.1,
-            fmu_info,
-            model_info
-        )
+    with pytest.raises(ValueError, match="Duplicate names in system infos."):
+        _validate_input(1, 0.1, fmu_info, model_info)
 
 
-
-def test_simulate_with_no_parameters_to_log(fmu_info: list[dict], model_info: list[dict], pid: PID) -> None:
+def test_simulate_with_no_parameters_to_log(
+    fmu_info: list[dict], model_info: list[dict], pid: PID
+) -> None:
 
     control_class = {"pid": pid}
 
@@ -148,83 +151,82 @@ def test_simulate_with_no_parameters_to_log(fmu_info: list[dict], model_info: li
         model_classes=control_class,
     )
 
-    test_results = pd.read_csv(Path(__file__).parent / "test_results.csv", usecols = ["time"])
+    test_results = pd.read_csv(
+        Path(__file__).parent / "test_results.csv", usecols=["time"]
+    )
     test_results = test_results.to_numpy()
     results = results.to_numpy()
     assert np.isclose(results, test_results, atol=1e-6).all()
 
+
 @pytest.mark.parametrize(
-    "fmu_info", [
+    "fmu_info",
+    [
         [
-        {
-            "path": str(Path(__file__).parent / "DC_Motor.fmu"),
-            "connections": [
-                {
-                    "parameter_name": "u",
-                    "connect_to_system": "pid",
-                    "connect_to_external_parameter": "u",
-                }
-            ],
-        }
+            {
+                "path": str(Path(__file__).parent / "DC_Motor.fmu"),
+                "connections": [
+                    {
+                        "parameter_name": "u",
+                        "connect_to_system": "pid",
+                        "connect_to_external_parameter": "u",
+                    }
+                ],
+            }
         ],
         [
-        {
-            "name": "DC_Motor",
-            "path": str(Path(__file__).parent / "DC_Motor.fmu"),
-            "connections": [
-                {
-                    "parameter_name": "u",
-                    "connect_to_system": "pid",
-                    "connect_to_external_parameter": "u",
-                }
-            ],
-        },
-        {
-            "name": "DC_Motor",
-            "connections": [
-                {
-                    "parameter_name": "u",
-                    "connect_to_system": "pid",
-                    "connect_to_external_parameter": "u",
-                }
-            ],
-        }
+            {
+                "name": "DC_Motor",
+                "path": str(Path(__file__).parent / "DC_Motor.fmu"),
+                "connections": [
+                    {
+                        "parameter_name": "u",
+                        "connect_to_system": "pid",
+                        "connect_to_external_parameter": "u",
+                    }
+                ],
+            },
+            {
+                "name": "DC_Motor",
+                "connections": [
+                    {
+                        "parameter_name": "u",
+                        "connect_to_system": "pid",
+                        "connect_to_external_parameter": "u",
+                    }
+                ],
+            },
         ],
         [
-        {
-            "path": str(Path(__file__).parent / "DC_Motor.fmu"),
-            "connections": [
-                {
-                    "connect_to_system": "pid",
-                    "connect_to_external_parameter": "u",
-                }
-            ],
-        },
+            {
+                "path": str(Path(__file__).parent / "DC_Motor.fmu"),
+                "connections": [
+                    {
+                        "connect_to_system": "pid",
+                        "connect_to_external_parameter": "u",
+                    }
+                ],
+            },
+        ],
+        [
+            {
+                "path": str(Path(__file__).parent / "DC_Motor.fmu"),
+                "connections": [
+                    {
+                        "parameter_name": "u",
+                        "connect_to_external_parameter": "u",
+                    }
+                ],
+            },
+        ],
+        [
+            {
+                "path": str(Path(__file__).parent / "DC_Motor.fmu"),
+                "connections": [{"parameter_name": "u", "connect_to_system": "pid"}],
+            },
+        ],
     ],
-    [
-        {
-            "path": str(Path(__file__).parent / "DC_Motor.fmu"),
-            "connections": [
-                {
-                    "parameter_name": "u",
-                    "connect_to_external_parameter": "u",
-                }
-            ],
-        },
-    ],
-    [
-        {
-            "path": str(Path(__file__).parent / "DC_Motor.fmu"),
-            "connections": [
-                {
-                    "parameter_name": "u",
-                    "connect_to_system": "pid"
-                }
-            ],
-        },
-    ]
-    ]
-    )
+)
 def test_validate_fmu_info_key_error(fmu_info: list[dict]) -> None:
 
     with pytest.raises(KeyError):
