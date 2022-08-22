@@ -177,11 +177,11 @@ class Simulation:
 
         return pd.DataFrame(columns=["time"] + columns)
 
-    def get_units(self) -> dict[str, Optional[str]]:
+    def get_units(self) -> Units:
         """Get a dictionary with all logged parameters as keys and their units as values.
 
         Returns:
-            dict[str, Optional[str]]: keys: parameter name, values: unit. If the unit can
+            Units: keys: parameter name, values: unit. If the unit can
             not be obtained it is set to None.
         """
         units = {}
@@ -210,6 +210,7 @@ class SystemInfo(TypedDict, total=False):
 
 SystemInfos = list[SystemInfo]
 
+Units = dict[str, Optional[str]]
 
 def simulate(
     stop_time: Union[float, int],
@@ -219,7 +220,7 @@ def simulate(
     model_classes: Optional[dict[str, SimulationEntity]] = None,
     parameters_to_log: Optional[dict[str, list[str]]] = None,
     get_units: bool = False,
-) -> Union[pd.DataFrame, tuple[pd.DataFrame, dict[str, str]]]:
+) -> Union[pd.DataFrame, tuple[pd.DataFrame, Units]]:
     """Simulate fmus and models written in python.
 
     Any number of python models and fmus can be simulated, but at least one
@@ -329,7 +330,7 @@ def simulate(
         ValueError: step_size value was invalid
 
     Returns:
-        Union[pd.DataFrame, tuple[pd.DataFrame, dict[str,str]]]:
+        Union[pd.DataFrame, tuple[pd.DataFrame, dict[str, Units]]:
             Result DataFrame with times series of logged parameters, units of
             logged parameters.
     """
