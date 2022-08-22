@@ -1,12 +1,12 @@
 from abc import ABC, abstractmethod
-from typing import Union
+from typing import Optional, Union
 
 
 class SimulationEntity(ABC):
     """Abstract object representing a simulation entity."""
 
     @abstractmethod
-    def set_input(self, input_name: str, input_value: Union[float, int]):
+    def set_input(self, input_name: str, input_value: Union[float, int]) -> None:
         """Set the value of an input parameter.
 
         Args:
@@ -28,9 +28,19 @@ class SimulationEntity(ABC):
         """
 
     @abstractmethod
-    def do_step(self, time: float):
+    def do_step(self, time: float) -> None:
         """Perform simulation entity calculation and set parameters accordingly.
 
         Args:
             time (float): current simulation time
+        """
+
+    def get_unit(self, parameter_name: str) -> Optional[str]:
+        """Return the unit of a parameter.
+
+        Args:
+            parameter_name (str): Name of the parameter.
+
+        Returns:
+            Optional[str]: Unit of the parameter.
         """
