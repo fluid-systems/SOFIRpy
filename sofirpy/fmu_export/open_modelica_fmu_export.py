@@ -88,7 +88,7 @@ class OpenModelicaFmuExport(FmuExport):
             map(lambda file_name: self._dump_directory / file_name, files_to_delete)
         )
 
-    def export_fmu(self):
+    def export_fmu(self) -> None:
         """Exports the model as an fmu."""
 
         open_modelica = ModelicaSystem(

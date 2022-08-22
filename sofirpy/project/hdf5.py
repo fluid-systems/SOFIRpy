@@ -298,7 +298,7 @@ class HDF5:
         """
         file_structure: dict[str, Any] = {}
 
-        def append_name(name: str, hdf5_object: Union[h5py.Group, h5py.Dataset]):
+        def append_name(name: str, hdf5_object: Union[h5py.Group, h5py.Dataset]) -> None:
             self._place(name, file_structure, hdf5_object, mode="short")
 
         with h5py.File(str(self.hdf5_path), "a") as hdf5:

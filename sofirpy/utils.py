@@ -3,7 +3,7 @@ import shutil
 from typing import Union
 
 
-def delete_file_or_directory(path: Path, print_status: bool = False):
+def delete_file_or_directory(path: Path, print_status: bool = False) -> None:
 
     if not path.exists():
         raise ValueError(f"{str(path)} does not exist")
@@ -73,7 +73,7 @@ def copy_file(source_path: Path, target_path: Path) -> None:
     shutil.copy(source_path, target_path)
 
 
-def _get_user_input(target_path: Union[Path, str], type="path") -> bool:
+def _get_user_input(target_path: Union[Path, str], type: str="path") -> bool:
 
     while True:
         overwrite = input(f"The {type} {target_path} already exists. Overwrite? [y/n]")

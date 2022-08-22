@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Union
+from typing import Union, Optional
 from fmpy import extract, read_model_description
 from fmpy.fmi2 import FMU2Slave
 from sofirpy.simulation.simulation_entity import SimulationEntity
@@ -120,7 +120,7 @@ class Fmu(SimulationEntity):
         self.fmu.terminate()
         self.fmu.freeInstance()
 
-    def get_unit(self, parameter_name: str) -> str:
+    def get_unit(self, parameter_name: str) -> Optional[str]:
         """Return the unit of a variable.
 
         Args:
