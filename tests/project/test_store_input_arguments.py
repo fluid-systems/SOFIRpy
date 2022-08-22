@@ -19,12 +19,9 @@ class DummyClass:
     def methode3(self, a) -> None:
         ...
 
-@pytest.fixture
-def test_class() -> DummyClass:
-    return DummyClass(1, b=5, c=4)
+def test_store_input_arguments() -> None:
 
-def test_store_input_arguments(test_class: DummyClass) -> None:
-
+    test_class = DummyClass(1, c=4, b=5)
     test_class.methode1()
     test_class.methode2(a=None)
     test_class.methode3(list())
