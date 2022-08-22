@@ -177,11 +177,11 @@ class Simulation:
 
         return pd.DataFrame(columns=["time"] + columns)
 
-    def get_units(self) -> dict[str, str]:
+    def get_units(self) -> dict[str, Optional[str]]:
         """Get a dictionary with all logged parameters as keys and their units as values.
 
         Returns:
-            dict[str, str]: keys: parameter name, values: unit. If the unit can
+            dict[str, Optional[str]]: keys: parameter name, values: unit. If the unit can
             not be obtained it is set to None.
         """
         units = {}
@@ -189,7 +189,7 @@ class Simulation:
             system = parameter.system
             parameter_name = parameter.name
             try:
-                unit = system.simulation_entity.get_unit(parameter_name)  # type: ignore
+                unit = system.simulation_entity.get_unit(parameter_name)
             except AttributeError:
                 unit = None
             units[f"{system.name}.{parameter_name}"] = unit
