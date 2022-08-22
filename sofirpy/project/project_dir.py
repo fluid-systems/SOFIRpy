@@ -149,7 +149,9 @@ class ProjectDir:
         )
 
     def move_file(
-        self, source_path: Union[Path, str], target_directory: Union[Path, str] = None
+        self,
+        source_path: Union[Path, str],
+        target_directory: Optional[Union[Path, str]] = None
     ) -> Path:
         """Move a file from a source path to a target directory.
 
