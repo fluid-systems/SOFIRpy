@@ -143,7 +143,7 @@ class Simulation:
             system.simulation_entity.do_step(time)
 
     def log_values(self, time: float, time_step: int) -> None:
-        """Log parameter values that are set o be logged.
+        """Log parameter values that are set to be logged.
 
         Args:
             time (float): current simulation time
@@ -156,7 +156,12 @@ class Simulation:
             value = system.simulation_entity.get_parameter_value(parameter_name)
             new_value_row += [value]
 
-        self.results.loc[time_step] = new_value_row
+        this_results = pd.DataFrame(
+            [new_value_row], columns=self.columns, index=[time_step]
+        )
+
+        # self.results.loc[time_step] = new_value_row
+        self.results = pd.concat([self.results, this_results])
 
     def create_result_df(
         self, parameters_to_log: list[LoggedParameter]
@@ -170,12 +175,12 @@ class Simulation:
         Returns:
             pd.DataFrame: dataFrame with only the column names
         """
-        columns = [
+        self.columns = [
             f"{parameter.system.name}.{parameter.name}"
             for parameter in parameters_to_log
         ]
 
-        return pd.DataFrame(columns=["time"] + columns)
+        return pd.DataFrame(columns=["time"] + self.columns)
 
     def get_units(self) -> Units:
         """Get a dictionary with all logged parameters as keys and their units as values.
@@ -211,6 +216,7 @@ class SystemInfo(TypedDict, total=False):
 SystemInfos = list[SystemInfo]
 
 Units = dict[str, Optional[str]]
+
 
 def simulate(
     stop_time: Union[float, int],
