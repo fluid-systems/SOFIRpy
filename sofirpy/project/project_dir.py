@@ -14,7 +14,7 @@ class ProjectDir:
         Args:
             project_directory (Union[Path, str]): Path to the project directory.
         """
-        self.project_directory = project_directory
+        self.project_directory = project_directory  # type: ignore[assignment]
         self.current_folder: str = "."
 
     @property
@@ -91,7 +91,7 @@ class ProjectDir:
         self._current_folder_path = self.project_directory / folder_name
 
     def _dir_setter(self, dir_path: Union[Path, str], name: str) -> Path:
-        """Set the path to a directory. If it doesn't exit, create it.
+        """Check if the given path is a directory and create it if it doesn't exist.
 
         Args:
             dir_path (Union[Path, str]): Path to the directory.
@@ -99,18 +99,18 @@ class ProjectDir:
 
         Raises:
             TypeError: 'dir_path' type was not 'Path', 'str'
-            ValueError: 'dir_path' leads to a file
+            NotADirectoryError: 'dir_path' doest not lead to a directory
 
         Returns:
             Path: Path to the directory.
         """
         _dir_path = utils.convert_str_to_path(dir_path, name)
 
-        if not _dir_path.exists():
+        if not _dir_path.exists(): #TODO think about how to handle this
             _dir_path.mkdir(parents=True)
-        else:
-            if not _dir_path.is_dir():
-                raise ValueError(f"{_dir_path} is a file; expected directory")
+            #raise FileNotFoundError(f"Directory '{dir_path}' doesn't exist.")
+        if not _dir_path.is_dir():
+            raise NotADirectoryError(f"Path at '{_dir_path}' is a file; expected directory")
 
         return _dir_path
 
@@ -122,11 +122,11 @@ class ProjectDir:
                 separating the folder names with '/'.
 
         Raises:
-            ValueError: folder already exists
+            FileExistsError: Folder already exists
         """
         folder_path = self.project_directory / folder_name
         if folder_path.exists():
-            raise ValueError(f"Folder at {folder_path} already exists.")
+            raise FileExistsError(f"Folder at {folder_path} already exists.")
         self.current_folder = folder_name
 
     def delete_element(self, name: str) -> None:
