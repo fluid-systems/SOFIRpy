@@ -87,7 +87,6 @@ class Simulation:
         if parameters_to_log is None:
             parameters_to_log = []
         self.parameters_to_log = parameters_to_log
-        self.results = self.create_result_df(self.parameters_to_log)
 
     def simulate(
         self, stop_time: float, step_size: float, start_time: float = 0.0
@@ -105,6 +104,7 @@ class Simulation:
             parameters
         """
         time_series = np.arange(start_time, stop_time + step_size, step_size)
+        self.results = np.zeros((len(time_series), len(self.parameters_to_log)+1))
 
         print("Starting Simulation...")
 
@@ -118,7 +118,7 @@ class Simulation:
             if isinstance(system.simulation_entity, Fmu):
                 system.simulation_entity.conclude_simulation_process()
 
-        return self.results
+        return self.convert_to_data_frame(self.results)
 
     def set_systems_inputs(self) -> None:
         """Set inputs for all systems."""
@@ -150,37 +150,31 @@ class Simulation:
             time_step (int): current time step
         """
         new_value_row = [time]
+
         for parameter in self.parameters_to_log:
             system = parameter.system
             parameter_name = parameter.name
             value = system.simulation_entity.get_parameter_value(parameter_name)
             new_value_row += [value]
 
-        this_results = pd.DataFrame(
-            [new_value_row], columns=self.columns, index=[time_step]
-        )
+        self.results[time_step] = new_value_row
 
-        # self.results.loc[time_step] = new_value_row
-        self.results = pd.concat([self.results, this_results])
-
-    def create_result_df(
-        self, parameters_to_log: list[LoggedParameter]
-    ) -> pd.DataFrame:
-        """Initialise the result dataFrame. By default the first column contains the time.
+    def convert_to_data_frame(self, results: np.ndarray) -> pd.DataFrame:
+        """Covert result numpy array to DataFrame.
 
         Args:
-            parameters_to_log (list[LoggedParameter]): list of parameters that
-                should be logged
+            results (np.ndarray): Results of the simulation.
 
         Returns:
-            pd.DataFrame: dataFrame with only the column names
+            pd.DataFrame: Results as DataFrame. Columns are named as follows:
+            '<system_name>.<parameter_name>'.
         """
-        self.columns = [
+        columns = ["time"] + [
             f"{parameter.system.name}.{parameter.name}"
-            for parameter in parameters_to_log
+            for parameter in self.parameters_to_log
         ]
 
-        return pd.DataFrame(columns=["time"] + self.columns)
+        return pd.DataFrame(results, columns=columns)
 
     def get_units(self) -> Units:
         """Get a dictionary with all logged parameters as keys and their units as values.
@@ -601,12 +595,12 @@ def _check_key_exists(key: str, info_dict: Union[SystemInfo, ConnectionInfo]) ->
         raise KeyError(f"missing key '{key}' in {info_dict}")
 
 
-def _check_value_type(key: str, value: Any, _type: Any) -> None:
-    if not isinstance(value, _type):
-        type_name = _type.__name__
-        if isinstance(_type, tuple):  # if multiple types allowed
-            type_name = ", ".join([t.name for t in _type])
-        raise TypeError(f"value of key '{key}' is {type(value)}; expected {type_name}")
+def _check_value_type(key: str, value: Any, typ: Any) -> None:
+    if not isinstance(value, typ):
+        typ_name = typ.__name__
+        if isinstance(typ, tuple):  # if multiple types allowed
+            typ_name = ", ".join([t.name for t in typ])
+        raise TypeError(f"value of key '{key}' is {type(value)}; expected {typ_name}")
 
 
 def _get_all_system_names(
