@@ -16,7 +16,7 @@ class HDF5:
             hdf5_path (Union[Path, str]): Path to a hdf5 file. If it doesn't
                 exists it will be created.
         """
-        self.hdf5_path = hdf5_path
+        self.hdf5_path = hdf5_path  # type: ignore[assignment]
 
     @property
     def hdf5_path(self) -> Path:
@@ -47,6 +47,9 @@ class HDF5:
                 f'Invalid path name, expected one of the following file extensions: {", ".join(hdf_suffixes)}'
             )
         if not _hdf5_path.exists():
+            # create_new = utils._get_user_input_for_creating_path(_hdf5_path)
+            # if not create_new:
+            #     raise FileNotFoundError(f"{_hdf5_path} doesn't exist.")
             _hdf5_path.touch()
             print(f"hdf5 file at {str(_hdf5_path)} created.")
 
@@ -108,7 +111,7 @@ class HDF5:
                 group = hdf5
                 data_path = data_name
             if data_path in hdf5:
-                overwrite = utils._get_user_input(data_path, "hdf5 dataset at")
+                overwrite = utils._get_user_input_for_overwriting(data_path, "hdf5 dataset at")
                 if not overwrite:
                     raise ValueError(
                         f"Unable to create dataset, dataset at {data_path} already exists)"
@@ -298,7 +301,9 @@ class HDF5:
         """
         file_structure: dict[str, Any] = {}
 
-        def append_name(name: str, hdf5_object: Union[h5py.Group, h5py.Dataset]) -> None:
+        def append_name(
+            name: str, hdf5_object: Union[h5py.Group, h5py.Dataset]
+        ) -> None:
             self._place(name, file_structure, hdf5_object, mode="short")
 
         with h5py.File(str(self.hdf5_path), "a") as hdf5:
