@@ -7,7 +7,10 @@ from typing_extensions import ParamSpec, Concatenate
 P = ParamSpec("P")
 RT = TypeVar("RT")
 
-def store_input_arguments(func: Callable[Concatenate[Any, P], RT]) -> Callable[Concatenate[Any, P], RT]:
+
+def store_input_arguments(
+    func: Callable[Concatenate[Any, P], RT]
+) -> Callable[Concatenate[Any, P], RT]:
     """Decorator that lets you store the input arguments of instance methods.
 
     The input arguments will be stored in a nested dictionary with the following structure:
