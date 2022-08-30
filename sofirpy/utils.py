@@ -39,7 +39,7 @@ def move_file(source_path: Path, target_path: Path) -> None:
     if not source_path.exists():
         raise FileNotFoundError(f"{source_path} does not exits.")
     if target_path.exists():
-        overwrite = _get_user_input(target_path)
+        overwrite = _get_user_input_for_overwriting(target_path)
         if not overwrite:
             raise FileExistsError(f"{target_path} already exists")
     if not target_path.parent.exists():
@@ -64,7 +64,7 @@ def copy_file(source_path: Path, target_path: Path) -> None:
     if source_path == target_path:
         return
     if target_path.exists():
-        overwrite = _get_user_input(target_path)
+        overwrite = _get_user_input_for_overwriting(target_path)
         if not overwrite:
             raise FileExistsError(f"{target_path} already exists")
     if not target_path.parent.exists():
@@ -73,10 +73,10 @@ def copy_file(source_path: Path, target_path: Path) -> None:
     shutil.copy(source_path, target_path)
 
 
-def _get_user_input(target_path: Union[Path, str], type: str="path") -> bool:
+def _get_user_input_for_overwriting(target_path: Union[Path, str], typ: str = "path") -> bool:
 
     while True:
-        overwrite = input(f"The {type} {target_path} already exists. Overwrite? [y/n]")
+        overwrite = input(f"The {typ} {target_path} already exists. Overwrite? [y/n]")
         if overwrite == "y":
             return True
         elif overwrite == "n":
@@ -84,6 +84,18 @@ def _get_user_input(target_path: Union[Path, str], type: str="path") -> bool:
         else:
             print("Enter 'y' or 'n'.")
 
+
+def _get_user_input_for_creating_path(path: Path) -> bool:
+
+    while True:
+        while True:
+            create = input(f"Path {path} doesn't exist. Create? [y/n]")
+            if create == "y":
+                return True
+            elif create == "n":
+                return False
+            else:
+                print("Enter 'y' or 'n'.")
 
 def rename_file(file_path: Path, new_name: str) -> Path:
 
@@ -93,7 +105,7 @@ def rename_file(file_path: Path, new_name: str) -> Path:
         raise ValueError(f"{file_path} is a directory; expected file")
     target_path = file_path.parent / f"{new_name}{file_path.suffix}"
     if target_path.exists():
-        overwrite = _get_user_input(target_path)
+        overwrite = _get_user_input_for_overwriting(target_path)
         if not overwrite:
             raise FileExistsError(f"{target_path} already exists")
         target_path.unlink()
