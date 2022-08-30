@@ -35,9 +35,9 @@ def test_dir_setter_creation() -> None:
 
 
 def test_dir_setter_exception() -> None:
-    directory = Path(__file__)
-    with pytest.raises(ValueError):
-        ProjectDir(directory)
+    path = Path(__file__)
+    with pytest.raises(NotADirectoryError):
+        ProjectDir(path)
 
 
 def test_set_current_folder_exception(project_dir: ProjectDir) -> None:
@@ -60,7 +60,7 @@ def test_create_folder(project_dir: ProjectDir) -> None:
 
 def test_create_folder_exception(project_dir: ProjectDir) -> None:
 
-    with pytest.raises(ValueError):
+    with pytest.raises(FileExistsError):
         project_dir.create_folder("test_create_folder_exception")
 
 
