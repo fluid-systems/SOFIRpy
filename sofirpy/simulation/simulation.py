@@ -10,7 +10,7 @@ import pandas as pd
 from tqdm import tqdm
 from sofirpy.simulation.simulation_entity import SimulationEntity
 from sofirpy.simulation.fmu import Fmu
-import sofirpy.utils as utils
+from sofirpy import utils
 
 
 @dataclass(frozen=True)
@@ -515,7 +515,7 @@ def _validate_input(
     all_system_names = _get_all_system_names(fmu_names, model_names)
 
     if len(set(all_system_names)) < len(all_system_names):
-        raise ValueError(f"Duplicate names in system infos.")
+        raise ValueError("Duplicate names in system infos.")
 
     _validate_model_classes(model_classes, model_names)
 
@@ -623,7 +623,6 @@ def _validate_model_classes(
     if model_classes is None:
         if model_names:
             raise ValueError("Models are defined but 'model_classes' is 'None'")
-        return None
 
     if not isinstance(model_classes, dict):
         raise TypeError(f"'model_classes' is {type(model_classes)}; expected dict")

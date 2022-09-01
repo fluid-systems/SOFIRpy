@@ -79,10 +79,9 @@ def _get_user_input_for_overwriting(target_path: Union[Path, str], typ: str = "p
         overwrite = input(f"The {typ} {target_path} already exists. Overwrite? [y/n]")
         if overwrite == "y":
             return True
-        elif overwrite == "n":
+        if overwrite == "n":
             return False
-        else:
-            print("Enter 'y' or 'n'.")
+        print("Enter 'y' or 'n'.")
 
 
 def _get_user_input_for_creating_path(path: Path) -> bool:
@@ -92,10 +91,9 @@ def _get_user_input_for_creating_path(path: Path) -> bool:
             create = input(f"Path {path} doesn't exist. Create? [y/n]")
             if create == "y":
                 return True
-            elif create == "n":
+            if create == "n":
                 return False
-            else:
-                print("Enter 'y' or 'n'.")
+            print("Enter 'y' or 'n'.")
 
 def rename_file(file_path: Path, new_name: str) -> Path:
 

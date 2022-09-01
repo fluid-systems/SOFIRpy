@@ -1,4 +1,3 @@
-from __future__ import annotations
 from inspect import getfullargspec
 from functools import wraps
 from typing import Callable, TypeVar, Any

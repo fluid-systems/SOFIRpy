@@ -2,8 +2,7 @@
 
 from pathlib import Path
 from typing import Optional, Union
-import sofirpy.utils as utils
-
+from sofirpy import utils
 
 class ProjectDir:
     """Object representing the Project Directory."""

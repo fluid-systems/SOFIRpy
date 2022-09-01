@@ -8,7 +8,7 @@ import re
 from datetime import datetime
 import fmpy
 from sofirpy.fmu_export.fmu_export import FmuExport
-import sofirpy.utils as utils
+from sofirpy import utils
 
 
 class DymolaFmuExport(FmuExport):
