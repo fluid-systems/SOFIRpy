@@ -1,6 +1,7 @@
 image: python:latest
 
 stages: 
+  - static-static_anaysis
   - test
 
 
@@ -13,7 +14,7 @@ before_script:
   - pip install .[test]
 
 static_anaysis:
-  stage: test
+  stage: static-static_anaysis
   script:
     - mypy src/sofirpy
 
