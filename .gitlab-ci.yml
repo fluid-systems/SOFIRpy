@@ -1,8 +1,6 @@
 image: python:latest
 
 stages: 
-  - build
-  - static-analysis
   - test
 
 
@@ -12,14 +10,10 @@ before_script:
   - pip install virtualenv
   - virtualenv venv
   - source venv/bin/activate
-
-install_project:
-  stage: build
-  script:
-    - pip install .[test]
+  - pip install .[test]
 
 static_anaysis:
-  stage: static-analysis
+  stage: test
   script:
     - mypy src/sofirpy
 
