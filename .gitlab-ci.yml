@@ -8,13 +8,14 @@ stages:
 
 before_script:
   - python --version
-  - venv venv
+  - pip install --upgrade pip setuptools
+  - pip install virtualenv
+  - virtualenv venv
   - source venv/bin/activate
 
 install_project:
   stage: build
   script:
-    - pip install --upgrade pip setuptools
     - pip install . [test]
 
 static_anaysis:
