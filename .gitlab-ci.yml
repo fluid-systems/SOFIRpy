@@ -16,7 +16,7 @@ before_script:
 install_project:
   stage: build
   script:
-    - pip install . [test]
+    - pip install .[test]
 
 static_anaysis:
   stage: static-analysis
