@@ -69,10 +69,10 @@ class PID(SimulationEntity):
 
 @pytest.fixture
 def fmu_info() -> dict:
-    if sys.platform == "darwin":
-        fmu_path = Path(__file__).parent / "DC_Motor_mac.fmu"
-    else:
+    if sys.platform == "win32":
         fmu_path = Path(__file__).parent / "DC_Motor.fmu"
+    else:
+        fmu_path = Path(__file__).parent / "DC_Motor_mac.fmu"
 
     return [
         {
@@ -112,9 +112,9 @@ def pid() -> PID:
 
 @pytest.fixture
 def result_path() -> Path:
-    if sys.platform == "darwin":
-        return Path(__file__).parent / "test_results_mac.csv"
-    return Path(__file__).parent / "test_results.csv"
+    if sys.platform == "win32":
+        return Path(__file__).parent / "test_results.csv"
+    return Path(__file__).parent / "test_results_mac.csv"
 
 
 def test_simulation(
