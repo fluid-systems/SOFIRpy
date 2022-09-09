@@ -1,9 +1,8 @@
-image: python:latest
+image: python:3.9.14-bullseye
 
 stages: 
-  - static-static_anaysis
+  - Static Analysis
   - test
-
 
 before_script:
   - python --version
@@ -13,8 +12,8 @@ before_script:
   - source venv/bin/activate
   - pip install .[test]
 
-static_anaysis:
-  stage: static-static_anaysis
+static_analysis:
+  stage: Static Analysis
   script:
     - mypy src/sofirpy
 
