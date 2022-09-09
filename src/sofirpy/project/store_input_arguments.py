@@ -5,11 +5,12 @@ from typing_extensions import ParamSpec, Concatenate
 
 P = ParamSpec("P")
 RT = TypeVar("RT")
+T = TypeVar("T", bound=Any)
 
 
 def store_input_arguments(
-    func: Callable[Concatenate[Any, P], RT]
-) -> Callable[Concatenate[Any, P], RT]:
+    func: Callable[Concatenate[T, P], RT]
+) -> Callable[Concatenate[T, P], RT]:
     """Decorator that lets you store the input arguments of instance methods.
 
     The input arguments will be stored in a nested dictionary with the following structure:
@@ -29,14 +30,14 @@ def store_input_arguments(
     The dictionary will be stored as a instance attribute with the name '__input_arguments__'.
 
     Args:
-        func (Callable[Concatenate[Any, P], RT]): Method to decorate
+        func (Callable[Concatenate[T, P], RT]): Method to decorate
 
     Returns:
-        Callable[Concatenate[Any, P], RT]: Decorated Method
+        Callable[Concatenate[T, P], RT]: Decorated Method
     """
 
     @wraps(func)
-    def wrapper(self: Any, *args: P.args, **kwargs: P.kwargs) -> RT:
+    def wrapper(self: T, *args: P.args, **kwargs: P.kwargs) -> RT:
         insp = getfullargspec(func)
         # add input arguments
         inputs = {name: value for name, value in zip(insp.args[1:], args[0:])}

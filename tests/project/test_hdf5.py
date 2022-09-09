@@ -132,6 +132,25 @@ def test_read_data_exception(hdf5: HDF5) -> None:
         hdf5.read_data("subgroup1", "test_read_data")
 
 
+def test_read_entire_group_data(hdf5: HDF5) -> None:
+
+    _hdf5 = _copy_standard_hdf5(hdf5, "read_entire_group_data")
+    assert _hdf5.read_entire_group_data("test_delete_group") == {
+        "group1": {},
+        "group2": {"subgroup1": {}},
+    }
+    _hdf5.hdf5_path.unlink()
+
+
+def test_read_hdf5_structure(hdf5: HDF5) -> None:
+    _hdf5 = _copy_standard_hdf5(hdf5, "read_hdf5_structure")
+    assert _hdf5.read_hdf5_structure("test_read_data") == {
+        "subgroup1": {},
+        "test_data": '<HDF5 dataset "test_data": shape (10, 10), type "<f8">',
+    }
+    _hdf5.hdf5_path.unlink()
+
+
 def test_check_path_exists(hdf5: HDF5) -> None:
 
     assert hdf5.check_path_exists("test_check_path_exists")

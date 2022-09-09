@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import Optional, Union
 from sofirpy import utils
 
+
 class ProjectDir:
     """Object representing the Project Directory."""
 
@@ -105,11 +106,13 @@ class ProjectDir:
         """
         _dir_path = utils.convert_str_to_path(dir_path, name)
 
-        if not _dir_path.exists(): #TODO think about how to handle this
+        if not _dir_path.exists():  # TODO think about how to handle this
             _dir_path.mkdir(parents=True)
-            #raise FileNotFoundError(f"Directory '{dir_path}' doesn't exist.")
+            # raise FileNotFoundError(f"Directory '{dir_path}' doesn't exist.")
         if not _dir_path.is_dir():
-            raise NotADirectoryError(f"Path at '{_dir_path}' is a file; expected directory")
+            raise NotADirectoryError(
+                f"Path at '{_dir_path}' is a file; expected directory"
+            )
 
         return _dir_path
 
@@ -180,7 +183,7 @@ class ProjectDir:
         self,
         source_paths: list[Union[Path, str]],
         target_directory: Optional[Union[Path, str]] = None,
-    ) -> None:
+    ) -> list[Path]:
         """Move multiple files to a target directory.
 
         Args:
@@ -189,9 +192,14 @@ class ProjectDir:
             target_directory (Optional[Union[Path, str]], optional):
                 Target Directory the file should be moved to. If not specified
                 the file is moved to the current folder. Defaults to None.
+
+        Returns:
+            Path: List of target paths.
         """
-        for source_path in source_paths:
+        return [
             self.move_file(source_path, target_directory)
+            for source_path in source_paths
+        ]
 
     def copy_file(
         self,
