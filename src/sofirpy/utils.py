@@ -3,9 +3,11 @@ import shutil
 from typing import Union
 
 
-def delete_file_or_directory(path: Path, print_status: bool = False) -> None:
+def delete_file_or_directory(path: Path, print_status: bool = False, must_exist: bool = False) -> None:
 
     if not path.exists():
+        if not must_exist:
+            return
         raise ValueError(f"{str(path)} does not exist")
 
     if path.is_dir():
@@ -26,10 +28,10 @@ def delete_files_in_directory(
         delete_file_or_directory(path, print_status)
 
 
-def delete_paths(paths: list[Path]) -> None:
+def delete_paths(paths: list[Path], must_exist: bool = False) -> None:
 
     for path in paths:
-        delete_file_or_directory(path)
+        delete_file_or_directory(path, must_exist=must_exist)
 
 
 def move_file(source_path: Path, target_path: Path) -> None:
