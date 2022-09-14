@@ -15,7 +15,7 @@ before_script:
 static_analysis:
   stage: Static Analysis
   script:
-    - mypy src/sofirpy --strict
+    - mypy src/sofirpy
 
 test:
   stage: test
