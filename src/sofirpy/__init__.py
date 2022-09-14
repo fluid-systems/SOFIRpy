@@ -7,3 +7,15 @@ from .project.hdf5 import HDF5
 from .project.project_dir import ProjectDir
 from .project.store_input_arguments import store_input_arguments
 from .simulation.plot import plot_results
+
+__all__ = [
+    "export_dymola_model",
+    "export_open_modelica_model",
+    "simulate",
+    "SimulationEntity",
+    "Project",
+    "HDF5",
+    "ProjectDir",
+    "store_input_arguments",
+    "plot_results"
+]
