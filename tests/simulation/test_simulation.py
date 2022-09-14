@@ -137,11 +137,6 @@ def test_simulation(
         "DC_Motor.MotorTorque.tau": "N.m",
         "pid.u": None,
     }
-    # assert units == {
-    #     "DC_Motor.y": "rad/s",
-    #     "DC_Motor.MotorTorque.tau": "N.m",
-    #     "pid.u": None,
-    # }
     test_results = pd.read_csv(result_path)
     test_results = test_results.to_numpy()
     results = results.to_numpy()
