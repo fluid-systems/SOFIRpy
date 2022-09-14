@@ -1,17 +1,20 @@
 """This module allows to co-simulate multiple fmus and models written in python."""
 
 from __future__ import annotations
+
 from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
-from typing import Any, Optional, Union, TypedDict
+from typing import Any, Optional, TypedDict, Union
+
 import numpy as np
 import numpy.typing as npt
 import pandas as pd
 from tqdm import tqdm
-from sofirpy.simulation.simulation_entity import SimulationEntity
-from sofirpy.simulation.fmu import Fmu
+
 from sofirpy import utils
+from sofirpy.simulation.fmu import Fmu
+from sofirpy.simulation.simulation_entity import SimulationEntity
 
 
 @dataclass(frozen=True)

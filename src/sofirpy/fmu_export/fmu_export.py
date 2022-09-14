@@ -1,6 +1,7 @@
 """This module contains the base class for a fmu export."""
 
 from pathlib import Path
+
 from sofirpy import utils
 
 

@@ -1,15 +1,16 @@
 """This module allows to export a Dymola model as a fmu."""
 
-from pathlib import Path
-from typing import Union, Optional
-import subprocess
-from html import unescape
 import re
+import subprocess
 from datetime import datetime
-import fmpy
-from sofirpy.fmu_export.fmu_export import FmuExport
-from sofirpy import utils
+from html import unescape
+from pathlib import Path
+from typing import Optional, Union
 
+import fmpy
+
+from sofirpy import utils
+from sofirpy.fmu_export.fmu_export import FmuExport
 
 ParameterValue = Union[str, int, float, list[Union[int, float, str, bool]], bool]
 

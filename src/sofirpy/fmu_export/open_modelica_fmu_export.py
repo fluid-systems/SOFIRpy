@@ -2,9 +2,11 @@
 
 from pathlib import Path
 from typing import Optional, Union
+
 from OMPython import ModelicaSystem
-from sofirpy.fmu_export.fmu_export import FmuExport
+
 from sofirpy import utils
+from sofirpy.fmu_export.fmu_export import FmuExport
 
 
 class OpenModelicaFmuExport(FmuExport):

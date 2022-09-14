@@ -1,7 +1,9 @@
 from pathlib import Path
-from typing import Union, Optional
+from typing import Optional, Union
+
 from fmpy import extract, read_model_description
 from fmpy.fmi2 import FMU2Slave
+
 from sofirpy.simulation.simulation_entity import SimulationEntity
 
 

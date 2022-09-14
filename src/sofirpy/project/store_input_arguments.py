@@ -1,7 +1,8 @@
-from inspect import getfullargspec
 from functools import wraps
-from typing import Callable, TypeVar, Any
-from typing_extensions import ParamSpec, Concatenate
+from inspect import getfullargspec
+from typing import Any, Callable, TypeVar
+
+from typing_extensions import Concatenate, ParamSpec
 
 P = ParamSpec("P")
 RT = TypeVar("RT")
