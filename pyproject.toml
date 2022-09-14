@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "sofirpy"
-version = "0.1.0"
+dynamic = ["version"]
 description = "Framework for simulating FMUs and custom models written in python."
 readme = "README.md"
 authors = [
@@ -30,6 +30,7 @@ dependencies = [
     "typing_extensions>=4.3.0"
 ]
 requires-python = ">=3.9"
+
 [project.optional-dependencies]
 test = [
     "pytest>=7.1.2",
@@ -39,14 +40,20 @@ test = [
     "types-tqdm>=4.64.5",
     "types-pytz>=2022.2.1.0"
     ]
-docs = ["sphinx", "sphinx-rtd-theme"]
+doc = ["sphinx>=5.1.1", "sphinx-rtd-theme>=1.0.0"]
 
 [project.urls]
 repository = "https://git.rwth-aachen.de/sofirpy/sofirpy"
 documentation = "https://sofirpy.readthedocs.io/"
 
+[tool.setuptools.dynamic]
+version = {attr = "sofirpy.__version__"}
+
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.setuptools.package-data]
+sofirpy = ["py.typed"]
 
 [tool.mypy]
 strict = true
