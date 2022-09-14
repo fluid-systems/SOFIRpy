@@ -85,7 +85,7 @@ class HDF5:
         data_name: str,
         data: Any,
         group_path: str,
-        attributes: Optional[dict] = None,
+        attributes: Optional[dict[str, Any]] = None,
     ) -> None:
         """Stores data in a hdf5 group. If the group doesn't exist it will be created.
 
@@ -93,7 +93,7 @@ class HDF5:
             data_name (str): Name of the data.
             data (Any): Data that should be stored.
             group_path (str): Path to the hdf5 group.
-            attributes (Optional[dict], optional): Data attributes dictionary
+            attributes (Optional[dict[str, Any]], optional): Data attributes dictionary
                 with attribute names as keys and the attributes as values.
                 Defaults to None.
 
@@ -335,7 +335,7 @@ class HDF5:
     def _place(
         self,
         name: str,
-        _dict: dict,
+        _dict: dict[str, Any],
         hdf5_object: Union[h5py.Group, h5py.Dataset],
         mode: Optional[str] = None,
     ) -> dict[str, Any]:
@@ -354,7 +354,7 @@ class HDF5:
             )
         else:
             if name not in _dict:
-                value: Union[None, str, dict] = {}
+                value: Union[None, str, dict[str, Any]] = {}
                 if isinstance(hdf5_object, h5py.Dataset):
                     if mode == "full":
                         value = hdf5_object[()]

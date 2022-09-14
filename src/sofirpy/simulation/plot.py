@@ -14,7 +14,7 @@ def plot_results(
     x_label: Optional[str] = None,
     y_label: Optional[str] = None,
     title: Optional[str] = None,
-    legend: Optional[Union[str, list]] = None,
+    legend: Optional[Union[str, list[str]]] = None,
     style_sheet_path: Optional[Union[str, Path]] = None,
 ) -> Axes:
     """Plot the simulation results.

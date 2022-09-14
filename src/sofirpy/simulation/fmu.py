@@ -78,7 +78,7 @@ class Fmu(SimulationEntity):
 
         The keys of this dictionary are the names of the variables and the
         values are the corresponding units."""
-        self.unit_vars = {
+        self.unit_vars: dict[str, Optional[str]] = {
             variable.name: variable.unit
             for variable in self.model_description.modelVariables
         }
@@ -103,7 +103,7 @@ class Fmu(SimulationEntity):
         Returns:
             Union[int, float]: value of the parameter
         """
-        return self.fmu.getReal([self.model_vars[parameter_name]])[0]
+        return float(self.fmu.getReal([self.model_vars[parameter_name]])[0])
 
     def do_step(self, time: float) -> None:
         """Perform a simulation step.

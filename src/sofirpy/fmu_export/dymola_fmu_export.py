@@ -11,6 +11,9 @@ from sofirpy.fmu_export.fmu_export import FmuExport
 from sofirpy import utils
 
 
+ParameterValue = Union[str, int, float, list[Union[int, float, str, bool]], bool]
+
+
 class DymolaFmuExport(FmuExport):
     """Object that performs the Dymola fmu export."""
 
@@ -29,7 +32,7 @@ class DymolaFmuExport(FmuExport):
         dymola_exe_path: Path,
         model_path: Path,
         model_name: str,
-        parameters: Optional[dict[str, Union[str, int, float, list, bool]]] = None,
+        parameters: Optional[dict[str, ParameterValue]] = None,
         model_modifiers: Optional[list[str]] = None,
         packages: Optional[list[Union[str, Path]]] = None,
     ) -> None:
@@ -42,7 +45,7 @@ class DymolaFmuExport(FmuExport):
             model_name (str): Name of the model that should be exported. If the
                 model that should be exported is inside a package, separate the
                 package name and the model name with a '.'.
-            parameters (dict[str, Union[str, int, float, list, bool]], optional):
+            parameters (dict[str, ParameterValue], optional):
                 Dictionary of parameter names and values.
                 Example:
 
@@ -152,23 +155,23 @@ class DymolaFmuExport(FmuExport):
         self._model_name = model_name
 
     @property
-    def parameters(self) -> dict[str, Union[str, int, float, list, bool]]:
+    def parameters(self) -> dict[str, ParameterValue]:
         """Dictionary of parameter names and values.
 
         Returns:
-            dict[str, Union[str, int, float, list, bool]]: Dictionary of
+            dict[str, ParameterValue]: Dictionary of
             parameter names and values
         """
         return self._parameters
 
     @parameters.setter
     def parameters(
-        self, parameters: dict[str, Union[str, int, float, list, bool]]
+        self, parameters: dict[str, ParameterValue]
     ) -> None:
         """Set dictionary of parameter names and values.
 
         Args:
-            parameters (dict[str, Union[str, int, float, list, bool]]):
+            parameters (dict[str, ParameterValue]):
                 Dictionary of parameter names and values
 
         Raises:
@@ -317,7 +320,7 @@ class DymolaFmuExport(FmuExport):
             list[str]: List of parameters.
         """
 
-        def convert_to_modelica_value(value: Union[list, str, int, float, bool]) -> str:
+        def convert_to_modelica_value(value: ParameterValue) -> str:
 
             if isinstance(value, str):
                 return value
@@ -365,7 +368,7 @@ def export_dymola_model(
     model_path: Union[Path, str],
     model_name: str,
     output_directory: Union[Path, str],
-    parameters: Optional[dict[str, Union[str, int, float, list, bool]]] = None,
+    parameters: Optional[dict[str, ParameterValue]] = None,
     model_modifiers: Optional[list[str]] = None,
     packages: Optional[list[Union[str, Path]]] = None,
     keep_log: bool = True,
@@ -394,7 +397,7 @@ def export_dymola_model(
             model that should be exported is inside a package, separate the
             package name and the model name with a '.'.
         output_directory (Union[Path, str]): Path to the output directory.
-        parameters (dict[str, Union[str, int, float, list, bool]], optional):
+        parameters (dict[str, ParameterValue], optional):
             Dictionary of parameter names and values.
             Example:
 

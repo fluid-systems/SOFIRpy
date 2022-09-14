@@ -6,6 +6,7 @@ from enum import Enum
 from pathlib import Path
 from typing import Any, Optional, Union, TypedDict
 import numpy as np
+import numpy.typing as npt
 import pandas as pd
 from tqdm import tqdm
 from sofirpy.simulation.simulation_entity import SimulationEntity
@@ -159,11 +160,11 @@ class Simulation:
 
         self.results[time_step] = new_value_row
 
-    def convert_to_data_frame(self, results: np.ndarray) -> pd.DataFrame:
+    def convert_to_data_frame(self, results: npt.NDArray[np.float64]) -> pd.DataFrame:
         """Covert result numpy array to DataFrame.
 
         Args:
-            results (np.ndarray): Results of the simulation.
+            results (npt.NDArray[npt.float64]): Results of the simulation.
 
         Returns:
             pd.DataFrame: Results as DataFrame. Columns are named as follows:

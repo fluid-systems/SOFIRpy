@@ -59,4 +59,4 @@ def store_input_arguments(
             self.__input_arguments__ = method_input_info
         return return_value
 
-    return wrapper
+    return wrapper # type: ignore[return-value]
