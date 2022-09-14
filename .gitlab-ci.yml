@@ -2,7 +2,8 @@ image: python:3.9.14-bullseye
 
 stages:
   - Static Analysis
-  - test
+  - Test
+  - Documentation
 
 before_script:
   - python --version
@@ -10,7 +11,7 @@ before_script:
   - pip install virtualenv
   - virtualenv venv
   - source venv/bin/activate
-  - pip install .[test]
+  - pip install ".[test, doc]""
 
 static_analysis:
   stage: Static Analysis
@@ -21,3 +22,9 @@ test:
   stage: test
   script:
     - pytest tests/
+
+doc:
+  stage: Documentation
+  script:
+    - cd docs/
+    - make html
