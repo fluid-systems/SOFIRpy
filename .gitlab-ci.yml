@@ -1,6 +1,6 @@
 image: python:3.9.14-bullseye
 
-stages: 
+stages:
   - Static Analysis
   - test
 
@@ -15,7 +15,7 @@ before_script:
 static_analysis:
   stage: Static Analysis
   script:
-    - mypy src/sofirpy
+    - mypy src/sofirpy --strict
 
 test:
   stage: test
