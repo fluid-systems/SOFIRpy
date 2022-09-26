@@ -2,7 +2,9 @@
 
 from pathlib import Path
 from typing import Any, Optional, Union
+
 import h5py
+
 from sofirpy import utils
 
 

@@ -2,6 +2,7 @@
 
 from pathlib import Path
 from typing import Optional, Union
+
 from sofirpy import utils
 from sofirpy.project.hdf5 import HDF5
 from sofirpy.project.project_dir import ProjectDir

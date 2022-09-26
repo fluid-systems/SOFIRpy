@@ -1,10 +1,11 @@
 """This module provides a easy function for plotting the simulation results."""
 
-from typing import Union, Optional
 from pathlib import Path
-from matplotlib.axes import Axes
+from typing import Optional, Union
+
 import matplotlib.pyplot as plt
 import pandas as pd
+from matplotlib.axes import Axes
 
 
 def plot_results(

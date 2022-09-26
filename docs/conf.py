@@ -13,15 +13,15 @@
 import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
+import sofirpy
 
 # -- Project information -----------------------------------------------------
 
 project = 'SOFIRpy'
 copyright = '2022, Daniele Inturri'
-author = 'Daniele Inturri'
-
-# The full version, including alpha/beta/rc tags
-release = '0.1.0'
+author = sofirpy.__author__
+version = sofirpy.__version__
+release = version
 
 
 # -- General configuration ---------------------------------------------------
