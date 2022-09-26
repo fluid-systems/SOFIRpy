@@ -1,4 +1,3 @@
-import pytest
 from sofirpy import store_input_arguments
 
 
@@ -18,6 +17,7 @@ class DummyClass:
     @store_input_arguments
     def methode3(self, a) -> None:
         ...
+
 
 def test_store_input_arguments() -> None:
 
