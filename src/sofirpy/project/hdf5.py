@@ -51,7 +51,7 @@ class HDF5:
             # if not create_new:
             #     raise FileNotFoundError(f"{_hdf5_path} doesn't exist.")
             _hdf5_path.touch()
-            print(f"hdf5 file at {str(_hdf5_path)} created.")
+            print(f"hdf5 file at {_hdf5_path} created.")
 
         self._hdf5_path = _hdf5_path
 
