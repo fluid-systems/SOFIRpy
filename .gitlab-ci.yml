@@ -11,9 +11,14 @@ before_script:
   - pip install virtualenv
   - virtualenv venv
   - source venv/bin/activate
-  - pip install ".[test, doc]"
+  - pip install ".[test, doc, dev]"
 
-static_analysis:
+linting:
+  stage: Static Analysis
+  script:
+    - pylint src/sofirpy
+
+type_checking:
   stage: Static Analysis
   script:
     - mypy src/sofirpy
