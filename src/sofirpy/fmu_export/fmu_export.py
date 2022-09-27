@@ -77,19 +77,9 @@ class FmuExport:
             raise TypeError(f"'fmu_path' is {type(fmu_path)}; expected Path")
 
         if fmu_path.exists():
-            while True:
-                overwrite = input(
-                    "The new fmu will have the same path as an existing fmu. Overwrite? [y/n]"
-                )
-                if overwrite == "y":
-                    break
-                elif overwrite == "n":
-                    raise FileExistsError(
-                        f"Stopping execution. Fmu at {fmu_path} already exists."
-                    )
-                else:
-                    print("Enter 'y' or 'n'")
-
+            overwrite = utils.get_user_input_for_overwriting(fmu_path, "fmu_path")
+            if not overwrite:
+                raise FileExistsError(f"Fmu at '{fmu_path}' already exists")
         self._fmu_path = fmu_path
 
     def move_fmu(self, target_directory: Path) -> None:
