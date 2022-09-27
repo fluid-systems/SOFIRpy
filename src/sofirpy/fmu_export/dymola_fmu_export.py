@@ -78,13 +78,13 @@ class DymolaFmuExport(FmuExport):
 
         # add a time stamp to the mos file and log files
         time_stamp = datetime.now().strftime("%y%m%d%H%M%S")
-        self._mos_file_path = (
+        self.mos_file_path = (
             self.model_directory / f"export_script_{self.model_name}_{time_stamp}.mos"
         )
         self._simulator_log_path = (
             self.model_directory / f"log_{self.model_name}_{time_stamp}.txt"
         )
-        self._error_log_path = (
+        self.error_log_path = (
             self.model_directory / f"errors_{self.model_name}_{time_stamp}.txt"
         )
 
@@ -104,7 +104,7 @@ class DymolaFmuExport(FmuExport):
             map(lambda path: utils.convert_str_to_path(path, "package_path"), packages)
         )
 
-        self._paths_to_delete = list(
+        self.paths_to_delete = list(
             map(
                 lambda name: self.model_directory / name,
                 DymolaFmuExport.files_to_delete,
@@ -145,11 +145,23 @@ class DymolaFmuExport(FmuExport):
 
     @property
     def model_name(self) -> str:
+        """Name of the model.
+
+        Returns:
+            str: Name of the model.
+        """
         return self._model_name
 
     @model_name.setter
     def model_name(self, model_name: str) -> None:
+        """Name of the model.
 
+        Args:
+            model_name (str): Name of the model.
+
+        Raises:
+            TypeError: type of model_name was invalid
+        """
         if not isinstance(model_name, str):
             raise TypeError(f"'model_name' is {type(model_name)};  expected str")
 
@@ -166,9 +178,7 @@ class DymolaFmuExport(FmuExport):
         return self._parameters
 
     @parameters.setter
-    def parameters(
-        self, parameters: dict[str, ParameterValue]
-    ) -> None:
+    def parameters(self, parameters: dict[str, ParameterValue]) -> None:
         """Set dictionary of parameter names and values.
 
         Args:
@@ -185,14 +195,14 @@ class DymolaFmuExport(FmuExport):
             raise TypeError(f"'parameters' is {type(parameters)};  expected dict")
 
         self._parameters = {}
-        for comsym, value in parameters.items():
-            if not isinstance(comsym, str):
-                raise TypeError(f"key of parameters is {type(comsym)}; expected str")
+        for com_sym, value in parameters.items():
+            if not isinstance(com_sym, str):
+                raise TypeError(f"key of parameters is {type(com_sym)}; expected str")
             if not isinstance(value, (str, int, bool, float, list)):
                 raise TypeError(
                     f"value of parameters is {type(value)}; expected str, int, float, bool or list"
                 )
-            self._parameters[comsym] = value
+            self._parameters[com_sym] = value
 
     @property
     def model_modifiers(self) -> list[str]:
@@ -245,10 +255,10 @@ class DymolaFmuExport(FmuExport):
         mos_script = self.write_mos_script(export_simulator_log, export_error_log)
         self.create_mos_file(mos_script)
 
-        cmd = [str(self._dymola_exe_path), str(self._mos_file_path), "/nowindow"]
+        cmd = [str(self._dymola_exe_path), str(self.mos_file_path), "/nowindow"]
 
-        process = subprocess.Popen(cmd)
-        process.wait()
+        with subprocess.Popen(cmd) as process:
+            process.wait()
 
     def write_mos_script(
         self,
@@ -292,9 +302,10 @@ class DymolaFmuExport(FmuExport):
         if export_error_log:
             mos_script += "errors = getLastError();\n"
             mos_script += (
-                f'Modelica.Utilities.Files.removeFile("{self._error_log_path.name}");\n'
+                f'Modelica.Utilities.Files.removeFile("{self.error_log_path.name}");\n'
             )
-            mos_script += f'Modelica.Utilities.Streams.print(errors, "{self._error_log_path.name}");\n'
+            mos_script += "Modelica.Utilities.Streams.print"
+            mos_script += f'(errors, "{self.error_log_path.name}");\n'
         mos_script += "Modelica.Utilities.System.exit();"
 
         return mos_script
@@ -305,7 +316,7 @@ class DymolaFmuExport(FmuExport):
         Args:
             mos_script (str): The content for the mos file.
         """
-        with open(str(self._mos_file_path), mode="w", encoding="utf-8") as mos_file:
+        with open(str(self.mos_file_path), mode="w", encoding="utf-8") as mos_file:
             mos_file.write(mos_script)
 
     def format_parameters(self) -> list[str]:
@@ -335,6 +346,9 @@ class DymolaFmuExport(FmuExport):
                     + ", ".join(convert_to_modelica_value(element) for element in value)
                     + "}"
                 )
+            raise TypeError(
+                f"value is {type(value)}; expected str, bool, float, int, list"
+            )
 
         parameter_declaration = []
         for parameter_name, parameter_value in self.parameters.items():
@@ -349,9 +363,9 @@ class DymolaFmuExport(FmuExport):
         Args:
             target_directory (Path): Path to the target directory.
         """
-        new_mos_path = target_directory / self._mos_file_path.name
-        utils.move_file(self._mos_file_path, new_mos_path)
-        self._mos_file_path = new_mos_path
+        new_mos_path = target_directory / self.mos_file_path.name
+        utils.move_file(self.mos_file_path, new_mos_path)
+        self.mos_file_path = new_mos_path
 
     def move_log_file(self, target_directory: Path) -> None:
         """Move the log file to a target directory.
@@ -436,14 +450,14 @@ def export_dymola_model(
     dymola_fmu_export.export_fmu(keep_log)
 
     # delete unnecessary files
-    utils.delete_paths(dymola_fmu_export._paths_to_delete)
+    utils.delete_paths(dymola_fmu_export.paths_to_delete)
 
     if not keep_mos:
-        dymola_fmu_export._mos_file_path.unlink()
+        dymola_fmu_export.mos_file_path.unlink()
 
     if dymola_fmu_export.fmu_path.exists():
         print("The FMU Export was successful.")
-        dymola_fmu_export._error_log_path.unlink()
+        dymola_fmu_export.error_log_path.unlink()
         dymola_fmu_export.move_fmu(_output_directory)
         if keep_mos:
             dymola_fmu_export.move_mos_script(_output_directory)
@@ -454,19 +468,18 @@ def export_dymola_model(
     print("The FMU Export was not successful")
     print("Dymola Error Message: ")
     print("======================")
-    with open(dymola_fmu_export._error_log_path, "r") as error_log:
+    with open(dymola_fmu_export.error_log_path, "r", encoding="utf-8") as error_log:
         print(unescape(error_log.read()))
     print("======================")
-    dymola_fmu_export._error_log_path.unlink()
+    dymola_fmu_export.error_log_path.unlink()
     if parameters:
         print("Checking if added parameters exist in the model...")
         print("Exporting model without parameters and model modifiers...")
 
-        # TODO export in temp instead of model dir
         dymola_fmu_export = DymolaFmuExport(_dymola_exe_path, _model_path, model_name)
         dymola_fmu_export.export_fmu(export_simulator_log=False, export_error_log=False)
-        dymola_fmu_export._mos_file_path.unlink()
-        utils.delete_paths(dymola_fmu_export._paths_to_delete)
+        dymola_fmu_export.mos_file_path.unlink()
+        utils.delete_paths(dymola_fmu_export.paths_to_delete)
         if dymola_fmu_export.fmu_path.exists():
             print(
                 "FMU Export without added parameters and model modifiers was successful."

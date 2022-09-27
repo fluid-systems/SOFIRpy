@@ -49,8 +49,8 @@ def plot_results(
     if y_label:
         axes.set_ylabel(y_label)
     if isinstance(y_name, list):
-        for y in y_name:
-            axes.plot(results[x_name], results[y])
+        for name in y_name:
+            axes.plot(results[x_name], results[name])
     else:
         axes.plot(results[x_name], results[y_name])
     if legend:

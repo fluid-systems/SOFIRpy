@@ -1,3 +1,5 @@
+"""Module containing a decorator for storing input arguments of instance method."""
+
 from functools import wraps
 from inspect import getfullargspec
 from typing import Any, Callable, TypeVar
@@ -14,7 +16,8 @@ def store_input_arguments(
 ) -> Callable[Concatenate[T, P], RT]:
     """Decorator that lets you store the input arguments of instance methods.
 
-    The input arguments will be stored in a nested dictionary with the following structure:
+    The input arguments will be stored in a nested dictionary with the
+    following structure:
 
     >>> {"<method_name1>":
     ...     {
@@ -28,7 +31,8 @@ def store_input_arguments(
     ... }
     ... }
 
-    The dictionary will be stored as a instance attribute with the name '__input_arguments__'.
+    The dictionary will be stored as a instance attribute with
+    the name '__input_arguments__'.
 
     Args:
         func (Callable[Concatenate[T, P], RT]): Method to decorate
@@ -41,7 +45,7 @@ def store_input_arguments(
     def wrapper(self: T, *args: P.args, **kwargs: P.kwargs) -> RT:
         insp = getfullargspec(func)
         # add input arguments
-        inputs = {name: value for name, value in zip(insp.args[1:], args[0:])}
+        inputs = dict(zip(insp.args[1:], args[0:]))
         # add overwritten defaults
         inputs = {**inputs, **kwargs}
         # add defaults
@@ -52,12 +56,9 @@ def store_input_arguments(
         return_value = func(self, *args, **kwargs)
         method_input_info = {func.__name__: inputs}
         if hasattr(self, "__input_arguments__"):
-            self.__input_arguments__ = {
-                **self.__input_arguments__,
-                **method_input_info,
-            }
+            self.__input_arguments__ = {**self.__input_arguments__, **method_input_info}
         else:
             self.__input_arguments__ = method_input_info
         return return_value
 
-    return wrapper # type: ignore[return-value]
+    return wrapper  # type: ignore[return-value]

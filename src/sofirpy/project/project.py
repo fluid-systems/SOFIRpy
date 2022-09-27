@@ -1,4 +1,6 @@
-"""This module allows to take actions on a given hdf5 file and directory simultaneously."""
+"""
+This module allows to take actions on a given hdf5 file and directory simultaneously.
+"""
 
 from pathlib import Path
 from typing import Optional, Union
@@ -88,4 +90,7 @@ class Project:
         self.hdf5.store_data(target_path.name, str(target_path), folder_name)
 
     def __repr__(self) -> str:
-        return f"Project with project directory '{str(self.project_dir.project_directory)}' and hdf5 path '{str(self.hdf5.hdf5_path)}'"
+        repr_str = "Project with project directory "
+        repr_str += f"'{str(self.project_dir.project_directory)}' "
+        repr_str += f"and hdf5 path '{str(self.hdf5.hdf5_path)}'"
+        return repr_str

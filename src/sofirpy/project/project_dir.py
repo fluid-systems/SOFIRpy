@@ -107,7 +107,7 @@ class ProjectDir:
         """
         _dir_path = utils.convert_str_to_path(dir_path, name)
 
-        if not _dir_path.exists():  # TODO think about how to handle this
+        if not _dir_path.exists():
             _dir_path.mkdir(parents=True)
             # raise FileNotFoundError(f"Directory '{dir_path}' doesn't exist.")
         if not _dir_path.is_dir():
@@ -154,7 +154,7 @@ class ProjectDir:
     def move_file(
         self,
         source_path: Union[Path, str],
-        target_directory: Optional[Union[Path, str]] = None
+        target_directory: Optional[Union[Path, str]] = None,
     ) -> Path:
         """Move a file from a source path to a target directory.
 
@@ -207,7 +207,7 @@ class ProjectDir:
         source_path: Union[Path, str],
         target_directory: Optional[Union[Path, str]] = None,
     ) -> Path:
-        """Copy a file from a source path to a target directory while keeping the file name.
+        """Copy a file from a source path to a target directory.
 
         Args:
             source_path (Union[Path, str]): Source path of the file that should

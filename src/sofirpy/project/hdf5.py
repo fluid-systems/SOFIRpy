@@ -49,7 +49,7 @@ class HDF5:
                 f'Invalid path name, expected one of the following file extensions: {", ".join(hdf_suffixes)}'
             )
         if not _hdf5_path.exists():
-            # create_new = utils._get_user_input_for_creating_path(_hdf5_path)
+            # create_new = utils.get_user_input_for_creating_path(_hdf5_path)
             # if not create_new:
             #     raise FileNotFoundError(f"{_hdf5_path} doesn't exist.")
             _hdf5_path.touch()
@@ -113,10 +113,12 @@ class HDF5:
                 group = hdf5
                 data_path = data_name
             if data_path in hdf5:
-                overwrite = utils._get_user_input_for_overwriting(data_path, "hdf5 dataset at")
+                overwrite = utils.get_user_input_for_overwriting(
+                    data_path, "hdf5 dataset at"
+                )
                 if not overwrite:
                     raise ValueError(
-                        f"Unable to create dataset, dataset at {data_path} already exists)"
+                        f"Unable to create dataset, dataset at {data_path} already exists."
                     )
                 del hdf5[data_path]
             dset = group.create_dataset(data_name, data=data)
@@ -159,8 +161,8 @@ class HDF5:
         """Reads the attributes of a dataset or group.
 
         Args:
-            path (str): Path to a hdf5 group or dataset. If None or empty string the attributes
-                of the root will be returned.
+            path (str): Path to a hdf5 group or dataset. If None or empty string the
+                attributes of the root will be returned.
 
         Returns:
             dict[str, Any]: Attributes of the given hdf5 group or dataset.

@@ -86,7 +86,7 @@ class OpenModelicaFmuExport(FmuExport):
             f"{self.model_name}_FMU.makefile",
         ]
 
-        self._paths_to_delete = list(
+        self.paths_to_delete = list(
             map(lambda file_name: self._dump_directory / file_name, files_to_delete)
         )
 
@@ -105,7 +105,8 @@ def export_open_modelica_model(
     """Exports a modelica model as an fmu and moves the fmu to the output directory
 
     Args:
-        model_path (Union[Path, str]): Path to the modelica model that should be exported
+        model_path (Union[Path, str]): Path to the modelica model that should be
+            exported.
         model_name (str): Name of the model.
         output_directory (Union[Path, str]): Path to the output directory.
 
@@ -121,13 +122,13 @@ def export_open_modelica_model(
         om_fmu_export.export_fmu()
     finally:
         # delete unnecessary files
-        utils.delete_paths(om_fmu_export._paths_to_delete)
+        utils.delete_paths(om_fmu_export.paths_to_delete)
 
     if om_fmu_export.fmu_path.exists():
         print("The FMU Export was successful.")
         om_fmu_export.move_fmu(_output_directory)
         return om_fmu_export
-    else:
-        print("The FMU Export was not successful")
+
+    print("The FMU Export was not successful")
 
     return None

@@ -45,17 +45,17 @@ class SystemParameter:
 
 @dataclass(frozen=True)
 class LoggedParameter(SystemParameter):
-    """LoggedParameter object representing a parameter in a system that is logged."""
+    """Representing a parameter in a system that is logged."""
 
 
 @dataclass(frozen=True)
 class ConnectionPoint(SystemParameter):
-    """ConnectionPoint object representing a parameter in a system that is an input our output."""
+    """Representing a parameter in a system that is an input our output."""
 
 
 @dataclass(frozen=True)
 class Connection:
-    """Object representing a connection between two systems.
+    """Representing a connection between two systems.
 
     Args:
         input_point (ConnectionPoint): ConnectionPoint object that
@@ -108,7 +108,7 @@ class Simulation:
             parameters
         """
         time_series = np.arange(start_time, stop_time + step_size, step_size)
-        self.results = np.zeros((len(time_series), len(self.parameters_to_log)+1))
+        self.results = np.zeros((len(time_series), len(self.parameters_to_log) + 1))
 
         print("Starting Simulation...")
 
@@ -181,7 +181,7 @@ class Simulation:
         return pd.DataFrame(results, columns=columns)
 
     def get_units(self) -> Units:
-        """Get a dictionary with all logged parameters as keys and their units as values.
+        """Get a dictionary with units of all logged parameters.
 
         Returns:
             Units: keys: parameter name, values: unit. If the unit can
@@ -206,6 +206,8 @@ ConnectionInfos = list[ConnectionInfo]
 
 
 class SystemInfo(TypedDict, total=False):
+    """TypedDict for fmu_info and model_info."""
+
     name: str
     path: Union[str, Path]
     connections: ConnectionInfos
@@ -367,6 +369,8 @@ def simulate(
 
 
 class SystemInfoKeys(Enum):
+    """Enum containing the keys of fmu_info and model_info"""
+
     SYSTEM_NAME = "name"
     FMU_PATH = "path"
     CONNECTIONS = "connections"
@@ -422,8 +426,7 @@ def init_systems(
 
 
 def init_connections(
-    system_infos: SystemInfos,
-    systems: dict[str, System],
+    system_infos: SystemInfos, systems: dict[str, System]
 ) -> list[Connection]:
     """Initialize all the connections.
 
@@ -472,7 +475,8 @@ def init_parameter_list(
             the corresponding System instance as values.
 
     Returns:
-        Optional[list[LoggedParameter]]: List of system parameters that should be logged.
+        Optional[list[LoggedParameter]]: List of system parameters that should be
+        logged.
     """
     if parameters_to_log is None:
         return None
@@ -595,11 +599,13 @@ def _validate_connection_infos(connection_infos: ConnectionInfos) -> None:
 
 
 def _check_key_exists(key: str, info_dict: Union[SystemInfo, ConnectionInfo]) -> None:
+
     if key not in info_dict:
         raise KeyError(f"missing key '{key}' in {info_dict}")
 
 
 def _check_value_type(key: str, value: Any, typ: Any) -> None:
+
     if not isinstance(value, typ):
         typ_name = typ.__name__
         if isinstance(typ, tuple):  # if multiple types allowed
@@ -610,6 +616,7 @@ def _check_value_type(key: str, value: Any, typ: Any) -> None:
 def _get_all_system_names(
     fmu_names: Optional[list[str]], model_names: Optional[list[str]]
 ) -> list[str]:
+
     if fmu_names is not None and model_names is not None:
         return [*fmu_names, *model_names]
     if fmu_names is not None:
@@ -631,4 +638,5 @@ def _validate_model_classes(
     if not isinstance(model_classes, dict):
         raise TypeError(f"'model_classes' is {type(model_classes)}; expected dict")
 
-    # TODO check if names in models classes are defined in model names
+    if not set(model_classes.keys()) == set(model_names):
+        raise ValueError("Names in 'model_classes' and in 'model_info' do not match.")

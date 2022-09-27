@@ -1,7 +1,7 @@
 """Framework for simulating FMUs and custom models written in python."""
 
-__author__ = 'Daniele Inturri'
-__email__ = 'daniele.inturri@stud.tu-darmstadt.de'
+__author__ = "Daniele Inturri"
+__email__ = "daniele.inturri@stud.tu-darmstadt.de"
 __version__ = "0.1.0"
 
 __all__ = [
@@ -13,7 +13,7 @@ __all__ = [
     "HDF5",
     "ProjectDir",
     "store_input_arguments",
-    "plot_results"
+    "plot_results",
 ]
 
 from .fmu_export.dymola_fmu_export import export_dymola_model

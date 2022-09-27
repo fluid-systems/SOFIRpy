@@ -1,3 +1,5 @@
+"""Module containing the Fmu class."""
+
 from pathlib import Path
 from typing import Optional, Union
 

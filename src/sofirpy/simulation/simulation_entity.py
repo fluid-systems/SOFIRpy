@@ -1,3 +1,5 @@
+"""Module containing abstract class SimulationEntity"""
+
 from abc import ABC, abstractmethod
 from typing import Optional, Union
 
