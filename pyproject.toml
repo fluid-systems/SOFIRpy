@@ -32,6 +32,11 @@ dependencies = [
 requires-python = ">=3.9"
 
 [project.optional-dependencies]
+dev = [
+    "black>=22.8.0",
+    "isort>=5.8.0",
+    "pylint>=2.15.3"
+    ]
 test = [
     "pytest>=7.1.2",
     "pytest-cov>=3.0.0",
@@ -69,3 +74,26 @@ module = [
     "OMPython"
 ]
 ignore_missing_imports = true
+
+[tool.black]
+line_length = 88
+
+[tool.isort]
+atomic = true
+profile = "black"
+line_length = 88
+skip_gitignore = true
+
+[tool.pylint.main]
+fail-under = 9.9
+
+[tool.pylint.design]
+max-args = 9
+max-attributes = 13
+max-locals = 16
+
+[tool.pylint.format]
+max-line-length = 88
+[tool.pylint."messages control"]
+disable = ["attribute-defined-outside-init"]
+
