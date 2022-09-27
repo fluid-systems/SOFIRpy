@@ -634,6 +634,10 @@ def _validate_model_classes(
     if model_classes is None:
         if model_names:
             raise ValueError("Models are defined but 'model_classes' is 'None'")
+        return
+
+    if model_names is None:
+        model_names = []
 
     if not isinstance(model_classes, dict):
         raise TypeError(f"'model_classes' is {type(model_classes)}; expected dict")
