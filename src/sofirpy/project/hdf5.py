@@ -322,7 +322,7 @@ class HDF5:
 
             return file_structure
 
-    def check_path_exists(self, path: str) -> bool:
+    def __contains__(self, path: str) -> bool:
         """Check if a given group oder data path exists in the hdf5.
 
         Args:

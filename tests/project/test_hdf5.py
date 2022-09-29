@@ -17,6 +17,9 @@ def hdf5() -> HDF5:
     test_hdf5_path = Path(__file__).parent / "test_hdf5.hdf5"
     return HDF5(test_hdf5_path)
 
+def test_init_of_already_existing_hdf5(hdf5: HDF5) -> None:
+    assert hdf5.hdf5_path.exists() == True
+
 
 @pytest.mark.parametrize(
     "file_suffix", [".hdf", ".h4", ".hdf4", ".he2", ".h5", ".hdf5", ".he5"]
@@ -35,10 +38,6 @@ def test_create_new_hdf5_exception(file_suffix: str) -> None:
     temp_path = Path(__file__).parent / f"test_new_hdf5.{file_suffix}"
     with pytest.raises(ValueError):
         HDF5(temp_path)
-
-
-def test_init_of_already_existing_hdf5(hdf5: HDF5) -> None:
-    assert hdf5.hdf5_path.exists() == True
 
 
 @hdf5_clean_up
@@ -142,11 +141,11 @@ def test_read_hdf5_structure(hdf5: HDF5) -> None:
     }
 
 
-def test_check_path_exists(hdf5: HDF5) -> None:
+def test_contains(hdf5: HDF5) -> None:
 
-    assert hdf5.check_path_exists("test_check_path_exists")
-    assert hdf5.check_path_exists("test_check_path_exists/test_data")
-    assert not hdf5.check_path_exists("test_check_path_exists/non_existing_path")
+    assert "test_check_path_exists" in hdf5
+    assert "test_check_path_exists/test_data" in hdf5
+    assert "test_check_path_exists/non_existing_path" not in hdf5
 
 
 @hdf5_clean_up
@@ -173,7 +172,7 @@ def test_store_data_with_already_existing_data_set(hdf5: HDF5) -> None:
 def test_delete_data(hdf5: HDF5) -> None:
 
     hdf5.delete_data("test_delete_data", "delete_data")
-    assert not hdf5.check_path_exists("test_delete_data/delete_data")
+    assert "test_delete_data/delete_data" not in hdf5
 
 
 def test_delete_data_exception(hdf5: HDF5) -> None:
