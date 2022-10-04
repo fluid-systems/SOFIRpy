@@ -1,36 +1,35 @@
-import sys
+import shutil
+import tempfile
 from pathlib import Path
 
-import h5py
 import numpy as np
 import pytest
 
 from sofirpy import HDF5
 
-sys.path.append(str(Path(__file__).parent))
-
-from project_testing_utils import hdf5_clean_up
-
 
 @pytest.fixture
 def hdf5() -> HDF5:
     test_hdf5_path = Path(__file__).parent / "test_hdf5.hdf5"
-    return HDF5(test_hdf5_path)
+    _hdf5 = HDF5(test_hdf5_path)
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        yield copy_standard_hdf5(_hdf5, "hdf5_testing", Path(tmp_dir))
 
-def test_init_of_already_existing_hdf5(hdf5: HDF5) -> None:
-    assert hdf5.hdf5_path.exists() == True
+
+def copy_standard_hdf5(hdf5: HDF5, test_name: str, dir_path: Path) -> HDF5:
+    copy_path = dir_path / f"{test_name}.hdf5"
+    shutil.copy(hdf5.hdf5_path, copy_path)
+    return HDF5(copy_path)
 
 
 @pytest.mark.parametrize(
     "file_suffix", [".hdf", ".h4", ".hdf4", ".he2", ".h5", ".hdf5", ".he5"]
 )
 def test_create_new_hdf5(file_suffix: str) -> None:
-    try:
-        temp_path = Path(__file__).parent / f"test_new_hdf5.{file_suffix}"
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        temp_path = Path(tmp_dir) / f"test_new_hdf5.{file_suffix}"
         HDF5(temp_path)
         assert temp_path.exists() == True
-    finally:
-        temp_path.unlink()
 
 
 @pytest.mark.parametrize("file_suffix", [".txt", ".hdf6", ".h7"])
@@ -40,45 +39,56 @@ def test_create_new_hdf5_exception(file_suffix: str) -> None:
         HDF5(temp_path)
 
 
-@hdf5_clean_up
-def test_create_group(hdf5: HDF5) -> None:
-
-    groups = ["group1", "group1/subgroup1", "group2/subgroup1"]
-
-    for group in groups:
-        hdf5.create_group(group)
-
-    for group in groups:
-        with h5py.File(str(hdf5.hdf5_path), "a") as hdf5_file:
-            assert group in hdf5_file
-
-
-def test_create_group_exception(hdf5: HDF5) -> None:
-
-    groups = [
+@pytest.mark.parametrize(
+    "path",
+    [
         "test_create_group_exception/group1",
         "test_create_group_exception/group2/subgroup1",
-    ]
+    ],
+)
+def test_contains(hdf5: HDF5, path: str) -> None:
+    assert path in hdf5
 
-    for group in groups:
-        with pytest.raises(ValueError):
-            hdf5.create_group(group)
+
+@pytest.mark.parametrize(
+    "group",
+    [
+        "group1",
+        "group1/subgroup1",
+        "group2/subgroup1",
+    ],
+)
+def test_create_group(hdf5: HDF5, group: str) -> None:
+
+    hdf5.create_group(group)
+    assert group in hdf5
 
 
-@hdf5_clean_up
-def test_delete_group(hdf5: HDF5) -> None:
+@pytest.mark.parametrize(
+    "group",
+    [
+        "test_create_group_exception/group1",
+        "test_create_group_exception/group2/subgroup1",
+    ],
+)
+def test_create_group_exception(hdf5: HDF5, group: str) -> None:
 
-    groups = [
+    with pytest.raises(ValueError):
+        hdf5.create_group(group)
+
+
+@pytest.mark.parametrize(
+    "group",
+    [
         "test_delete_group/group1",
         "test_delete_group/group2/subgroup1",
         "test_delete_group/group2",
-    ]
+    ],
+)
+def test_delete_group(hdf5: HDF5, group: str) -> None:
 
-    for group in groups:
-        hdf5.delete_group(group)
-
-        with h5py.File(str(hdf5.hdf5_path), "a") as hdf5_file:
-            assert group not in hdf5_file
+    hdf5.delete_group(group)
+    assert group not in hdf5
 
 
 def test_read_attributes(hdf5: HDF5) -> None:
@@ -88,7 +98,6 @@ def test_read_attributes(hdf5: HDF5) -> None:
     assert attr == hdf5.read_attributes("test_read_attributes/dataset1")
 
 
-@hdf5_clean_up
 def test_delete_attribute(hdf5: HDF5) -> None:
 
     hdf5.delete_attribute("test_delete_attribute", attribute_name="attr1")
@@ -101,7 +110,6 @@ def test_delete_attribute_exception(hdf5: HDF5) -> None:
         hdf5.delete_attribute("test_delete_attribute_exception", "i_do_not_exist")
 
 
-@hdf5_clean_up
 def test_append_attributes(hdf5: HDF5) -> None:
 
     attr = {"attr1": 1, "attr4": "foo"}
@@ -124,7 +132,6 @@ def test_read_data_exception(hdf5: HDF5) -> None:
         hdf5.read_data("subgroup1", "test_read_data")
 
 
-@hdf5_clean_up
 def test_read_entire_group_data(hdf5: HDF5) -> None:
 
     assert hdf5.read_entire_group_data("test_delete_group") == {
@@ -133,7 +140,6 @@ def test_read_entire_group_data(hdf5: HDF5) -> None:
     }
 
 
-@hdf5_clean_up
 def test_read_hdf5_structure(hdf5: HDF5) -> None:
     assert hdf5.read_hdf5_structure("test_read_data") == {
         "subgroup1": {},
@@ -141,14 +147,6 @@ def test_read_hdf5_structure(hdf5: HDF5) -> None:
     }
 
 
-def test_contains(hdf5: HDF5) -> None:
-
-    assert "test_check_path_exists" in hdf5
-    assert "test_check_path_exists/test_data" in hdf5
-    assert "test_check_path_exists/non_existing_path" not in hdf5
-
-
-@hdf5_clean_up
 def test_store_data(hdf5: HDF5) -> None:
 
     data = np.zeros((10, 10))
@@ -168,7 +166,6 @@ def test_store_data_with_already_existing_data_set(hdf5: HDF5) -> None:
     pass
 
 
-@hdf5_clean_up
 def test_delete_data(hdf5: HDF5) -> None:
 
     hdf5.delete_data("test_delete_data", "delete_data")

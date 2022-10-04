@@ -1,38 +1,39 @@
 import shutil
-import sys
+import tempfile
 from pathlib import Path
 
 import pytest
 
 from sofirpy import ProjectDir
 
-sys.path.append(str(Path(__file__).parent))
 
-from project_testing_utils import project_dir_clean_up
+@pytest.fixture
+def tmp_dir() -> tempfile.TemporaryDirectory:
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        yield Path(tmp_dir)
 
 
 @pytest.fixture
 def project_dir() -> ProjectDir:
+
     directory = Path(__file__).parent / "test_project_dir"
-    return ProjectDir(directory)
+    _project_dir = ProjectDir(directory)
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        yield _copy_standard_project_dir(
+            _project_dir, "test_project_dir", Path(tmp_dir)
+        )
+
+
+def _copy_standard_project_dir(
+    project_dir: ProjectDir, test_name: str, dir_path: Path
+) -> ProjectDir:
+    copy_path = dir_path / f"{test_name}_project_dir"
+    shutil.copytree(project_dir.project_directory, copy_path)
+    return ProjectDir(copy_path)
 
 
 def test_init(project_dir: ProjectDir) -> None:
     assert project_dir.current_folder_path == project_dir.project_directory
-
-
-def test_dir_setter_creation() -> None:
-    directory = Path(__file__).parent / "test_dir_setter_creation"
-    if directory.exists():
-        directory.rmdir()
-    project_dir = ProjectDir(directory)
-    assert directory.exists()
-    project_dir.project_directory.rmdir()
-    project_dir.project_directory = (
-        Path(__file__).parent / "test_dir_setter_creation/test"
-    )
-    assert directory.exists()
-    shutil.rmtree(project_dir.project_directory.parent, ignore_errors=True)
 
 
 def test_dir_setter_exception() -> None:
@@ -47,7 +48,6 @@ def test_set_current_folder_exception(project_dir: ProjectDir) -> None:
         project_dir.current_folder = None
 
 
-@project_dir_clean_up
 def test_create_folder(project_dir: ProjectDir) -> None:
 
     folder_name = "test_create_folder"
@@ -64,7 +64,6 @@ def test_create_folder_exception(project_dir: ProjectDir) -> None:
         project_dir.create_folder("test_create_folder_exception")
 
 
-@project_dir_clean_up
 def test_delete_element(project_dir: ProjectDir) -> None:
 
     file_rel_path = "test_delete_element/test.txt"
@@ -75,7 +74,6 @@ def test_delete_element(project_dir: ProjectDir) -> None:
     assert not (project_dir.project_directory / folder_rel_path).exists()
 
 
-@project_dir_clean_up
 def test_delete_folder(project_dir: ProjectDir) -> None:
 
     project_dir.current_folder = "test_delete_folder"
@@ -85,7 +83,6 @@ def test_delete_folder(project_dir: ProjectDir) -> None:
     assert project_dir.current_folder == "."
 
 
-@project_dir_clean_up
 def test_delete_files(project_dir: ProjectDir) -> None:
 
     project_dir.current_folder = "test_delete_files"
@@ -94,7 +91,6 @@ def test_delete_files(project_dir: ProjectDir) -> None:
     assert not (project_dir.current_folder_path / "test2.txt").exists()
 
 
-@project_dir_clean_up
 def test_rename_file(project_dir: ProjectDir) -> None:
 
     file_path = project_dir.project_directory / "test_rename_file.txt"
@@ -105,7 +101,6 @@ def test_rename_file(project_dir: ProjectDir) -> None:
     assert not file_path.exists()
 
 
-@project_dir_clean_up
 def test_move_file(project_dir: ProjectDir) -> None:
 
     source_path = project_dir.project_directory / "test_move_file.txt"
@@ -116,7 +111,6 @@ def test_move_file(project_dir: ProjectDir) -> None:
     assert not source_path.exists()
 
 
-@project_dir_clean_up
 def test_move_files(project_dir: ProjectDir) -> None:
 
     source_directory = project_dir.project_directory / "test_move_files"
@@ -130,7 +124,6 @@ def test_move_files(project_dir: ProjectDir) -> None:
         assert not path.exists()
 
 
-@project_dir_clean_up
 def test_move_and_rename_file(project_dir: ProjectDir) -> None:
 
     source_path = project_dir.project_directory / "test_move_and_rename_file.txt"
@@ -144,7 +137,6 @@ def test_move_and_rename_file(project_dir: ProjectDir) -> None:
     assert not source_path.exists()
 
 
-@project_dir_clean_up
 def test_copy_file(project_dir: ProjectDir) -> None:
 
     source_path = project_dir.project_directory / "test_copy_file.txt"
@@ -155,7 +147,6 @@ def test_copy_file(project_dir: ProjectDir) -> None:
     assert source_path.exists()
 
 
-@project_dir_clean_up
 def test_copy_and_rename_file(project_dir: ProjectDir) -> None:
 
     source_path = project_dir.project_directory / "test_copy_and_rename_file.txt"
