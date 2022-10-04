@@ -6,7 +6,7 @@ import sofirpy.utils as utils
 
 @pytest.mark.parametrize(
     "str_or_path, expected",
-    [("C:/sofirpy", Path("C:/sofirpy")), (Path("C:/sofirpy"), Path("C:/sofirpy"))],
+    [("/sofirpy", Path("/sofirpy")), (Path("/sofirpy"), Path("/sofirpy"))],
 )
 def test_convert_str_to_path_function(
     str_or_path: Union[str, Path], expected: Path
