@@ -53,12 +53,11 @@ def store_input_arguments(
             for name, val in zip(insp.args[::-1], insp.defaults[::-1]):
                 if name not in list(inputs.keys()):
                     inputs[name] = val
-        return_value = func(self, *args, **kwargs)
         method_input_info = {func.__name__: inputs}
         if hasattr(self, "__input_arguments__"):
             self.__input_arguments__ = {**self.__input_arguments__, **method_input_info}
         else:
             self.__input_arguments__ = method_input_info
-        return return_value
+        return func(self, *args, **kwargs)
 
     return wrapper  # type: ignore[return-value]
