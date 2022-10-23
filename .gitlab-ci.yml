@@ -1,0 +1,35 @@
+image: python:3.9.14-bullseye
+
+stages:
+  - Static Analysis
+  - Test
+  - Documentation
+
+before_script:
+  - python --version
+  - pip install --upgrade pip setuptools
+  - pip install virtualenv
+  - virtualenv venv
+  - source venv/bin/activate
+  - pip install ".[test, doc, dev]"
+
+linting:
+  stage: Static Analysis
+  script:
+    - pylint src/sofirpy
+
+type_checking:
+  stage: Static Analysis
+  script:
+    - mypy src/sofirpy
+
+test:
+  stage: Test
+  script:
+    - pytest tests/
+
+doc:
+  stage: Documentation
+  script:
+    - cd docs/
+    - make html

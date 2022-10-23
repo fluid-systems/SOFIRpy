@@ -10,19 +10,18 @@
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
-import os
 import sys
-sys.path.insert(0, os.path.abspath('..'))
-
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
+import sofirpy
 
 # -- Project information -----------------------------------------------------
 
 project = 'SOFIRpy'
 copyright = '2022, Daniele Inturri'
-author = 'Daniele Inturri'
-
-# The full version, including alpha/beta/rc tags
-release = '0.1.0'
+author = sofirpy.__author__
+version = sofirpy.__version__
+release = version
 
 
 # -- General configuration ---------------------------------------------------
@@ -51,8 +50,3 @@ exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 # a list of builtin themes.
 #s
 html_theme = 'sphinx_rtd_theme'
-
-# Add any paths that contain custom static files (such as style sheets) here,
-# relative to this directory. They are copied after the builtin static files,
-# so a file named "default.css" will overwrite the builtin "default.css".
-html_static_path = ['_static']

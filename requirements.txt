@@ -1,7 +1,8 @@
-FMPy
-alive_progress
-h5py
-matplotlib
-numpy
-pandas
-OMpython
+FMPy >= 0.3.0
+tqdm >= 4.60.0
+h5py >= 3.0.0
+matplotlib >= 3.2.0
+numpy >= 1.20.0
+pandas >= 1.3.0
+OMpython >= 3.4.0
+typing_extensions >= 4.3.0

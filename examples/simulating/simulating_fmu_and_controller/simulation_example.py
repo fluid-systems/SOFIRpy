@@ -1,8 +1,13 @@
+import sys
+import os
 from pathlib import Path
 from sofirpy import simulate
-from discrete_pid import PID # custom implemented pid controller 
 
-fmu_path = Path(__file__).parent / "DC_Motor.fmu"
+sys.path.append(os.path.join(os.path.dirname(__file__),'../../'))
+
+from discrete_pid import PID # custom implemented pid controller
+
+fmu_path = Path(__file__).parent.parent.parent / "DC_Motor.fmu"
 
 fmu_info = [
     {
@@ -10,11 +15,11 @@ fmu_info = [
         "path": str(fmu_path),
         "connections": [
             {
-                "parameter name": "u",
-                "connect to system": "pid",
-                "connect to external parameter": "u",
+                "parameter_name": "u",
+                "connect_to_system": "pid",
+                "connect_to_external_parameter": "u",
             }
-        ],
+        ]
     }
 ]
 
@@ -24,11 +29,11 @@ control_infos = [
         "name": "pid",
         "connections": [
             {
-                "parameter name": "speed",
-                "connect to system": "DC_Motor",
-                "connect to external parameter": "y",
+                "parameter_name": "speed",
+                "connect_to_system": "DC_Motor",
+                "connect_to_external_parameter": "y"
             }
-        ],
+        ]
     }
 ]
 pid = PID(1e-3, 3, 20, 0.1, set_point=100, u_max=100, u_min=0)

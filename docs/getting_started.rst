@@ -28,7 +28,7 @@ Simulating a FMU and a Controller
 
 The custom implemented pid controller is shown below.
 
-.. literalinclude:: ../examples/simulating/simulating_fmu_and_controller/discrete_pid.py
+.. literalinclude:: ../examples/discrete_pid.py
 
 Initializing a project and storing data
 ----------------------------------------
