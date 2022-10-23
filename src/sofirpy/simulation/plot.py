@@ -5,7 +5,6 @@ from typing import Optional, Union
 
 import matplotlib.pyplot as plt
 import pandas as pd
-from matplotlib.axes import Axes
 
 
 def plot_results(
@@ -17,7 +16,7 @@ def plot_results(
     title: Optional[str] = None,
     legend: Optional[Union[str, list[str]]] = None,
     style_sheet_path: Optional[Union[str, Path]] = None,
-) -> Axes:
+) -> tuple[plt.Axes, plt.Figure]:
     """Plot the simulation results.
 
     Args:
@@ -34,12 +33,12 @@ def plot_results(
             style sheet. Defaults to None.
 
     Returns:
-        Axes: Matplotlib Axes object.
+        tuple[plt.Axes, plt.Figure]: Matplotlib Axes and figure object.
     """
     if style_sheet_path:
         plt.style.use(style_sheet_path)
 
-    plt.figure()
+    figure = plt.figure()
     axes = plt.gca()
 
     if title:
@@ -56,4 +55,4 @@ def plot_results(
     if legend:
         axes.legend(legend)
 
-    return axes
+    return axes, figure
