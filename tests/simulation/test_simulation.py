@@ -9,7 +9,8 @@ from sofirpy.simulation.simulation import (
     SimulationEntity,
     simulate,
     _validate_fmu_infos,
-    _validate_input
+    _validate_input,
+    _validate_parameters_to_log
 )
 
 
@@ -106,6 +107,14 @@ def model_info() -> dict:
         }
     ]
 
+@pytest.fixture
+def parameters_to_log() -> dict:
+    return {"DC_Motor": ["y", "MotorTorque.tau"], "pid": ["u"]}
+
+@pytest.fixture
+def system_names() -> dict:
+    return ["DC_Motor", "pid"]
+
 
 @pytest.fixture
 def pid() -> PID:
@@ -118,11 +127,10 @@ def result_path() -> Path:
 
 
 def test_simulation(
-    fmu_info: list[dict], model_info: list[dict], pid: PID, result_path: Path
+    fmu_info: list[dict], model_info: list[dict], pid: PID, result_path: Path, parameters_to_log: dict
 ) -> None:
 
     control_class = {"pid": pid}
-    parameters_to_log = {"DC_Motor": ["y", "MotorTorque.tau"], "pid": ["u"]}
     results, units = simulate(
         stop_time=2,
         step_size=1e-3,
@@ -149,7 +157,7 @@ def test_validate_input_duplicate_name_value_error(
 
     model_info[0]["name"] = fmu_info[0]["name"]
     with pytest.raises(ValueError, match="Duplicate names in system infos."):
-        _validate_input(1, 0.1, fmu_info, model_info)
+        _validate_input(1, 0.1, fmu_info, model_info, None, None, None)
 
 
 def test_simulate_with_no_parameters_to_log(
@@ -171,6 +179,34 @@ def test_simulate_with_no_parameters_to_log(
     results = results.to_numpy()
     assert np.isclose(results, test_results, atol=1e-6).all()
 
+
+@pytest.mark.parametrize("logging_step_size", [1e-3,1e-2,1e-1,1.0])
+def test_simulate_with_bigger_log_step_size(
+    fmu_info: list[dict],
+    model_info: list[dict],
+    pid: PID,
+    result_path: Path,
+    parameters_to_log: dict,
+    logging_step_size: float
+) -> None:
+
+    step_size = 1e-3
+    control_class = {"pid": pid}
+    results = simulate(
+        stop_time=2,
+        step_size=step_size,
+        fmu_infos=fmu_info,
+        model_infos=model_info,
+        model_classes=control_class,
+        parameters_to_log=parameters_to_log,
+        logging_step_size=logging_step_size
+
+    )
+
+    test_results = pd.read_csv(result_path).to_numpy()
+    results = results.to_numpy()
+
+    assert np.isclose(results, test_results[::int(logging_step_size/step_size)], atol=1e-6).all()
 
 @pytest.mark.parametrize(
     "fmu_info",
@@ -244,3 +280,15 @@ def test_validate_fmu_info_key_error(fmu_info: list[dict]) -> None:
 
     with pytest.raises(KeyError):
         _validate_fmu_infos(fmu_info)
+
+def test_validate_parameters_to_log_raises_type_error(parameters_to_log: dict, system_names: list[str]) -> None:
+
+    parameters_to_log["DC_Motor"] = "var"
+    with pytest.raises(TypeError):
+        _validate_parameters_to_log(parameters_to_log, system_names)
+
+def test_validate_parameters_to_log_raises_type_error(parameters_to_log: dict, system_names: list[str]) -> None:
+
+    system_names.pop(0)
+    with pytest.raises(ValueError):
+        _validate_parameters_to_log(parameters_to_log, system_names)
