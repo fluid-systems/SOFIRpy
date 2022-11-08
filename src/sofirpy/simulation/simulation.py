@@ -93,13 +93,18 @@ class Simulation:
         self.parameters_to_log = parameters_to_log
 
     def simulate(
-        self, stop_time: float, step_size: float, logging_step_size: int, start_time: float = 0.0
+        self,
+        stop_time: float,
+        step_size: float,
+        logging_step_size: float,
+        start_time: float = 0.0,
     ) -> pd.DataFrame:
         """Simulate the systems.
 
         Args:
             stop_time (float): stop time for the simulation
             step_size (float): step size for the simulation
+            logging_step_size(float): logging step size for the simulation
             start_time (float, optional): start time of the simulation.
                 Defaults to 0.0.
 
@@ -108,11 +113,13 @@ class Simulation:
             parameters
         """
         time_series = np.arange(start_time, stop_time + step_size, step_size)
-        if time_series[-1]>stop_time:
+        if time_series[-1] > stop_time:
             time_series = time_series[:-1]
 
-        number_log_steps = self._compute_number_of_log_steps(stop_time, logging_step_size)
-        logging_multiple = int(logging_step_size/step_size)
+        number_log_steps = self._compute_number_of_log_steps(
+            stop_time, logging_step_size
+        )
+        logging_multiple = int(logging_step_size / step_size)
         self.results = np.zeros((number_log_steps, len(self.parameters_to_log) + 1))
 
         print("Starting Simulation...")
@@ -120,7 +127,7 @@ class Simulation:
         log_step = 0
         for time_step, time in enumerate(tqdm(time_series)):
 
-            if (time_step%logging_multiple) == 0:
+            if (time_step % logging_multiple) == 0:
                 self.log_values(time, log_step)
                 log_step += 1
             self.set_systems_inputs()
@@ -132,8 +139,10 @@ class Simulation:
 
         return self.convert_to_data_frame(self.results)
 
-    def _compute_number_of_log_steps(self, stop_time: float, logging_step_size: float) -> int:
-        return int(stop_time/logging_step_size) + 1
+    def _compute_number_of_log_steps(
+        self, stop_time: float, logging_step_size: float
+    ) -> int:
+        return int(stop_time / logging_step_size) + 1
 
     def set_systems_inputs(self) -> None:
         """Set inputs for all systems."""
@@ -334,6 +343,11 @@ def simulate(
             ... }
 
             Defaults to None.
+        logging_step_size (Optional[Union[float, int]], optional): step_size
+            for logging. It must be a multiple of the chosen simulation 'step_size'.
+            Example:
+            If the simulation 'step_size' is set to 1e-3 and 'logging_step_size'
+            is set to 2e-3, every second time step is logged.
         get_units (bool, optional): Determines whether the units of
             the logged parameter should be returned. Defaults to False.
 
@@ -353,13 +367,23 @@ def simulate(
             logged parameters.
     """
 
-    _validate_input(stop_time, step_size, fmu_infos, model_infos, model_classes, parameters_to_log, logging_step_size)
+    _validate_input(
+        stop_time,
+        step_size,
+        fmu_infos,
+        model_infos,
+        model_classes,
+        parameters_to_log,
+        logging_step_size,
+    )
 
     stop_time = float(stop_time)
     step_size = float(step_size)
 
     if logging_step_size is None:
         logging_step_size = step_size
+
+    logging_step_size = float(logging_step_size)
 
     if fmu_infos is None:
         fmu_infos = []
@@ -514,7 +538,7 @@ def _validate_input(
     model_infos: Optional[SystemInfos],
     model_classes: Optional[dict[str, SimulationEntity]],
     parameters_to_log: Optional[dict[str, list[str]]],
-    logging_step_size: Optional[float]
+    logging_step_size: Optional[float],
 ) -> None:
 
     if not isinstance(stop_time, (float, int)):
@@ -528,8 +552,6 @@ def _validate_input(
 
     if step_size <= 0 or step_size >= stop_time:
         raise ValueError(f"'step_size' is {step_size}; expected (0, {stop_time})")
-
-    #TODO check is step_size in multiple of stop_time
 
     if not fmu_infos and not model_infos:
         raise ValueError(
@@ -670,23 +692,37 @@ def _validate_model_classes(
     if not set(model_classes.keys()) == set(model_names):
         raise ValueError("Names in 'model_classes' and in 'model_info' do not match.")
 
-def _validate_parameters_to_log(parameters_to_log: dict[str, list[str]], system_names: list[str]) -> None:
+
+def _validate_parameters_to_log(
+    parameters_to_log: dict[str, list[str]], system_names: list[str]
+) -> None:
 
     if not isinstance(parameters_to_log, dict):
-        raise TypeError(f"'parameters_to_log' is {type(parameters_to_log)}; expected dict")
+        raise TypeError(
+            f"'parameters_to_log' is {type(parameters_to_log)}; expected dict"
+        )
 
     for name, parameter_names in parameters_to_log.items():
         if name not in system_names:
-            raise ValueError(f"System name '{name}' is defined in 'parameters_to_log', but does not exist.")
+            raise ValueError(
+                f"System name '{name}' is defined in 'parameters_to_log', but does not exist."
+            )
         if not isinstance(parameter_names, list):
-            raise TypeError(f"Value to key '{name}' in 'parameters_to_log' is {type(parameter_names)}; expected list")
+            raise TypeError(
+                f"Value to key '{name}' in 'parameters_to_log' is {type(parameter_names)}; expected list"
+            )
 
-def _validate_logging_step_size(logging_step_size: Union[int, float], step_size: Union[int, float]) -> None:
+
+def _validate_logging_step_size(
+    logging_step_size: Union[int, float], step_size: Union[int, float]
+) -> None:
 
     if not isinstance(logging_step_size, (int, float)):
-        raise TypeError(f"'logging_step_size' is {type(logging_step_size)}; expected int, float")
+        raise TypeError(
+            f"'logging_step_size' is {type(logging_step_size)}; expected int, float"
+        )
 
-    if not round(logging_step_size/step_size, 10).is_integer():
-        raise ValueError(f"'logging_step_size' must be a multiple of the chosen 'step_size'")
-
-
+    if not round(logging_step_size / step_size, 10).is_integer():
+        raise ValueError(
+            "'logging_step_size' must be a multiple of the chosen 'step_size'"
+        )
