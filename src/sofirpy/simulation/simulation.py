@@ -93,7 +93,7 @@ class Simulation:
         self.parameters_to_log = parameters_to_log
 
     def simulate(
-        self, stop_time: float, step_size: float, start_time: float = 0.0
+        self, stop_time: float, step_size: float, logging_step_size: int, start_time: float = 0.0
     ) -> pd.DataFrame:
         """Simulate the systems.
 
@@ -108,13 +108,21 @@ class Simulation:
             parameters
         """
         time_series = np.arange(start_time, stop_time + step_size, step_size)
-        self.results = np.zeros((len(time_series), len(self.parameters_to_log) + 1))
+        if time_series[-1]>stop_time:
+            time_series = time_series[:-1]
+
+        number_log_steps = self._compute_number_of_log_steps(stop_time, logging_step_size)
+        logging_multiple = int(logging_step_size/step_size)
+        self.results = np.zeros((number_log_steps, len(self.parameters_to_log) + 1))
 
         print("Starting Simulation...")
 
+        log_step = 0
         for time_step, time in enumerate(tqdm(time_series)):
 
-            self.log_values(time, time_step)
+            if (time_step%logging_multiple) == 0:
+                self.log_values(time, log_step)
+                log_step += 1
             self.set_systems_inputs()
             self.do_step(time)
 
@@ -123,6 +131,9 @@ class Simulation:
                 system.simulation_entity.conclude_simulation_process()
 
         return self.convert_to_data_frame(self.results)
+
+    def _compute_number_of_log_steps(self, stop_time: float, logging_step_size: float) -> int:
+        return int(stop_time/logging_step_size) + 1
 
     def set_systems_inputs(self) -> None:
         """Set inputs for all systems."""
@@ -220,11 +231,12 @@ Units = dict[str, Optional[str]]
 
 def simulate(
     stop_time: Union[float, int],
-    step_size: float,
+    step_size: Union[float, int],
     fmu_infos: Optional[SystemInfos] = None,
     model_infos: Optional[SystemInfos] = None,
     model_classes: Optional[dict[str, SimulationEntity]] = None,
     parameters_to_log: Optional[dict[str, list[str]]] = None,
+    logging_step_size: Optional[Union[float, int]] = None,
     get_units: bool = False,
 ) -> Union[pd.DataFrame, tuple[pd.DataFrame, Units]]:
     """Simulate fmus and models written in python.
@@ -234,7 +246,7 @@ def simulate(
 
     Args:
         stop_time (Union[float,int]): stop time for the simulation
-        step_size (float): step size for the simulation
+        step_size (Union[float, int]): step size for the simulation
         fmu_infos (Optional[SystemInfos], optional):
             Defines which fmus should be simulated and how they are connected
             to other systems. It needs to have the following format:
@@ -341,10 +353,13 @@ def simulate(
             logged parameters.
     """
 
-    _validate_input(stop_time, step_size, fmu_infos, model_infos, model_classes)
+    _validate_input(stop_time, step_size, fmu_infos, model_infos, model_classes, parameters_to_log, logging_step_size)
 
     stop_time = float(stop_time)
     step_size = float(step_size)
+
+    if logging_step_size is None:
+        logging_step_size = step_size
 
     if fmu_infos is None:
         fmu_infos = []
@@ -359,7 +374,7 @@ def simulate(
 
     simulator = Simulation(list(systems.values()), connections, _parameters_to_log)
 
-    results = simulator.simulate(stop_time, step_size)
+    results = simulator.simulate(stop_time, step_size, logging_step_size)
 
     if get_units:
         units = simulator.get_units()
@@ -494,10 +509,12 @@ def init_parameter_list(
 
 def _validate_input(
     stop_time: Union[float, int],
-    step_size: float,
-    fmu_infos: Optional[SystemInfos] = None,
-    model_infos: Optional[SystemInfos] = None,
-    model_classes: Optional[dict[str, SimulationEntity]] = None,
+    step_size: Union[float, int],
+    fmu_infos: Optional[SystemInfos],
+    model_infos: Optional[SystemInfos],
+    model_classes: Optional[dict[str, SimulationEntity]],
+    parameters_to_log: Optional[dict[str, list[str]]],
+    logging_step_size: Optional[float]
 ) -> None:
 
     if not isinstance(stop_time, (float, int)):
@@ -507,10 +524,12 @@ def _validate_input(
         raise TypeError(f"'step_size' is {type(step_size)}; expected float, int")
 
     if stop_time <= 0:
-        raise ValueError(f"stop_time is {stop_time}; expected > 0")
+        raise ValueError(f"'stop_time' is {stop_time}; expected > 0")
 
     if step_size <= 0 or step_size >= stop_time:
         raise ValueError(f"'step_size' is {step_size}; expected (0, {stop_time})")
+
+    #TODO check is step_size in multiple of stop_time
 
     if not fmu_infos and not model_infos:
         raise ValueError(
@@ -526,6 +545,12 @@ def _validate_input(
         raise ValueError("Duplicate names in system infos.")
 
     _validate_model_classes(model_classes, model_names)
+
+    if parameters_to_log is not None:
+        _validate_parameters_to_log(parameters_to_log, all_system_names)
+
+    if logging_step_size is not None:
+        _validate_logging_step_size(logging_step_size, step_size)
 
 
 def _validate_fmu_infos(fmu_infos: Optional[SystemInfos]) -> Optional[list[str]]:
@@ -644,3 +669,24 @@ def _validate_model_classes(
 
     if not set(model_classes.keys()) == set(model_names):
         raise ValueError("Names in 'model_classes' and in 'model_info' do not match.")
+
+def _validate_parameters_to_log(parameters_to_log: dict[str, list[str]], system_names: list[str]) -> None:
+
+    if not isinstance(parameters_to_log, dict):
+        raise TypeError(f"'parameters_to_log' is {type(parameters_to_log)}; expected dict")
+
+    for name, parameter_names in parameters_to_log.items():
+        if name not in system_names:
+            raise ValueError(f"System name '{name}' is defined in 'parameters_to_log', but does not exist.")
+        if not isinstance(parameter_names, list):
+            raise TypeError(f"Value to key '{name}' in 'parameters_to_log' is {type(parameter_names)}; expected list")
+
+def _validate_logging_step_size(logging_step_size: Union[int, float], step_size: Union[int, float]) -> None:
+
+    if not isinstance(logging_step_size, (int, float)):
+        raise TypeError(f"'logging_step_size' is {type(logging_step_size)}; expected int, float")
+
+    if not round(logging_step_size/step_size, 10).is_integer():
+        raise ValueError(f"'logging_step_size' must be a multiple of the chosen 'step_size'")
+
+
