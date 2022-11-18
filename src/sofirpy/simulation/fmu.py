@@ -119,8 +119,8 @@ class Fmu(SimulationEntity):
             currentCommunicationPoint=time, communicationStepSize=self.step_size
         )
 
-    def conclude_simulation_process(self) -> None:
-        """Conclude the simulation process of the fmu."""
+    def conclude_simulation(self) -> None:
+        """Conclude the simulation process of the FMU."""
         self.fmu.terminate()
         self.fmu.freeInstance()
 

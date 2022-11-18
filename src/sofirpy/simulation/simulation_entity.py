@@ -46,3 +46,5 @@ class SimulationEntity(ABC):
         Returns:
             Optional[str]: Unit of the parameter.
         """
+    def conclude_simulation(self) -> None:
+        """Conclude the simulation."""

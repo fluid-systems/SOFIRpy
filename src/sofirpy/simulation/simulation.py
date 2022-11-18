@@ -116,9 +116,8 @@ class Simulation:
         if time_series[-1] > stop_time:
             time_series = time_series[:-1]
 
-        number_log_steps = self._compute_number_of_log_steps(
-            stop_time, logging_step_size
-        )
+        number_log_steps = int(stop_time / logging_step_size) + 1
+
         logging_multiple = int(logging_step_size / step_size)
         self.results = np.zeros((number_log_steps, len(self.parameters_to_log) + 1))
 
@@ -133,16 +132,9 @@ class Simulation:
             self.set_systems_inputs()
             self.do_step(time)
 
-        for system in self.systems:
-            if isinstance(system.simulation_entity, Fmu):
-                system.simulation_entity.conclude_simulation_process()
+        self.conclude_simulation()
 
         return self.convert_to_data_frame(self.results)
-
-    def _compute_number_of_log_steps(
-        self, stop_time: float, logging_step_size: float
-    ) -> int:
-        return int(stop_time / logging_step_size) + 1
 
     def set_systems_inputs(self) -> None:
         """Set inputs for all systems."""
@@ -182,6 +174,11 @@ class Simulation:
             new_value_row += [value]
 
         self.results[time_step] = new_value_row
+
+    def conclude_simulation(self):
+        """Conclude the simulation for all simulation entities."""
+        for system in self.systems:
+            system.simulation_entity.conclude_simulation()
 
     def convert_to_data_frame(self, results: npt.NDArray[np.float64]) -> pd.DataFrame:
         """Covert result numpy array to DataFrame.
