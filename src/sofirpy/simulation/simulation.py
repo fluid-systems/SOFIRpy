@@ -175,7 +175,7 @@ class Simulation:
 
         self.results[time_step] = new_value_row
 
-    def conclude_simulation(self):
+    def conclude_simulation(self) -> None:
         """Conclude the simulation for all simulation entities."""
         for system in self.systems:
             system.simulation_entity.conclude_simulation()
