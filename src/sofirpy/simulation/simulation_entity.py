@@ -31,7 +31,7 @@ class SimulationEntity(ABC):
 
     @abstractmethod
     def do_step(self, time: float) -> None:
-        """Perform simulation entity calculation and set parameters accordingly.
+        """Perform a simulation step.
 
         Args:
             time (float): current simulation time
