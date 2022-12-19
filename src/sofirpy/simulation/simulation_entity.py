@@ -37,6 +37,9 @@ class SimulationEntity(ABC):
             time (float): current simulation time
         """
 
+    def set_start_values(self, start_values: dict[str, Union[float, int]]) -> None:
+        """Set start values for parameters"""
+
     def get_unit(self, parameter_name: str) -> Optional[str]:
         """Return the unit of a parameter.
 
@@ -46,5 +49,6 @@ class SimulationEntity(ABC):
         Returns:
             Optional[str]: Unit of the parameter.
         """
+
     def conclude_simulation(self) -> None:
         """Conclude the simulation."""
