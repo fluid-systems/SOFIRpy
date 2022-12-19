@@ -41,16 +41,17 @@ class SystemParameter:
 
     system: System
     name: str
+    in_input: bool = False
 
 
-@dataclass(frozen=True)
-class LoggedParameter(SystemParameter):
-    """Representing a parameter in a system that is logged."""
+# @dataclass(frozen=True)
+# class LoggedParameter(SystemParameter):
+#     """Representing a parameter in a system that is logged."""
 
 
-@dataclass(frozen=True)
-class ConnectionPoint(SystemParameter):
-    """Representing a parameter in a system that is an input our output."""
+# @dataclass(frozen=True)
+# class ConnectionPoint(SystemParameter):
+#     """Representing a parameter in a system that is an input our output."""
 
 
 @dataclass(frozen=True)
@@ -58,14 +59,14 @@ class Connection:
     """Representing a connection between two systems.
 
     Args:
-        input_point (ConnectionPoint): ConnectionPoint object that
+        input_point (SystemParameter): SystemParameter object that
             represents an input of a system
-        output_point (ConnectionPoint): ConnectionPoint object that
+        output_point (SystemParameter): SystemParameter object that
             represents an output of a system
     """
 
-    input_point: ConnectionPoint
-    output_point: ConnectionPoint
+    input_point: SystemParameter
+    output_point: SystemParameter
 
 
 class Simulation:
@@ -75,7 +76,7 @@ class Simulation:
         self,
         systems: list[System],
         connections: list[Connection],
-        parameters_to_log: Optional[list[LoggedParameter]] = None,
+        parameters_to_log: Optional[list[SystemParameter]] = None,
     ) -> None:
         """Initialize Simulation object.
 
@@ -83,7 +84,7 @@ class Simulation:
             systems (list[System]): list of systems which are to be simulated
             connections (list[Connection]): list of connections between the
                  systems
-            parameters_to_log (list[LoggedParameter], optional): List of
+            parameters_to_log (list[SystemParameter], optional): List of
                 Parameters that should be logged. Defaults to None.
         """
         self.systems = systems
@@ -100,6 +101,11 @@ class Simulation:
         start_time: float = 0.0,
     ) -> pd.DataFrame:
         """Simulate the systems.
+
+        The following steps are performed.
+        1. start values are set
+        2. start values are logged
+        3. simulation loop starts
 
         Args:
             stop_time (float): stop time for the simulation
@@ -118,23 +124,28 @@ class Simulation:
 
         number_log_steps = int(stop_time / logging_step_size) + 1
 
-        logging_multiple = int(logging_step_size / step_size)
+        logging_multiple = round(logging_step_size / step_size)
         self.results = np.zeros((number_log_steps, len(self.parameters_to_log) + 1))
 
         print("Starting Simulation...")
 
-        log_step = 0
-        for time_step, time in enumerate(tqdm(time_series)):
-
-            if (time_step % logging_multiple) == 0:
-                self.log_values(time, log_step)
-                log_step += 1
-            self.set_systems_inputs()
+        self.log_values(time=0, log_step=0)
+        log_step = 1
+        for time_step, time in enumerate(tqdm(time_series[:-1])):
             self.do_step(time)
+            self.set_systems_inputs()
+            if ((time_step+1) % logging_multiple) == 0:
+                self.log_values(time_series[time_step+1], log_step)
+                log_step += 1
 
         self.conclude_simulation()
 
         return self.convert_to_data_frame(self.results)
+
+    def set_start_values(self) -> None:
+        """Set start values for all systems"""
+        for system in self.systems:
+            system.simulation_entity.set_start_values({})
 
     def set_systems_inputs(self) -> None:
         """Set inputs for all systems."""
@@ -158,12 +169,12 @@ class Simulation:
         for system in self.systems:
             system.simulation_entity.do_step(time)
 
-    def log_values(self, time: float, time_step: int) -> None:
+    def log_values(self, time: float, log_step: int) -> None:
         """Log parameter values that are set to be logged.
 
         Args:
             time (float): current simulation time
-            time_step (int): current time step
+            log_step (int): current time step
         """
         new_value_row = [time]
 
@@ -173,7 +184,7 @@ class Simulation:
             value = system.simulation_entity.get_parameter_value(parameter_name)
             new_value_row += [value]
 
-        self.results[time_step] = new_value_row
+        self.results[log_step] = new_value_row
 
     def conclude_simulation(self) -> None:
         """Conclude the simulation for all simulation entities."""
@@ -241,6 +252,7 @@ def simulate(
     fmu_infos: Optional[SystemInfos] = None,
     model_infos: Optional[SystemInfos] = None,
     model_classes: Optional[dict[str, SimulationEntity]] = None,
+    start_values: Optional[dict[str, float]] = None,
     parameters_to_log: Optional[dict[str, list[str]]] = None,
     logging_step_size: Optional[Union[float, int]] = None,
     get_units: bool = False,
@@ -394,7 +406,7 @@ def simulate(
     _parameters_to_log = init_parameter_list(parameters_to_log, systems)
 
     simulator = Simulation(list(systems.values()), connections, _parameters_to_log)
-
+    simulator.set_start_values()
     results = simulator.simulate(stop_time, step_size, logging_step_size)
 
     if get_units:
@@ -453,10 +465,10 @@ def init_systems(
 
     for model_info in model_infos:
         model_name: str = model_info[SystemInfoKeys.SYSTEM_NAME.value]
-        py_model = model_classes[model_name]
-        system = System(py_model, model_name)
+        model = model_classes[model_name]
+        system = System(model, model_name)
         systems[model_name] = system
-        print(f"Python model '{model_name}' initialized.")
+        print(f"Model '{model_name}' initialized.")
 
     return systems
 
@@ -484,13 +496,13 @@ def init_connections(
             this_system = systems[this_system_name]
             for con in connections:
                 this_parameter_name = con[SystemInfoKeys.INPUT_PARAMETER.value]
-                this_connection_point = ConnectionPoint(
+                this_connection_point = SystemParameter(
                     this_system, this_parameter_name
                 )
                 other_system_name = con[SystemInfoKeys.CONNECTED_SYSTEM.value]
                 other_system = systems[other_system_name]
                 other_parameter_name = con[SystemInfoKeys.OUTPUT_PARAMETER.value]
-                other_connection_point = ConnectionPoint(
+                other_connection_point = SystemParameter(
                     other_system, other_parameter_name
                 )
                 connection = Connection(this_connection_point, other_connection_point)
@@ -501,7 +513,7 @@ def init_connections(
 
 def init_parameter_list(
     parameters_to_log: Optional[dict[str, list[str]]], systems: dict[str, System]
-) -> Optional[list[LoggedParameter]]:
+) -> Optional[list[SystemParameter]]:
     """Initialize all parameters that should be logged.
 
     Args:
@@ -511,18 +523,18 @@ def init_parameter_list(
             the corresponding System instance as values.
 
     Returns:
-        Optional[list[LoggedParameter]]: List of system parameters that should be
+        Optional[list[SystemParameter]]: List of system parameters that should be
         logged.
     """
     if parameters_to_log is None:
         return None
 
-    log: list[LoggedParameter] = []
+    log: list[SystemParameter] = []
 
     for system_name in list(parameters_to_log.keys()):
         system = systems[system_name]
         for parameter_name in parameters_to_log[system_name]:
-            parameter_to_log = LoggedParameter(system, parameter_name)
+            parameter_to_log = SystemParameter(system, parameter_name)
             log.append(parameter_to_log)
 
     return log
