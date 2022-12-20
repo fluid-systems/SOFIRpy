@@ -49,10 +49,7 @@ class Fmu(SimulationEntity):
             raise FileNotFoundError(f"The path '{fmu_path}' does not exist")
         self._fmu_path = fmu_path
 
-    def initialize(
-        self,
-        start_values: Optional[dict[str, ParameterValue]] = None
-        ) -> None:
+    def initialize(self,start_values: dict[str, ParameterValue]) -> None:
         """Initialize the fmu.
 
         Args:
@@ -83,8 +80,6 @@ class Fmu(SimulationEntity):
         }
         self.fmu.instantiate()
         self.fmu.setupExperiment()
-        if start_values is None:
-            start_values = {}
         # start values are set before and after entering Initialization mode
         self.init_mode = False
         self.apply_start_values(start_values)

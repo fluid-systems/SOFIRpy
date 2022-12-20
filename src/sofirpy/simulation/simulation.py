@@ -459,7 +459,8 @@ def init_fmus(
             fmu_info[SystemInfoKeys.FMU_PATH.value], "fmu_path"
         )
         fmu = Fmu(fmu_path, fmu_name, step_size)
-        fmu.initialize(start_values = start_values.get(fmu_name))
+        _start_values = start_values.get(fmu_name) or {}
+        fmu.initialize(start_values = _start_values)
         system = System(fmu, fmu_name)
         fmus[fmu_name] = system
         print(f"FMU '{fmu_name}' initialized.")
@@ -494,7 +495,8 @@ def init_models(
     for model_info in model_infos:
         model_name: str = model_info[SystemInfoKeys.SYSTEM_NAME.value]
         model = model_classes[model_name]
-        model.initialize(start_values.get(model_name))
+        _start_values = start_values.get(model_name) or {}
+        model.initialize(_start_values)
         system = System(model, model_name)
         models[model_name] = system
         print(f"Model '{model_name}' initialized.")

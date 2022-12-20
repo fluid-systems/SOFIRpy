@@ -40,7 +40,7 @@ class SimulationEntity(ABC):
             time (float): current simulation time
         """
 
-    def initialize(self, start_values: Optional[dict[str, ParameterValue]]) -> None:
+    def initialize(self, start_values: dict[str, ParameterValue]) -> None:
         """Initialize the model"""
 
     def apply_start_values(self, start_values: dict[str, ParameterValue]) -> None:
