@@ -67,6 +67,7 @@ show_error_codes = true
 module = [
     "fmpy",
     "fmpy.fmi2",
+    "fmpy.simulation",
     "h5py",
     "matplotlib",
     "matplotlib.axes",
