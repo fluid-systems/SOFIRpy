@@ -63,13 +63,6 @@ class Fmu(SimulationEntity):
             variable.name: variable
             for variable in self.model_description.modelVariables
         }
-        self.model_vars = {
-            variable.name: variable.valueReference
-            for variable in self.model_description.modelVariables
-        }
-        self.create_model_vars_dict()
-        self.create_unit_vars_dict()
-        self.create_var_type_dict()
         unzipdir = extract(self.fmu_path)
         self.fmu = FMU2Slave(
             guid=self.model_description.guid,
@@ -99,36 +92,11 @@ class Fmu(SimulationEntity):
         self.init_mode = True
         self.apply_start_values(start_values)
         if start_values:
-            print(f"Not possible to set the following start values in FMU '{self.name}':")
-            print(", ".join(start_values.keys()) + "\n")
+            msg  = f"Not possible to set the start value in FMU '{self.name}' "
+            msg += "for the following variables: "
+            msg += ", ".join(start_values.keys())
+            print(msg)
         self.fmu.exitInitializationMode()
-
-    def create_model_vars_dict(self) -> None:
-        """Create a dictionary for the variables of the fmu.
-
-        The keys of this dictionary are the names of the variables and the
-        values are the corresponding reference numbers."""
-        self.model_vars = {
-            variable.name: variable.valueReference
-            for variable in self.model_description.modelVariables
-        }
-
-    def create_unit_vars_dict(self) -> None:
-        """Create a dictionary for the units of the fmu variables.
-
-        The keys of this dictionary are the names of the variables and the
-        values are the corresponding units."""
-        self.unit_vars: dict[str, Optional[str]] = {
-            variable.name: variable.unit
-            for variable in self.model_description.modelVariables
-        }
-
-    def create_var_type_dict(self) -> None:
-
-        self.var_types: dict[str, str] = {
-            variable.name: variable.type
-            for variable in self.model_description.modelVariables
-        }
 
     def apply_start_values(self, start_values: dict[str, ParameterValue]) -> None:
 
@@ -141,12 +109,11 @@ class Fmu(SimulationEntity):
         for parameter_name, parameter_value in start_values.items():
 
             variable = self.model_description_dict[parameter_name]
-            if not check_settable(variable):
-                continue
-            self.set_parameter(
-                parameter_name, parameter_value
-            )
-            start_values_applied.append(parameter_name)
+            if check_settable(variable):
+                self.set_parameter(
+                    parameter_name, parameter_value
+                )
+                start_values_applied.append(parameter_name)
 
         [start_values.pop(parameter_name) for parameter_name in start_values_applied]
 
@@ -162,8 +129,11 @@ class Fmu(SimulationEntity):
 
     def set_parameter(self, parameter_name: str, parameter_value: ParameterValue) -> None:
 
-        var_type = self.var_types[parameter_name]
-        self.setter_functions[var_type]([self.model_vars[parameter_name]], [parameter_value])
+        var_type = self.model_description_dict[parameter_name].type
+        self.setter_functions[var_type](
+            [self.model_description_dict[parameter_name].valueReference],
+            [parameter_value]
+        )
 
     def get_parameter_value(self, parameter_name: str) -> ParameterValue:
         """Return the value of a parameter.
@@ -175,8 +145,8 @@ class Fmu(SimulationEntity):
         Returns:
             Union[int, float]: value of the parameter
         """
-        var_type = self.var_types[parameter_name]
-        value: ParameterValue = self.getter_functions[var_type]([self.model_vars[parameter_name]])[0]
+        var_type = self.model_description_dict[parameter_name].type
+        value: ParameterValue = self.getter_functions[var_type]([self.model_description_dict[parameter_name].valueReference])[0]
         return value
 
     def do_step(self, time: float) -> None:
@@ -203,4 +173,5 @@ class Fmu(SimulationEntity):
         Returns:
             str: The unit of the variable.
         """
-        return self.unit_vars[parameter_name]
+        unit: Optional[str] = self.model_description_dict[parameter_name].unit
+        return unit
