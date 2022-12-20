@@ -15,7 +15,7 @@ GetterFunction = Callable[[list[int]], list[ParameterValue]]
 class Fmu(SimulationEntity):
     """Class representing a fmu."""
 
-    def __init__(self, fmu_path: Path, step_size: float) -> None:
+    def __init__(self, fmu_path: Path, name: str, step_size: float) -> None:
         """Initialize Fmu object.
 
         Args:
@@ -23,6 +23,7 @@ class Fmu(SimulationEntity):
             step_size (float): step size of the simulation
         """
         self.fmu_path = fmu_path
+        self.name = name
         self.step_size = step_size
 
     @property
@@ -97,7 +98,9 @@ class Fmu(SimulationEntity):
         self.fmu.enterInitializationMode()
         self.init_mode = True
         self.apply_start_values(start_values)
-        print(start_values)
+        if start_values:
+            print(f"Not possible to set the following start values in FMU '{self.name}':")
+            print(", ".join(start_values.keys()) + "\n")
         self.fmu.exitInitializationMode()
 
     def create_model_vars_dict(self) -> None:

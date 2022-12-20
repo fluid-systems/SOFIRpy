@@ -44,16 +44,6 @@ class SystemParameter:
     in_input: bool = False
 
 
-# @dataclass(frozen=True)
-# class LoggedParameter(SystemParameter):
-#     """Representing a parameter in a system that is logged."""
-
-
-# @dataclass(frozen=True)
-# class ConnectionPoint(SystemParameter):
-#     """Representing a parameter in a system that is an input our output."""
-
-
 @dataclass(frozen=True)
 class Connection:
     """Representing a connection between two systems.
@@ -468,7 +458,7 @@ def init_fmus(
         fmu_path: Path = utils.convert_str_to_path(
             fmu_info[SystemInfoKeys.FMU_PATH.value], "fmu_path"
         )
-        fmu = Fmu(fmu_path, step_size)
+        fmu = Fmu(fmu_path, fmu_name, step_size)
         fmu.initialize(start_values = start_values.get(fmu_name))
         system = System(fmu, fmu_name)
         fmus[fmu_name] = system
