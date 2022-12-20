@@ -14,7 +14,7 @@ from tqdm import tqdm
 
 from sofirpy import utils
 from sofirpy.simulation.fmu import Fmu
-from sofirpy.simulation.simulation_entity import SimulationEntity
+from sofirpy.simulation.simulation_entity import SimulationEntity, ParameterValue
 
 
 @dataclass(frozen=True)
@@ -74,7 +74,7 @@ class Simulation:
 
     def __init__(
         self,
-        systems: list[System],
+        systems: dict[str, System],
         connections: list[Connection],
         parameters_to_log: Optional[list[SystemParameter]] = None,
     ) -> None:
@@ -134,18 +134,13 @@ class Simulation:
         for time_step, time in enumerate(tqdm(time_series[:-1])):
             self.do_step(time)
             self.set_systems_inputs()
-            if ((time_step+1) % logging_multiple) == 0:
-                self.log_values(time_series[time_step+1], log_step)
+            if ((time_step + 1) % logging_multiple) == 0:
+                self.log_values(time_series[time_step + 1], log_step)
                 log_step += 1
 
         self.conclude_simulation()
 
         return self.convert_to_data_frame(self.results)
-
-    def set_start_values(self) -> None:
-        """Set start values for all systems"""
-        for system in self.systems:
-            system.simulation_entity.set_start_values({})
 
     def set_systems_inputs(self) -> None:
         """Set inputs for all systems."""
@@ -157,7 +152,7 @@ class Simulation:
             input_value = output_system.simulation_entity.get_parameter_value(
                 output_name
             )
-            input_system.simulation_entity.set_input(input_name, input_value)
+            input_system.simulation_entity.set_parameter(input_name, input_value)
 
     def do_step(self, time: float) -> None:
         """Perform a calculation in all systems.
@@ -166,7 +161,7 @@ class Simulation:
             time (float): current simulation time
             step_size (float): step size of the simulation
         """
-        for system in self.systems:
+        for system in self.systems.values():
             system.simulation_entity.do_step(time)
 
     def log_values(self, time: float, log_step: int) -> None:
@@ -188,7 +183,7 @@ class Simulation:
 
     def conclude_simulation(self) -> None:
         """Conclude the simulation for all simulation entities."""
-        for system in self.systems:
+        for system in self.systems.values():
             system.simulation_entity.conclude_simulation()
 
     def convert_to_data_frame(self, results: npt.NDArray[np.float64]) -> pd.DataFrame:
@@ -245,6 +240,8 @@ SystemInfos = list[SystemInfo]
 
 Units = dict[str, Optional[str]]
 
+StartValues = dict[str, dict[str, ParameterValue]]
+
 
 def simulate(
     stop_time: Union[float, int],
@@ -252,7 +249,7 @@ def simulate(
     fmu_infos: Optional[SystemInfos] = None,
     model_infos: Optional[SystemInfos] = None,
     model_classes: Optional[dict[str, SimulationEntity]] = None,
-    start_values: Optional[dict[str, float]] = None,
+    start_values: Optional[StartValues] = None,
     parameters_to_log: Optional[dict[str, list[str]]] = None,
     logging_step_size: Optional[Union[float, int]] = None,
     get_units: bool = False,
@@ -375,7 +372,6 @@ def simulate(
             Result DataFrame with times series of logged parameters, units of
             logged parameters.
     """
-
     _validate_input(
         stop_time,
         step_size,
@@ -400,13 +396,29 @@ def simulate(
         model_infos = []
     if model_classes is None:
         model_classes = {}
+    if start_values is None:
+        start_values = {}
 
-    systems = init_systems(fmu_infos, model_infos, model_classes, step_size)
+    start_values = start_values.copy() # copy so mutating doesn't affect passed dict
+
+    fmus = init_fmus(
+        fmu_infos,
+        step_size,
+        start_values
+    )
+
+    models = init_models(
+        model_infos,
+        model_classes,
+        start_values
+    )
+
+    systems = {**fmus, **models}
+
     connections = init_connections(fmu_infos + model_infos, systems)
     _parameters_to_log = init_parameter_list(parameters_to_log, systems)
 
-    simulator = Simulation(list(systems.values()), connections, _parameters_to_log)
-    simulator.set_start_values()
+    simulator = Simulation(systems, connections, _parameters_to_log)
     results = simulator.simulate(stop_time, step_size, logging_step_size)
 
     if get_units:
@@ -427,11 +439,10 @@ class SystemInfoKeys(Enum):
     OUTPUT_PARAMETER = "connect_to_external_parameter"
 
 
-def init_systems(
+def init_fmus(
     fmu_infos: SystemInfos,
-    model_infos: SystemInfos,
-    model_classes: dict[str, SimulationEntity],
     step_size: float,
+    start_values: StartValues
 ) -> dict[str, System]:
     """Initialize all System object and stores them in a dictionary.
 
@@ -451,26 +462,54 @@ def init_systems(
         dict[str, System]: Dictionary with system names as keys and the
             corresponding System instance as values.
     """
-    systems = {}
+    fmus = {}
     for fmu_info in fmu_infos:
         fmu_name: str = fmu_info[SystemInfoKeys.SYSTEM_NAME.value]
         fmu_path: Path = utils.convert_str_to_path(
             fmu_info[SystemInfoKeys.FMU_PATH.value], "fmu_path"
         )
         fmu = Fmu(fmu_path, step_size)
-        fmu.initialize_fmu()
+        fmu.initialize(start_values = start_values.get(fmu_name))
         system = System(fmu, fmu_name)
-        systems[fmu_name] = system
+        fmus[fmu_name] = system
         print(f"FMU '{fmu_name}' initialized.")
 
+    return fmus
+
+def init_models(
+    model_infos: SystemInfos,
+    model_classes: dict[str, SimulationEntity],
+    start_values: StartValues
+) -> dict[str, System]:
+    """Initialize all System object and stores them in a dictionary.
+
+    Args:
+        fmu_infos (SystemInfos): Defines
+            which fmus should be simulated and how they are connected to other
+            systems.
+        model_infos (SystemInfos):
+            Defines which python models should be simulated and how they are
+            connected to other systems.
+        model_classes (dict[str, SimulationEntity]): Dictionary with the name of
+            the models as keys and a instance of the model class as
+            values.
+        step_size (float): step size of the simulation
+
+    Returns:
+        dict[str, System]: Dictionary with system names as keys and the
+            corresponding System instance as values.
+    """
+
+    models = {}
     for model_info in model_infos:
         model_name: str = model_info[SystemInfoKeys.SYSTEM_NAME.value]
         model = model_classes[model_name]
+        model.initialize(start_values.get(model_name))
         system = System(model, model_name)
-        systems[model_name] = system
+        models[model_name] = system
         print(f"Model '{model_name}' initialized.")
 
-    return systems
+    return models
 
 
 def init_connections(

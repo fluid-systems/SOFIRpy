@@ -43,9 +43,9 @@ class PID(SimulationEntity):
         self.error[1] = self.error[0]
         self.error[0] = self.set_point - self.inputs["speed"]
 
-    def set_input(self, input_name, input_value) -> None:
+    def set_parameter(self, parameter_name, parameter_value) -> None:
 
-        self.inputs[input_name] = input_value
+        self.inputs[parameter_name] = parameter_value
 
     def do_step(self, _) -> None:
 
