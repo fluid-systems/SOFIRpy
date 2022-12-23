@@ -67,6 +67,7 @@ show_error_codes = true
 module = [
     "fmpy",
     "fmpy.fmi2",
+    "fmpy.simulation",
     "h5py",
     "matplotlib",
     "matplotlib.axes",
@@ -90,7 +91,7 @@ fail-under = 9.8
 [tool.pylint.design]
 max-args = 9
 max-attributes = 13
-max-locals = 16
+max-locals = 17
 
 [tool.pylint.format]
 max-line-length = 88

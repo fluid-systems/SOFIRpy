@@ -1,18 +1,22 @@
 """Module containing the Fmu class."""
-
 from pathlib import Path
-from typing import Optional, Union
+from typing import Optional, Callable
 
 from fmpy import extract, read_model_description
 from fmpy.fmi2 import FMU2Slave
+from fmpy.simulation import settable_in_initialization_mode, settable_in_instantiated
 
-from sofirpy.simulation.simulation_entity import SimulationEntity
+from sofirpy.simulation.simulation_entity import SimulationEntity, ParameterValue
+
+
+SetterFunction = Callable[[list[int], list[ParameterValue]], None]
+GetterFunction = Callable[[list[int]], list[ParameterValue]]
 
 
 class Fmu(SimulationEntity):
     """Class representing a fmu."""
 
-    def __init__(self, fmu_path: Path, step_size: float) -> None:
+    def __init__(self, fmu_path: Path, name: str, step_size: float) -> None:
         """Initialize Fmu object.
 
         Args:
@@ -20,6 +24,7 @@ class Fmu(SimulationEntity):
             step_size (float): step size of the simulation
         """
         self.fmu_path = fmu_path
+        self.name = name
         self.step_size = step_size
 
     @property
@@ -45,15 +50,17 @@ class Fmu(SimulationEntity):
             raise FileNotFoundError(f"The path '{fmu_path}' does not exist")
         self._fmu_path = fmu_path
 
-    def initialize_fmu(self, start_time: float = 0) -> None:
+    def initialize(self, start_values: dict[str, ParameterValue]) -> None:
         """Initialize the fmu.
 
         Args:
             start_time (float, optional): start time. Defaults to 0.
         """
         self.model_description = read_model_description(self.fmu_path)
-        self.create_model_vars_dict()
-        self.create_unit_vars_dict()
+        self.model_description_dict = {
+            variable.name: variable
+            for variable in self.model_description.modelVariables
+        }
         unzipdir = extract(self.fmu_path)
         self.fmu = FMU2Slave(
             guid=self.model_description.guid,
@@ -61,43 +68,77 @@ class Fmu(SimulationEntity):
             modelIdentifier=self.model_description.coSimulation.modelIdentifier,
             instanceName="instance1",
         )
-
+        self.setter_functions: dict[str, SetterFunction] = {
+            "Boolean": self.fmu.setBoolean,
+            "Integer": self.fmu.setInteger,
+            "Real": self.fmu.setReal,
+            "Enumeration": self.fmu.setInteger,
+        }
+        self.getter_functions: dict[str, GetterFunction] = {
+            "Boolean": self.fmu.getBoolean,
+            "Integer": self.fmu.getInteger,
+            "Real": self.fmu.getReal,
+        }
         self.fmu.instantiate()
-        self.fmu.setupExperiment(startTime=start_time)
+        self.fmu.setupExperiment()
+        # start values are set before and after entering Initialization mode
+        self.init_mode = False
+        self.set_start_values(start_values)
         self.fmu.enterInitializationMode()
+        self.init_mode = True
+        self.set_start_values(start_values)
+        if self.start_values_not_applied:
+            msg = f"Not possible to set the start value in FMU '{self.name}' "
+            msg += "for the following variables: "
+            msg += ", ".join(self.start_values_not_applied)
+            print(msg)
         self.fmu.exitInitializationMode()
 
-    def create_model_vars_dict(self) -> None:
-        """Create a dictionary for the variables of the fmu.
+    def set_start_values(self, start_values: dict[str, ParameterValue]) -> None:
+        """Set the start values for the fmu.
 
-        The keys of this dictionary are the names of the variables and the
-        values are the corresponding reference numbers."""
-        self.model_vars = {
-            variable.name: variable.valueReference
-            for variable in self.model_description.modelVariables
-        }
+        First checks if the initialization mode is entered, because different variables
+        need to be set before or in initialization mode. If a variable was able to be
+        set, it is removed from the start_values_not_applied list.
 
-    def create_unit_vars_dict(self) -> None:
-        """Create a dictionary for the units of the fmu variables.
+        Args:
+            start_values (dict[str, ParameterValue]): keys-variable name;
+                values-variable value
+        """
+        check_settable = settable_in_initialization_mode
+        if not self.init_mode:
+            check_settable = settable_in_instantiated
 
-        The keys of this dictionary are the names of the variables and the
-        values are the corresponding units."""
-        self.unit_vars: dict[str, Optional[str]] = {
-            variable.name: variable.unit
-            for variable in self.model_description.modelVariables
-        }
+        self.start_values_not_applied: list[str] = list(start_values.keys())
 
-    def set_input(self, input_name: str, input_value: Union[float, int]) -> None:
+        for parameter_name, parameter_value in start_values.items():
+
+            variable = self.model_description_dict[parameter_name]
+            if check_settable(variable):
+                self.set_parameter(parameter_name, parameter_value)
+                self.start_values_not_applied.remove(parameter_name)
+
+    def set_input(self, input_name: str, input_value: ParameterValue) -> None:
         """Set the value of an input parameter.
 
         Args:
             input_name (str): name of the parameter that should be set
-            input_value (Union[float, int]): value to which the parameter is to
+            input_value (ParameterValue): value to which the parameter is to
                 be set
         """
-        self.fmu.setReal([self.model_vars[input_name]], [input_value])
+        self.set_parameter(input_name, input_value)
 
-    def get_parameter_value(self, parameter_name: str) -> float:
+    def set_parameter(
+        self, parameter_name: str, parameter_value: ParameterValue
+    ) -> None:
+
+        var_type = self.model_description_dict[parameter_name].type
+        self.setter_functions[var_type](
+            [self.model_description_dict[parameter_name].valueReference],
+            [parameter_value],
+        )
+
+    def get_parameter_value(self, parameter_name: str) -> ParameterValue:
         """Return the value of a parameter.
 
         Args:
@@ -107,7 +148,11 @@ class Fmu(SimulationEntity):
         Returns:
             Union[int, float]: value of the parameter
         """
-        return float(self.fmu.getReal([self.model_vars[parameter_name]])[0])
+        var_type = self.model_description_dict[parameter_name].type
+        value: ParameterValue = self.getter_functions[var_type](
+            [self.model_description_dict[parameter_name].valueReference]
+        )[0]
+        return value
 
     def do_step(self, time: float) -> None:
         """Perform a simulation step.
@@ -133,4 +178,5 @@ class Fmu(SimulationEntity):
         Returns:
             str: The unit of the variable.
         """
-        return self.unit_vars[parameter_name]
+        unit: Optional[str] = self.model_description_dict[parameter_name].unit
+        return unit

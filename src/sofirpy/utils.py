@@ -2,7 +2,7 @@
 
 import shutil
 from pathlib import Path
-from typing import Union
+from typing import Union, Any
 
 
 def delete_file_or_directory(
@@ -191,7 +191,25 @@ def convert_str_to_path(path: Union[str, Path], variable_name: str) -> Path:
     Returns:
         Path: Path object
     """
-    if not isinstance(path, (Path, str)):
-        raise TypeError(f"'{variable_name}' is {type(path)};  expected Path, str")
-
+    check_type(path, variable_name, (Path, str))
     return path if isinstance(path, Path) else Path(path)
+
+
+def check_type(var: Any, var_name: str, expected_type: Any) -> None:
+    """Check the type of a given variable.
+
+    Args:
+        var (Any): variable to be checked
+        var_name (str): Name of the variable
+        expected_type (Any): expected type
+
+    Raises:
+        TypeError: type variable of was not expected type
+    """
+    if not isinstance(var, expected_type):
+        msg = f"'{var_name}' has type {type(var).__name__}; expected "
+        if isinstance(expected_type, tuple):
+            msg += ", ".join([typ.__name__ for typ in expected_type])
+        else:
+            msg += expected_type.__name__
+        raise TypeError(msg)
