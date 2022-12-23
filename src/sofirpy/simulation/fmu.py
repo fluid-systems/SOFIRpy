@@ -12,6 +12,7 @@ from sofirpy.simulation.simulation_entity import SimulationEntity, ParameterValu
 SetterFunction = Callable[[list[int], list[ParameterValue]], None]
 GetterFunction = Callable[[list[int]], list[ParameterValue]]
 
+
 class Fmu(SimulationEntity):
     """Class representing a fmu."""
 
@@ -49,7 +50,7 @@ class Fmu(SimulationEntity):
             raise FileNotFoundError(f"The path '{fmu_path}' does not exist")
         self._fmu_path = fmu_path
 
-    def initialize(self,start_values: dict[str, ParameterValue]) -> None:
+    def initialize(self, start_values: dict[str, ParameterValue]) -> None:
         """Initialize the fmu.
 
         Args:
@@ -71,7 +72,7 @@ class Fmu(SimulationEntity):
             "Boolean": self.fmu.setBoolean,
             "Integer": self.fmu.setInteger,
             "Real": self.fmu.setReal,
-            "Enumeration": self.fmu.setInteger
+            "Enumeration": self.fmu.setInteger,
         }
         self.getter_functions: dict[str, GetterFunction] = {
             "Boolean": self.fmu.getBoolean,
@@ -82,35 +83,40 @@ class Fmu(SimulationEntity):
         self.fmu.setupExperiment()
         # start values are set before and after entering Initialization mode
         self.init_mode = False
-        self.apply_start_values(start_values)
+        self.set_start_values(start_values)
         self.fmu.enterInitializationMode()
         self.init_mode = True
-        self.apply_start_values(start_values)
-        if start_values:
-            msg  = f"Not possible to set the start value in FMU '{self.name}' "
+        self.set_start_values(start_values)
+        if self.start_values_not_applied:
+            msg = f"Not possible to set the start value in FMU '{self.name}' "
             msg += "for the following variables: "
-            msg += ", ".join(start_values.keys())
+            msg += ", ".join(self.start_values_not_applied)
             print(msg)
         self.fmu.exitInitializationMode()
 
-    def apply_start_values(self, start_values: dict[str, ParameterValue]) -> None:
+    def set_start_values(self, start_values: dict[str, ParameterValue]) -> None:
+        """Set the start values for the fmu.
 
+        First checks if the initialization mode is entered, because different variables
+        need to be set before or in initialization mode. If a variable was able to be
+        set, it is removed from the start_values_not_applied list.
+
+        Args:
+            start_values (dict[str, ParameterValue]): keys-variable name;
+                values-variable value
+        """
         check_settable = settable_in_initialization_mode
         if not self.init_mode:
             check_settable = settable_in_instantiated
 
-        start_values_applied: list[str] = []
+        self.start_values_not_applied: list[str] = list(start_values.keys())
 
         for parameter_name, parameter_value in start_values.items():
 
             variable = self.model_description_dict[parameter_name]
             if check_settable(variable):
-                self.set_parameter(
-                    parameter_name, parameter_value
-                )
-                start_values_applied.append(parameter_name)
-
-        [start_values.pop(parameter_name) for parameter_name in start_values_applied]
+                self.set_parameter(parameter_name, parameter_value)
+                self.start_values_not_applied.remove(parameter_name)
 
     def set_input(self, input_name: str, input_value: ParameterValue) -> None:
         """Set the value of an input parameter.
@@ -122,12 +128,14 @@ class Fmu(SimulationEntity):
         """
         self.set_parameter(input_name, input_value)
 
-    def set_parameter(self, parameter_name: str, parameter_value: ParameterValue) -> None:
+    def set_parameter(
+        self, parameter_name: str, parameter_value: ParameterValue
+    ) -> None:
 
         var_type = self.model_description_dict[parameter_name].type
         self.setter_functions[var_type](
             [self.model_description_dict[parameter_name].valueReference],
-            [parameter_value]
+            [parameter_value],
         )
 
     def get_parameter_value(self, parameter_name: str) -> ParameterValue:
@@ -141,7 +149,9 @@ class Fmu(SimulationEntity):
             Union[int, float]: value of the parameter
         """
         var_type = self.model_description_dict[parameter_name].type
-        value: ParameterValue = self.getter_functions[var_type]([self.model_description_dict[parameter_name].valueReference])[0]
+        value: ParameterValue = self.getter_functions[var_type](
+            [self.model_description_dict[parameter_name].valueReference]
+        )[0]
         return value
 
     def do_step(self, time: float) -> None:
