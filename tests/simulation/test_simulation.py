@@ -157,7 +157,7 @@ def test_validate_input_duplicate_name_value_error(
 
     model_info[0]["name"] = fmu_info[0]["name"]
     with pytest.raises(ValueError, match="Duplicate names in system infos."):
-        _validate_input(1, 0.1, fmu_info, model_info, None, None, None)
+        _validate_input(1, 0.1, fmu_info, model_info, None, None, None, None)
 
 
 def test_simulate_with_no_parameters_to_log(
