@@ -11,7 +11,9 @@ class SimulationEntity(ABC):
     """Abstract object representing a simulation entity."""
 
     @abstractmethod
-    def set_parameter(self, parameter_name: str, parameter_value: ParameterValue) -> None:
+    def set_parameter(
+        self, parameter_name: str, parameter_value: ParameterValue
+    ) -> None:
         """Set the value of a parameter.
 
         Args:
@@ -42,9 +44,6 @@ class SimulationEntity(ABC):
 
     def initialize(self, start_values: dict[str, ParameterValue]) -> None:
         """Initialize the model"""
-
-    def apply_start_values(self, start_values: dict[str, ParameterValue]) -> None:
-        """Apply start values for parameters"""
 
     def get_unit(self, parameter_name: str) -> Optional[str]:
         """Return the unit of a parameter.
