@@ -370,6 +370,7 @@ def simulate(
         model_classes,
         parameters_to_log,
         logging_step_size,
+        start_values,
     )
 
     stop_time = float(stop_time)
@@ -389,19 +390,11 @@ def simulate(
     if start_values is None:
         start_values = {}
 
-    start_values = start_values.copy() # copy so mutating doesn't affect passed dict
+    # start_values = start_values.copy()  # copy so mutating doesn't affect passed dict
 
-    fmus = init_fmus(
-        fmu_infos,
-        step_size,
-        start_values
-    )
+    fmus = init_fmus(fmu_infos, step_size, start_values)
 
-    models = init_models(
-        model_infos,
-        model_classes,
-        start_values
-    )
+    models = init_models(model_infos, model_classes, start_values)
 
     systems = {**fmus, **models}
 
@@ -430,9 +423,7 @@ class SystemInfoKeys(Enum):
 
 
 def init_fmus(
-    fmu_infos: SystemInfos,
-    step_size: float,
-    start_values: StartValues
+    fmu_infos: SystemInfos, step_size: float, start_values: StartValues
 ) -> dict[str, System]:
     """Initialize all System object and stores them in a dictionary.
 
@@ -460,17 +451,18 @@ def init_fmus(
         )
         fmu = Fmu(fmu_path, fmu_name, step_size)
         _start_values = start_values.get(fmu_name) or {}
-        fmu.initialize(start_values = _start_values)
+        fmu.initialize(start_values=_start_values)
         system = System(fmu, fmu_name)
         fmus[fmu_name] = system
         print(f"FMU '{fmu_name}' initialized.")
 
     return fmus
 
+
 def init_models(
     model_infos: SystemInfos,
     model_classes: dict[str, SimulationEntity],
-    start_values: StartValues
+    start_values: StartValues,
 ) -> dict[str, System]:
     """Initialize all System object and stores them in a dictionary.
 
@@ -579,13 +571,11 @@ def _validate_input(
     model_classes: Optional[dict[str, SimulationEntity]],
     parameters_to_log: Optional[dict[str, list[str]]],
     logging_step_size: Optional[float],
+    start_values: Optional[StartValues],
 ) -> None:
 
-    if not isinstance(stop_time, (float, int)):
-        raise TypeError(f"'stop_time' is {type(stop_time)}; expected float, int")
-
-    if not isinstance(step_size, (float, int)):
-        raise TypeError(f"'step_size' is {type(step_size)}; expected float, int")
+    utils.check_type(stop_time, 'stop_time', (float, int))
+    utils.check_type(step_size, 'step_size', (float, int))
 
     if stop_time <= 0:
         raise ValueError(f"'stop_time' is {stop_time}; expected > 0")
@@ -614,29 +604,32 @@ def _validate_input(
     if logging_step_size is not None:
         _validate_logging_step_size(logging_step_size, step_size)
 
+    if start_values is not None:
+        _validate_start_values(start_values, all_system_names)
+
 
 def _validate_fmu_infos(fmu_infos: Optional[SystemInfos]) -> Optional[list[str]]:
 
     if fmu_infos is None:
         return None
 
-    if not isinstance(fmu_infos, list):
-        raise TypeError(f"'fmu_infos' is {type(fmu_infos)}; expected list")
+    utils.check_type(fmu_infos, "fmu_infos", list)
 
     fmu_names: list[str] = []
 
     for fmu_info in fmu_infos:
+        utils.check_type(fmu_info, "element in list 'fmu_infos", dict)
         _check_key_exists(SystemInfoKeys.SYSTEM_NAME.value, fmu_info)
-        _check_value_type(
-            SystemInfoKeys.SYSTEM_NAME.value,
+        utils.check_type(
             fmu_info[SystemInfoKeys.SYSTEM_NAME.value],
+            f"Value to key '{SystemInfoKeys.SYSTEM_NAME.value}' in 'fmu_infos",
             str,
         )
         fmu_names.append(fmu_info[SystemInfoKeys.SYSTEM_NAME.value])
         _check_key_exists(SystemInfoKeys.FMU_PATH.value, fmu_info)
-        _check_value_type(
-            SystemInfoKeys.FMU_PATH.value,
+        utils.check_type(
             fmu_info[SystemInfoKeys.FMU_PATH.value],
+            f"Value to key '{SystemInfoKeys.FMU_PATH.value}' in 'fmu_infos",
             (str, Path),
         )
         if fmu_info.get(SystemInfoKeys.CONNECTIONS.value) is not None:
@@ -650,16 +643,16 @@ def _validate_model_infos(model_infos: Optional[SystemInfos]) -> Optional[list[s
     if model_infos is None:
         return None
 
-    if model_infos and not isinstance(model_infos, list):
-        raise TypeError(f"'model_infos' is {type(model_infos)}; expected list")
+    utils.check_type(model_infos, "model_infos", list)
 
     model_names: list[str] = []
 
     for model_info in model_infos:
+        utils.check_type(model_info, "element in list 'model_info", dict)
         _check_key_exists(SystemInfoKeys.SYSTEM_NAME.value, model_info)
-        _check_value_type(
-            SystemInfoKeys.SYSTEM_NAME.value,
+        utils.check_type(
             model_info[SystemInfoKeys.SYSTEM_NAME.value],
+            f"Value to key '{SystemInfoKeys.SYSTEM_NAME.value}' in 'model_infos",
             str,
         )
         model_names.append(model_info[SystemInfoKeys.SYSTEM_NAME.value])
@@ -671,33 +664,27 @@ def _validate_model_infos(model_infos: Optional[SystemInfos]) -> Optional[list[s
 
 def _validate_connection_infos(connection_infos: ConnectionInfos) -> None:
 
-    if not isinstance(connection_infos, list):
-        raise TypeError(
-            f"value of key '{SystemInfoKeys.CONNECTIONS.value}' is {type(connection_infos)}; expected list"
-        )
+    utils.check_type(
+        connection_infos, f"Value to key '{SystemInfoKeys.CONNECTIONS.value}", list
+    )
+
     for connection in connection_infos:
+        utils.check_type(connection, "element in list 'connections", dict)
         for key in (
             SystemInfoKeys.INPUT_PARAMETER.value,
             SystemInfoKeys.OUTPUT_PARAMETER.value,
             SystemInfoKeys.CONNECTED_SYSTEM.value,
         ):
             _check_key_exists(key, connection)
-            _check_value_type(key, connection[key], str)
+            utils.check_type(
+                connection[key], f"Value to key '{key}' in 'connections", str
+            )
 
 
 def _check_key_exists(key: str, info_dict: Union[SystemInfo, ConnectionInfo]) -> None:
 
     if key not in info_dict:
         raise KeyError(f"missing key '{key}' in {info_dict}")
-
-
-def _check_value_type(key: str, value: Any, typ: Any) -> None:
-
-    if not isinstance(value, typ):
-        typ_name = typ.__name__
-        if isinstance(typ, tuple):  # if multiple types allowed
-            typ_name = ", ".join([t.name for t in typ])
-        raise TypeError(f"value of key '{key}' is {type(value)}; expected {typ_name}")
 
 
 def _get_all_system_names(
@@ -726,8 +713,7 @@ def _validate_model_classes(
     if model_names is None:
         model_names = []
 
-    if not isinstance(model_classes, dict):
-        raise TypeError(f"'model_classes' is {type(model_classes)}; expected dict")
+    utils.check_type(model_classes, "model_classes", dict)
 
     if not set(model_classes.keys()) == set(model_names):
         raise ValueError("Names in 'model_classes' and in 'model_info' do not match.")
@@ -737,32 +723,38 @@ def _validate_parameters_to_log(
     parameters_to_log: dict[str, list[str]], system_names: list[str]
 ) -> None:
 
-    if not isinstance(parameters_to_log, dict):
-        raise TypeError(
-            f"'parameters_to_log' is {type(parameters_to_log)}; expected dict"
-        )
+    utils.check_type(parameters_to_log, "parameters_to_log", dict)
 
     for name, parameter_names in parameters_to_log.items():
         if name not in system_names:
             raise ValueError(
                 f"System name '{name}' is defined in 'parameters_to_log', but does not exist."
             )
-        if not isinstance(parameter_names, list):
-            raise TypeError(
-                f"Value to key '{name}' in 'parameters_to_log' is {type(parameter_names)}; expected list"
-            )
+        utils.check_type(
+            parameter_names, f"Value to key '{name}' in 'parameters_to_log", list
+        )
 
 
 def _validate_logging_step_size(
     logging_step_size: Union[int, float], step_size: Union[int, float]
 ) -> None:
 
-    if not isinstance(logging_step_size, (int, float)):
-        raise TypeError(
-            f"'logging_step_size' is {type(logging_step_size)}; expected int, float"
-        )
+    utils.check_type(logging_step_size, "logging_step_size", (int, float))
 
     if not round(logging_step_size / step_size, 10).is_integer():
         raise ValueError(
             "'logging_step_size' must be a multiple of the chosen 'step_size'"
         )
+
+
+def _validate_start_values(
+    start_values: StartValues, all_system_names: list[str]
+) -> None:
+
+    utils.check_type(start_values, "start_values", dict)
+
+    for name in start_values:
+        if name not in all_system_names:
+            raise ValueError(
+                f"System name '{name}' is defined in 'start_values', but does not exist."
+            )
