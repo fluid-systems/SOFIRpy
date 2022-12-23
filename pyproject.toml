@@ -91,7 +91,7 @@ fail-under = 9.8
 [tool.pylint.design]
 max-args = 9
 max-attributes = 13
-max-locals = 16
+max-locals = 17
 
 [tool.pylint.format]
 max-line-length = 88
