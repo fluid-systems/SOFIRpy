@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
-from typing import Any, Optional, TypedDict, Union
+from typing import Optional, TypedDict, Union
 
 import numpy as np
 import numpy.typing as npt
@@ -14,7 +14,7 @@ from tqdm import tqdm
 
 from sofirpy import utils
 from sofirpy.simulation.fmu import Fmu
-from sofirpy.simulation.simulation_entity import SimulationEntity, ParameterValue
+from sofirpy.simulation.simulation_entity import StartValue, SimulationEntity
 
 
 @dataclass(frozen=True)
@@ -93,9 +93,24 @@ class Simulation:
         """Simulate the systems.
 
         The following steps are performed.
-        1. start values are set
-        2. start values are logged
-        3. simulation loop starts
+        1. A time array is created starting from 0 to the specified stop time. The
+            intervals have the size of the step size. If the last element in the array
+            is greater than the stop time, it is deleted.
+        2. The logging multiple is calculated from the logging step size. Since the
+            logging step size needs to be a multiple of the step size, the logging
+            multiple is an integer. Therefore a precise modulo operation inside the
+            simulation loop can be performed.
+            E.g if the step size 1e-3 and the logging step size is 1e-1, the logging
+            multiple will be 100. Therefor every 100 time step will be logged.
+        3. The numpy results object is initialized.
+        4. The start values are logged.
+        5. The simulation loop starts.
+            2.1 A simulation step is performed.
+            2.2 All system inputs are set.
+            2.3 If the time step + 1 is a multiple of the logging multiple, values are
+                logged.
+        6. The simulation process is concluded.
+        7. The numpy results object is converted to a pandas DataFrame.
 
         Args:
             stop_time (float): stop time for the simulation
@@ -230,7 +245,7 @@ SystemInfos = list[SystemInfo]
 
 Units = dict[str, Optional[str]]
 
-StartValues = dict[str, dict[str, ParameterValue]]
+StartValues = dict[str, dict[str, StartValue]]
 
 
 def simulate(
@@ -319,6 +334,24 @@ def simulate(
             model class as values. The name in the dictionary must be
             chosen according to the names specified in 'model_infos'.
             Defaults to None.
+        start_values (Optional[StartValues], optional): Dictionary with start values for
+            the simulation. For Fmus the unit can also be specified as a string.
+            It has the following format:
+
+            >>> start_values =
+            ... {
+            ...     "<name of system 1 (corresponding to the names specified in"
+            ...     "'model_infos' or 'fmu_infos')>":
+            ...     {
+            ...         "<name of parameter 1>": "<start value>",
+            ...         "<name of parameter 2>", "(<start value>, unit e.g 'kg.m2')"
+            ...     },
+            ...     "<name of system 2>":
+            ...     {
+            ...         "<name of parameter 1>": "<start value>",
+            ...         "<name of parameter 2>": "<start value>"
+            ...     }
+            ... }
         parameters_to_log (Optional[dict[str, list[str]]], optional):
             Dictionary that defines which parameters should be logged.
             It needs to have the following format:
@@ -585,7 +618,8 @@ def _validate_input(
 
     if not fmu_infos and not model_infos:
         raise ValueError(
-            "'fmu_infos' and 'model_infos' are empty; expected at least one to be not empty"
+            "'fmu_infos' and 'model_infos' are empty; "
+            "expected at least one to be not empty"
         )
 
     fmu_names = _validate_fmu_infos(fmu_infos)
@@ -688,7 +722,8 @@ def _validate_connection_infos(
                 connected_system = connection[SystemInfoKeys.CONNECTED_SYSTEM.value]
                 if connected_system not in system_names:
                     raise ValueError(
-                        f"System '{connected_system}' specified in connections doesn't exist."
+                        f"System '{connected_system}' specified "
+                        "in connections doesn't exist."
                     )
 
 
@@ -726,7 +761,8 @@ def _validate_parameters_to_log(
     for name, parameter_names in parameters_to_log.items():
         if name not in system_names:
             raise ValueError(
-                f"System name '{name}' is defined in 'parameters_to_log', but does not exist."
+                f"System name '{name}' is defined in 'parameters_to_log', "
+                "but does not exist."
             )
         utils.check_type(
             parameter_names, f"Value to key '{name}' in 'parameters_to_log", list
@@ -754,5 +790,6 @@ def _validate_start_values(
     for name in start_values:
         if name not in all_system_names:
             raise ValueError(
-                f"System name '{name}' is defined in 'start_values', but does not exist."
+                f"System name '{name}' is defined in 'start_values', "
+                "but does not exist."
             )
