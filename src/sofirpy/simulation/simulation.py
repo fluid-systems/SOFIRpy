@@ -390,7 +390,7 @@ def simulate(
     if start_values is None:
         start_values = {}
 
-    # start_values = start_values.copy()  # copy so mutating doesn't affect passed dict
+    start_values = start_values.copy()  # copy so mutating doesn't affect passed dict
 
     fmus = init_fmus(fmu_infos, step_size, start_values)
 
@@ -574,8 +574,8 @@ def _validate_input(
     start_values: Optional[StartValues],
 ) -> None:
 
-    utils.check_type(stop_time, 'stop_time', (float, int))
-    utils.check_type(step_size, 'step_size', (float, int))
+    utils.check_type(stop_time, "stop_time", (float, int))
+    utils.check_type(step_size, "step_size", (float, int))
 
     if stop_time <= 0:
         raise ValueError(f"'stop_time' is {stop_time}; expected > 0")
@@ -585,16 +585,21 @@ def _validate_input(
 
     if not fmu_infos and not model_infos:
         raise ValueError(
-            "'fmu_infos' and 'model_infos' are empty; expected al least one to be not empty"
+            "'fmu_infos' and 'model_infos' are empty; expected at least one to be not empty"
         )
 
     fmu_names = _validate_fmu_infos(fmu_infos)
     model_names = _validate_model_infos(model_infos)
 
-    all_system_names = _get_all_system_names(fmu_names, model_names)
+    all_system_names = fmu_names + model_names
 
     if len(set(all_system_names)) < len(all_system_names):
         raise ValueError("Duplicate names in system infos.")
+
+    fmu_infos = fmu_infos or []
+    model_infos = model_infos or []
+
+    _validate_connection_infos(fmu_infos + model_infos, all_system_names)
 
     _validate_model_classes(model_classes, model_names)
 
@@ -608,10 +613,10 @@ def _validate_input(
         _validate_start_values(start_values, all_system_names)
 
 
-def _validate_fmu_infos(fmu_infos: Optional[SystemInfos]) -> Optional[list[str]]:
+def _validate_fmu_infos(fmu_infos: Optional[SystemInfos]) -> list[str]:
 
     if fmu_infos is None:
-        return None
+        return []
 
     utils.check_type(fmu_infos, "fmu_infos", list)
 
@@ -632,16 +637,14 @@ def _validate_fmu_infos(fmu_infos: Optional[SystemInfos]) -> Optional[list[str]]
             f"Value to key '{SystemInfoKeys.FMU_PATH.value}' in 'fmu_infos",
             (str, Path),
         )
-        if fmu_info.get(SystemInfoKeys.CONNECTIONS.value) is not None:
-            _validate_connection_infos(fmu_info[SystemInfoKeys.CONNECTIONS.value])
 
     return fmu_names
 
 
-def _validate_model_infos(model_infos: Optional[SystemInfos]) -> Optional[list[str]]:
+def _validate_model_infos(model_infos: Optional[SystemInfos]) -> list[str]:
 
     if model_infos is None:
-        return None
+        return []
 
     utils.check_type(model_infos, "model_infos", list)
 
@@ -656,48 +659,43 @@ def _validate_model_infos(model_infos: Optional[SystemInfos]) -> Optional[list[s
             str,
         )
         model_names.append(model_info[SystemInfoKeys.SYSTEM_NAME.value])
-        if model_info.get(SystemInfoKeys.CONNECTIONS.value) is not None:
-            _validate_connection_infos(model_info[SystemInfoKeys.CONNECTIONS.value])
 
     return model_names
 
 
-def _validate_connection_infos(connection_infos: ConnectionInfos) -> None:
+def _validate_connection_infos(
+    system_infos: SystemInfos, system_names: list[str]
+) -> None:
 
-    utils.check_type(
-        connection_infos, f"Value to key '{SystemInfoKeys.CONNECTIONS.value}", list
-    )
-
-    for connection in connection_infos:
-        utils.check_type(connection, "element in list 'connections", dict)
-        for key in (
-            SystemInfoKeys.INPUT_PARAMETER.value,
-            SystemInfoKeys.OUTPUT_PARAMETER.value,
-            SystemInfoKeys.CONNECTED_SYSTEM.value,
-        ):
-            _check_key_exists(key, connection)
+    for system_info in system_infos:
+        if system_info.get(SystemInfoKeys.CONNECTIONS.value) is not None:
             utils.check_type(
-                connection[key], f"Value to key '{key}' in 'connections", str
+                system_info[SystemInfoKeys.CONNECTIONS.value],
+                f"Value to key '{SystemInfoKeys.CONNECTIONS.value}",
+                list,
             )
+            for connection in system_info[SystemInfoKeys.CONNECTIONS.value]:
+                utils.check_type(connection, "element in list 'connections", dict)
+                for key in (
+                    SystemInfoKeys.INPUT_PARAMETER.value,
+                    SystemInfoKeys.OUTPUT_PARAMETER.value,
+                    SystemInfoKeys.CONNECTED_SYSTEM.value,
+                ):
+                    _check_key_exists(key, connection)
+                    utils.check_type(
+                        connection[key], f"Value to key '{key}' in 'connections", str
+                    )
+                connected_system = connection[SystemInfoKeys.CONNECTED_SYSTEM.value]
+                if connected_system not in system_names:
+                    raise ValueError(
+                        f"System '{connected_system}' specified in connections doesn't exist."
+                    )
 
 
 def _check_key_exists(key: str, info_dict: Union[SystemInfo, ConnectionInfo]) -> None:
 
     if key not in info_dict:
         raise KeyError(f"missing key '{key}' in {info_dict}")
-
-
-def _get_all_system_names(
-    fmu_names: Optional[list[str]], model_names: Optional[list[str]]
-) -> list[str]:
-
-    if fmu_names is not None and model_names is not None:
-        return [*fmu_names, *model_names]
-    if fmu_names is not None:
-        return fmu_names
-    if model_names is not None:
-        return model_names
-    return []
 
 
 def _validate_model_classes(
