@@ -3,9 +3,8 @@
 from abc import ABC, abstractmethod
 from typing import Optional, Union
 
-
 ParameterValue = Union[bool, int, float]
-
+StartValue = Union[ParameterValue, tuple[ParameterValue, str]]
 
 class SimulationEntity(ABC):
     """Abstract object representing a simulation entity."""
@@ -42,7 +41,7 @@ class SimulationEntity(ABC):
             time (float): current simulation time
         """
 
-    def initialize(self, start_values: dict[str, ParameterValue]) -> None:
+    def initialize(self, start_values: dict[str, StartValue]) -> None:
         """Initialize the model"""
 
     def get_unit(self, parameter_name: str) -> Optional[str]:
