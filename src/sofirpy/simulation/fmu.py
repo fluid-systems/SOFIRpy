@@ -1,13 +1,21 @@
 """Module containing the Fmu class."""
+
 from pathlib import Path
-from typing import Optional, Callable
+from typing import Callable, Optional
 
 from fmpy import extract, read_model_description
 from fmpy.fmi2 import FMU2Slave
-from fmpy.simulation import settable_in_initialization_mode, settable_in_instantiated
+from fmpy.simulation import (
+    settable_in_initialization_mode,
+    settable_in_instantiated,
+    apply_start_values,
+)
 
-from sofirpy.simulation.simulation_entity import SimulationEntity, ParameterValue
-
+from sofirpy.simulation.simulation_entity import (
+    StartValue,
+    SimulationEntity,
+    ParameterValue,
+)
 
 SetterFunction = Callable[[list[int], list[ParameterValue]], None]
 GetterFunction = Callable[[list[int]], list[ParameterValue]]
@@ -50,7 +58,7 @@ class Fmu(SimulationEntity):
             raise FileNotFoundError(f"The path '{fmu_path}' does not exist")
         self._fmu_path = fmu_path
 
-    def initialize(self, start_values: dict[str, ParameterValue]) -> None:
+    def initialize(self, start_values: dict[str, StartValue]) -> None:
         """Initialize the fmu.
 
         Args:
@@ -81,52 +89,22 @@ class Fmu(SimulationEntity):
         }
         self.fmu.instantiate()
         self.fmu.setupExperiment()
-        # start values are set before and after entering Initialization mode
-        self.init_mode = False
-        self.set_start_values(start_values)
+        not_set_start_values = apply_start_values(
+            self.fmu, self.model_description, start_values, settable_in_instantiated
+        )
         self.fmu.enterInitializationMode()
-        self.init_mode = True
-        self.set_start_values(start_values)
-        if self.start_values_not_applied:
-            msg = f"Not possible to set the start value in FMU '{self.name}' "
-            msg += "for the following variables: "
-            msg += ", ".join(self.start_values_not_applied)
-            print(msg)
+        not_set_start_values = apply_start_values(
+            self.fmu,
+            self.model_description,
+            not_set_start_values,
+            settable_in_initialization_mode,
+        )
+        if not_set_start_values:
+            print(
+                f"The following start values for the FMU '{self.name}' "
+                f"cannot be set:\n{not_set_start_values}"
+            )
         self.fmu.exitInitializationMode()
-
-    def set_start_values(self, start_values: dict[str, ParameterValue]) -> None:
-        """Set the start values for the fmu.
-
-        First checks if the initialization mode is entered, because different variables
-        need to be set before or in initialization mode. If a variable was able to be
-        set, it is removed from the start_values_not_applied list.
-
-        Args:
-            start_values (dict[str, ParameterValue]): keys-variable name;
-                values-variable value
-        """
-        check_settable = settable_in_initialization_mode
-        if not self.init_mode:
-            check_settable = settable_in_instantiated
-
-        self.start_values_not_applied: list[str] = list(start_values.keys())
-
-        for parameter_name, parameter_value in start_values.items():
-
-            variable = self.model_description_dict[parameter_name]
-            if check_settable(variable):
-                self.set_parameter(parameter_name, parameter_value)
-                self.start_values_not_applied.remove(parameter_name)
-
-    def set_input(self, input_name: str, input_value: ParameterValue) -> None:
-        """Set the value of an input parameter.
-
-        Args:
-            input_name (str): name of the parameter that should be set
-            input_value (ParameterValue): value to which the parameter is to
-                be set
-        """
-        self.set_parameter(input_name, input_value)
 
     def set_parameter(
         self, parameter_name: str, parameter_value: ParameterValue
@@ -179,4 +157,6 @@ class Fmu(SimulationEntity):
             str: The unit of the variable.
         """
         unit: Optional[str] = self.model_description_dict[parameter_name].unit
+        if unit is None:
+            unit = self.model_description_dict[parameter_name].declaredType.unit
         return unit
