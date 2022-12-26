@@ -200,7 +200,8 @@ class DymolaFmuExport(FmuExport):
                 raise TypeError(f"key of parameters is {type(com_sym)}; expected str")
             if not isinstance(value, (str, int, bool, float, list)):
                 raise TypeError(
-                    f"value of parameters is {type(value)}; expected str, int, float, bool or list"
+                    f"value of parameters is {type(value)}; "
+                    "expected str, int, float, bool or list"
                 )
             self._parameters[com_sym] = value
 
@@ -482,7 +483,8 @@ def export_dymola_model(
         utils.delete_paths(dymola_fmu_export.paths_to_delete)
         if dymola_fmu_export.fmu_path.exists():
             print(
-                "FMU Export without added parameters and model modifiers was successful."
+                "FMU Export without added parameters "
+                "and model modifiers was successful."
             )
             parameters_in_model = read_model_parameters(dymola_fmu_export.fmu_path)
             not_valid_parameters = check_not_valid_parameters(
@@ -492,7 +494,8 @@ def export_dymola_model(
             dymola_fmu_export.fmu_path.unlink()
         else:
             print(
-                "FMU Export without added parameters and model modifiers was not successful."
+                "FMU Export without added parameters and "
+                "model modifiers was not successful."
             )
 
     return None

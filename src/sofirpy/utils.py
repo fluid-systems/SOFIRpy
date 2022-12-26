@@ -2,7 +2,7 @@
 
 import shutil
 from pathlib import Path
-from typing import Union, Any
+from typing import Any, Union
 
 
 def delete_file_or_directory(

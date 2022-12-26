@@ -46,7 +46,8 @@ class HDF5:
 
         if _hdf5_path.suffix not in hdf_suffixes:
             raise ValueError(
-                f'Invalid path name, expected one of the following file extensions: {", ".join(hdf_suffixes)}'
+                "Invalid path name, expected one of the following file extensions: "
+                f"{', '.join(hdf_suffixes)}"
             )
         if not _hdf5_path.exists():
             # create_new = utils.get_user_input_for_creating_path(_hdf5_path)
@@ -118,7 +119,8 @@ class HDF5:
                 )
                 if not overwrite:
                     raise ValueError(
-                        f"Unable to create dataset, dataset at {data_path} already exists."
+                        "Unable to create dataset, "
+                        f"dataset at {data_path} already exists."
                     )
                 del hdf5[data_path]
             dset = group.create_dataset(data_name, data=data)
@@ -153,7 +155,8 @@ class HDF5:
             hdf5_object: Union[h5py.Group, h5py.Dataset] = hdf5[path]
             if attribute_name not in hdf5_object.attrs.keys():
                 raise KeyError(
-                    f"Attribute with name '{attribute_name}' is not a attribute at '{path}'."
+                    f"Attribute with name '{attribute_name}' "
+                    f"is not a attribute at '{path}'."
                 )
             del hdf5_object.attrs[attribute_name]
 
