@@ -86,7 +86,7 @@ line_length = 88
 skip_gitignore = true
 
 [tool.pylint.main]
-fail-under = 9.8
+fail-under = 10
 
 [tool.pylint.design]
 max-args = 9
