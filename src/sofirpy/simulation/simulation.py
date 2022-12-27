@@ -41,7 +41,6 @@ class SystemParameter:
 
     system: System
     name: str
-    in_input: bool = False
 
 
 @dataclass(frozen=True)
@@ -93,23 +92,33 @@ class Simulation:
         """Simulate the systems.
 
         The following steps are performed.
+
         1. A time array is created starting from 0 to the specified stop time. The
-            intervals have the size of the step size. If the last element in the array
-            is greater than the stop time, it is deleted.
+           intervals have the size of the step size. If the last element in the array
+           is greater than the stop time, it is deleted.
+
         2. The logging multiple is calculated from the logging step size. Since the
-            logging step size needs to be a multiple of the step size, the logging
-            multiple is an integer. Therefore a precise modulo operation inside the
-            simulation loop can be performed.
-            E.g if the step size 1e-3 and the logging step size is 1e-1, the logging
-            multiple will be 100. Therefor every 100 time step will be logged.
+           logging step size needs to be a multiple of the step size, the logging
+           multiple is an integer. Therefore a precise modulo operation inside the
+           simulation loop can be performed.
+           E.g if the step size 1e-3 and the logging step size is 1e-1, the logging
+           multiple will be 100. Therefor every 100 time step will be logged.
+
         3. The numpy results object is initialized.
+
         4. The start values are logged.
+
         5. The simulation loop starts.
-            2.1 A simulation step is performed.
-            2.2 All system inputs are set.
-            2.3 If the time step + 1 is a multiple of the logging multiple, values are
-                logged.
+
+           5.1 A simulation step is performed.
+
+           5.2 All system inputs are set.
+
+           5.3 If the time step + 1 is a multiple of the logging multiple, values are
+           logged.
+
         6. The simulation process is concluded.
+
         7. The numpy results object is converted to a pandas DataFrame.
 
         Args:
