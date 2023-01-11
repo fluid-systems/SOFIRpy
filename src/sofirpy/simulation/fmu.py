@@ -69,10 +69,10 @@ class Fmu(SimulationEntity):
             variable.name: variable
             for variable in self.model_description.modelVariables
         }
-        unzipdir = extract(self.fmu_path)
+        unzip_dir = extract(self.fmu_path)
         self.fmu = FMU2Slave(
             guid=self.model_description.guid,
-            unzipDirectory=unzipdir,
+            unzipDirectory=unzip_dir,
             modelIdentifier=self.model_description.coSimulation.modelIdentifier,
             instanceName="instance1",
         )
@@ -102,7 +102,7 @@ class Fmu(SimulationEntity):
         if not_set_start_values:
             print(
                 f"The following start values for the FMU '{self.name}' "
-                f"cannot be set:\n{not_set_start_values}"
+                f"can not be set:\n{not_set_start_values}"
             )
         self.fmu.exitInitializationMode()
 
