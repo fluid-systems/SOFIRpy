@@ -11,10 +11,11 @@ import numpy as np
 import numpy.typing as npt
 import pandas as pd
 from tqdm import tqdm
+from typing_extensions import NotRequired
 
 from sofirpy import utils
 from sofirpy.simulation.fmu import Fmu
-from sofirpy.simulation.simulation_entity import StartValue, SimulationEntity
+from sofirpy.simulation.simulation_entity import SimulationEntity, StartValue
 
 
 @dataclass(frozen=True)
@@ -35,11 +36,11 @@ class SystemParameter:
     """SystemParameter object representing a parameter in a system.
 
     Args:
-            system (System): System object
+            system (str): Name of the corresponding system
             name (str): name of the parameter
     """
 
-    system: System
+    system_name: str
     name: str
 
 
@@ -159,9 +160,11 @@ class Simulation:
     def set_systems_inputs(self) -> None:
         """Set inputs for all systems."""
         for connection in self.connections:
-            input_system = connection.input_point.system
+            input_system_name = connection.input_point.system_name
+            input_system = self.systems[input_system_name]
             input_name = connection.input_point.name
-            output_system = connection.output_point.system
+            output_system_name = connection.output_point.system_name
+            output_system = self.systems[output_system_name]
             output_name = connection.output_point.name
             input_value = output_system.simulation_entity.get_parameter_value(
                 output_name
@@ -188,7 +191,8 @@ class Simulation:
         new_value_row = [time]
 
         for parameter in self.parameters_to_log:
-            system = parameter.system
+            system_name = parameter.system_name
+            system = self.systems[system_name]
             parameter_name = parameter.name
             value = system.simulation_entity.get_parameter_value(parameter_name)
             new_value_row += [value]
@@ -211,7 +215,7 @@ class Simulation:
             '<system_name>.<parameter_name>'.
         """
         columns = ["time"] + [
-            f"{parameter.system.name}.{parameter.name}"
+            f"{parameter.system_name}.{parameter.name}"
             for parameter in self.parameters_to_log
         ]
 
@@ -226,7 +230,8 @@ class Simulation:
         """
         units = {}
         for parameter in self.parameters_to_log:
-            system = parameter.system
+            system_name = parameter.system_name
+            system = self.systems[system_name]
             parameter_name = parameter.name
             try:
                 unit = system.simulation_entity.get_unit(parameter_name)
@@ -242,14 +247,24 @@ ConnectionInfo = dict[str, str]
 ConnectionInfos = list[ConnectionInfo]
 
 
-class SystemInfo(TypedDict, total=False):
-    """TypedDict for fmu_info and model_info."""
+class FmuInfo(TypedDict):
+    """TypedDict for fmu_info."""
 
     name: str
     path: Union[str, Path]
-    connections: ConnectionInfos
+    connections: NotRequired[ConnectionInfos]
 
 
+class ModelInfo(TypedDict):
+    """TypedDict for model_info."""
+
+    name: str
+    connections: NotRequired[ConnectionInfos]
+
+
+FmuInfos = list[FmuInfo]
+ModelInfos = list[ModelInfo]
+SystemInfo = Union[ModelInfo, FmuInfo]
 SystemInfos = list[SystemInfo]
 
 Units = dict[str, Optional[str]]
@@ -260,8 +275,8 @@ StartValues = dict[str, dict[str, StartValue]]
 def simulate(
     stop_time: Union[float, int],
     step_size: Union[float, int],
-    fmu_infos: Optional[SystemInfos] = None,
-    model_infos: Optional[SystemInfos] = None,
+    fmu_infos: Optional[FmuInfos] = None,
+    model_infos: Optional[ModelInfos] = None,
     model_classes: Optional[dict[str, SimulationEntity]] = None,
     start_values: Optional[StartValues] = None,
     parameters_to_log: Optional[dict[str, list[str]]] = None,
@@ -276,7 +291,7 @@ def simulate(
     Args:
         stop_time (Union[float,int]): stop time for the simulation
         step_size (Union[float, int]): step size for the simulation
-        fmu_infos (Optional[SystemInfos], optional):
+        fmu_infos (Optional[FmuInfos], optional):
             Defines which fmus should be simulated and how they are connected
             to other systems. It needs to have the following format:
 
@@ -330,7 +345,7 @@ def simulate(
             Note: The name of the fmus can be chosen arbitrarily, but each name
             in 'fmu_infos' and 'model_infos' must occur only once.
             Defaults to None.
-        model_infos (Optional[SystemInfos], optional):
+        model_infos (Optional[ModelInfos], optional):
             Defines which python models should be simulated and how they are
             connected to other systems. It needs to have the same format as
             'fmu_infos' with the difference that
@@ -385,7 +400,7 @@ def simulate(
             for logging. It must be a multiple of the chosen simulation 'step_size'.
             Example:
             If the simulation 'step_size' is set to 1e-3 and 'logging_step_size'
-            is set to 2e-3, every second time step is logged.
+            is set to 2e-3, every second time step is logged. Defaults to None.
         get_units (bool, optional): Determines whether the units of
             the logged parameter should be returned. Defaults to False.
 
@@ -440,8 +455,8 @@ def simulate(
 
     systems = {**fmus, **models}
 
-    connections = init_connections(fmu_infos + model_infos, systems)
-    _parameters_to_log = init_parameter_list(parameters_to_log, systems)
+    connections = init_connections([*fmu_infos, *model_infos])
+    _parameters_to_log = init_parameter_list(parameters_to_log)
 
     simulator = Simulation(systems, connections, _parameters_to_log)
     results = simulator.simulate(stop_time, step_size, logging_step_size)
@@ -465,15 +480,15 @@ class SystemInfoKeys(Enum):
 
 
 def init_fmus(
-    fmu_infos: SystemInfos, step_size: float, start_values: StartValues
+    fmu_infos: FmuInfos, step_size: float, start_values: StartValues
 ) -> dict[str, System]:
     """Initialize all System object and stores them in a dictionary.
 
     Args:
-        fmu_infos (SystemInfos): Defines
+        fmu_infos (FmuInfos): Defines
             which fmus should be simulated and how they are connected to other
             systems.
-        model_infos (SystemInfos):
+        model_infos (ModelInfos):
             Defines which python models should be simulated and how they are
             connected to other systems.
         model_classes (dict[str, SimulationEntity]): Dictionary with the name of
@@ -502,17 +517,17 @@ def init_fmus(
 
 
 def init_models(
-    model_infos: SystemInfos,
+    model_infos: ModelInfos,
     model_classes: dict[str, SimulationEntity],
     start_values: StartValues,
 ) -> dict[str, System]:
     """Initialize all System object and stores them in a dictionary.
 
     Args:
-        fmu_infos (SystemInfos): Defines
+        fmu_infos (FmuInfos): Defines
             which fmus should be simulated and how they are connected to other
             systems.
-        model_infos (SystemInfos):
+        model_infos (ModelInfos):
             Defines which python models should be simulated and how they are
             connected to other systems.
         model_classes (dict[str, SimulationEntity]): Dictionary with the name of
@@ -538,16 +553,12 @@ def init_models(
     return models
 
 
-def init_connections(
-    system_infos: SystemInfos, systems: dict[str, System]
-) -> list[Connection]:
+def init_connections(system_infos: SystemInfos) -> list[Connection]:
     """Initialize all the connections.
 
     Args:
         system_infos (SystemInfos):
             Defines how all systems are connected.
-        systems (dict[str, System]): Dictionary with system names as keys and
-            the corresponding System instance as values.
 
     Returns:
         list[Connection]: List of Connections.
@@ -555,20 +566,18 @@ def init_connections(
     all_connections: list[Connection] = []
 
     for system_info in system_infos:
-        if system_info.get(SystemInfoKeys.CONNECTIONS.value) is not None:
+        if SystemInfoKeys.CONNECTIONS.value in system_info:
             connections = system_info[SystemInfoKeys.CONNECTIONS.value]
             this_system_name = system_info[SystemInfoKeys.SYSTEM_NAME.value]
-            this_system = systems[this_system_name]
             for con in connections:
                 this_parameter_name = con[SystemInfoKeys.INPUT_PARAMETER.value]
                 this_connection_point = SystemParameter(
-                    this_system, this_parameter_name
+                    this_system_name, this_parameter_name
                 )
                 other_system_name = con[SystemInfoKeys.CONNECTED_SYSTEM.value]
-                other_system = systems[other_system_name]
                 other_parameter_name = con[SystemInfoKeys.OUTPUT_PARAMETER.value]
                 other_connection_point = SystemParameter(
-                    other_system, other_parameter_name
+                    other_system_name, other_parameter_name
                 )
                 connection = Connection(this_connection_point, other_connection_point)
                 all_connections.append(connection)
@@ -577,15 +586,13 @@ def init_connections(
 
 
 def init_parameter_list(
-    parameters_to_log: Optional[dict[str, list[str]]], systems: dict[str, System]
+    parameters_to_log: Optional[dict[str, list[str]]]
 ) -> Optional[list[SystemParameter]]:
     """Initialize all parameters that should be logged.
 
     Args:
         parameters_to_log (Optional[dict[str, list[str]]]): Defines which
             parameters should be logged.
-        systems (dict[str, System]): Dictionary with system names as keys and
-            the corresponding System instance as values.
 
     Returns:
         Optional[list[SystemParameter]]: List of system parameters that should be
@@ -596,10 +603,9 @@ def init_parameter_list(
 
     log: list[SystemParameter] = []
 
-    for system_name in list(parameters_to_log.keys()):
-        system = systems[system_name]
-        for parameter_name in parameters_to_log[system_name]:
-            parameter_to_log = SystemParameter(system, parameter_name)
+    for system_name, parameter_names in parameters_to_log.items():
+        for parameter_name in parameter_names:
+            parameter_to_log = SystemParameter(system_name, parameter_name)
             log.append(parameter_to_log)
 
     return log
@@ -608,8 +614,8 @@ def init_parameter_list(
 def _validate_input(
     stop_time: Union[float, int],
     step_size: Union[float, int],
-    fmu_infos: Optional[SystemInfos],
-    model_infos: Optional[SystemInfos],
+    fmu_infos: Optional[FmuInfos],
+    model_infos: Optional[ModelInfos],
     model_classes: Optional[dict[str, SimulationEntity]],
     parameters_to_log: Optional[dict[str, list[str]]],
     logging_step_size: Optional[float],
@@ -642,7 +648,7 @@ def _validate_input(
     fmu_infos = fmu_infos or []
     model_infos = model_infos or []
 
-    _validate_connection_infos(fmu_infos + model_infos, all_system_names)
+    _validate_connection_infos([*fmu_infos, *model_infos], all_system_names)
 
     _validate_model_classes(model_classes, model_names)
 
@@ -656,7 +662,7 @@ def _validate_input(
         _validate_start_values(start_values, all_system_names)
 
 
-def _validate_fmu_infos(fmu_infos: Optional[SystemInfos]) -> list[str]:
+def _validate_fmu_infos(fmu_infos: Optional[FmuInfos]) -> list[str]:
 
     if fmu_infos is None:
         return []
@@ -684,7 +690,7 @@ def _validate_fmu_infos(fmu_infos: Optional[SystemInfos]) -> list[str]:
     return fmu_names
 
 
-def _validate_model_infos(model_infos: Optional[SystemInfos]) -> list[str]:
+def _validate_model_infos(model_infos: Optional[ModelInfos]) -> list[str]:
 
     if model_infos is None:
         return []
@@ -711,7 +717,7 @@ def _validate_connection_infos(
 ) -> None:
 
     for system_info in system_infos:
-        if system_info.get(SystemInfoKeys.CONNECTIONS.value) is not None:
+        if SystemInfoKeys.CONNECTIONS.value in system_info:
             utils.check_type(
                 system_info[SystemInfoKeys.CONNECTIONS.value],
                 f"Value to key '{SystemInfoKeys.CONNECTIONS.value}",
