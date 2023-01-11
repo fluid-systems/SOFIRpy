@@ -287,7 +287,7 @@ def test_validate_parameters_to_log_raises_type_error(parameters_to_log: dict, s
     with pytest.raises(TypeError):
         _validate_parameters_to_log(parameters_to_log, system_names)
 
-def test_validate_parameters_to_log_raises_type_error(parameters_to_log: dict, system_names: list[str]) -> None:
+def test_validate_parameters_to_log_raises_value_error(parameters_to_log: dict, system_names: list[str]) -> None:
 
     system_names.pop(0)
     with pytest.raises(ValueError):
