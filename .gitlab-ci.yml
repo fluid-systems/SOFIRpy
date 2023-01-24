@@ -4,6 +4,7 @@ stages:
   - Static Analysis
   - Test
   - Documentation
+  - Release
 
 before_script:
   - python --version
@@ -33,3 +34,16 @@ doc:
   script:
     - cd docs/
     - make html
+
+release:
+  stage: Release
+  only: tags
+  script:
+    - TAG_VERSION=`echo "$CI_COMMIT_TAG"|cut -d "v" -f2`
+    - VERSION=`pip show sofirpy|grep Version|cut -d " " -f2`
+    - if [ "$TAG_VERSION" != "$VERSION" ]
+      then
+        echo "GitLab TAG "$TAG_VERSION" does not match specified version "$VERSION" in sofirpy/__init__.py"
+      false
+      fi
+    - echo "versions match"
