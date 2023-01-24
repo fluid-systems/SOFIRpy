@@ -51,7 +51,7 @@ release:
     - pip install --upgrade pip
     - python -m build
     - pip install --upgrade twine
-    - TWINE_PASSWORD=${TEST_PYPI_TOKEN} TWINE_USERNAME=gitlab-ci-token twine upload --repository testpypi dist/*
+    - TWINE_PASSWORD=${TEST_PYPI_TOKEN} TWINE_USERNAME=__token__ twine upload --repository testpypi dist/*
   # release:
   #   tag_name: $CI_COMMIT_TAG
   #   name: 'Release $CI_COMMIT_TAG'
