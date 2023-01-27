@@ -48,9 +48,8 @@ release:
         echo "GitLab TAG "$tag_version" does not match specified version "$ver" in sofirpy/__init__.py"
         exit 1
       fi
-    - pip install --upgrade build
+    - pip install build twine
     - python -m build
-    - pip install --upgrade twine
     - TWINE_PASSWORD=${TEST_PYPI_TOKEN} TWINE_USERNAME=__token__ twine upload --repository testpypi dist/*
   # release:
   #   tag_name: $CI_COMMIT_TAG
