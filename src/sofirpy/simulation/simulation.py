@@ -155,7 +155,9 @@ class Simulation:
 
         return self.convert_to_data_frame(self.results)
 
-    def compute_time_array(self, stop_time: float, step_size: float, start_time: float) -> npt.NDArray[np.float64]:
+    def compute_time_array(
+        self, stop_time: float, step_size: float, start_time: float
+    ) -> npt.NDArray[np.float64]:
         """Compute the time array for the simulation.
 
         Args:
