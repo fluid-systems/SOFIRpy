@@ -133,9 +133,7 @@ class Simulation:
             pd.DataFrame: result DataFrame with times series of logged
             parameters
         """
-        time_series = np.arange(start_time, stop_time + step_size, step_size)
-        if time_series[-1] > stop_time:
-            time_series = time_series[:-1]
+        time_series = self.compute_time_array(stop_time, step_size, start_time)
 
         number_log_steps = int(stop_time / logging_step_size) + 1
 
@@ -156,6 +154,22 @@ class Simulation:
         self.conclude_simulation()
 
         return self.convert_to_data_frame(self.results)
+
+    def compute_time_array(self, stop_time: float, step_size: float, start_time: float) -> npt.NDArray[np.float64]:
+        """Compute the time array for the simulation.
+
+        Args:
+            stop_time (float): stop time for the simulation
+            step_size (float): step size for the simulation
+            start_time (float): start time of the simulation.
+
+        Returns:
+            npt.NDArray[np.float64]: time array
+        """
+        time_series = np.arange(start_time, stop_time + step_size, step_size)
+        if time_series[-1] > stop_time:
+            time_series = time_series[:-1]
+        return time_series
 
     def set_systems_inputs(self) -> None:
         """Set inputs for all systems."""
