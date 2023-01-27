@@ -6,6 +6,10 @@ stages:
   - Documentation
   - Release
 
+cache:
+  paths:
+    - ~/.cache/pip/
+
 before_script:
   - python --version
   - pip install --upgrade pip setuptools
