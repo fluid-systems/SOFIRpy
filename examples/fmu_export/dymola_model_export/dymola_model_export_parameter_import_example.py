@@ -1,4 +1,5 @@
 from pathlib import Path
+
 from sofirpy import export_dymola_model
 
 dir_path = Path(__file__).parent

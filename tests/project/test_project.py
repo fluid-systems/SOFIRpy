@@ -11,9 +11,10 @@ from sofirpy import Project
 def project() -> Project:
     _hdf5 = Path(__file__).parent / "test_hdf5.hdf5"
     directory = Path(__file__).parent / "test_project_dir"
-    _project =  Project(_hdf5, directory)
+    _project = Project(_hdf5, directory)
     with tempfile.TemporaryDirectory() as tmp_dir:
         yield _copy_standard_project(_project, "test_project", Path(tmp_dir))
+
 
 def _copy_standard_project(project: Project, test_name: str, tmp_dir: Path) -> Project:
     copy_dir = tmp_dir / f"{test_name}_project"

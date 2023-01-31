@@ -3,14 +3,14 @@ Connect systems
 
 The following example demonstrates how multiple systems can be connected for the simulation.
 
-Consider the following systems. 
+Consider the following systems.
 
 .. image:: Images/connection_diagram.svg
 
 For each input of a system it must be defined with which output of another system the
-input is to be connected. 
-For the shown system the variables 'fmu_infos' and 'model_infos' must be defined as follows. 
-The variables 'fmu_infos' and 'model_infos' are inputs for the 
+input is to be connected.
+For the shown system the variables 'fmu_infos' and 'model_infos' must be defined as follows.
+The variables 'fmu_infos' and 'model_infos' are inputs for the
 :py:func:`simulate() <sofirpy.simulation.simulation.simulate>`
 function.
 

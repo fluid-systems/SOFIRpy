@@ -1,5 +1,6 @@
-from pathlib import Path
 import json
+from pathlib import Path
+
 from sofirpy import export_dymola_model
 
 dir_path = Path(__file__).parent
@@ -23,7 +24,8 @@ for component_name, parameter_pairs in content.items():
         parameters[f"{component_name}.{parameter_name}"] = parameter_value
 
 model_modifiers = [
-    "redeclare package Medium = Modelica.Media.Water.ConstantPropertyLiquidWater"]
+    "redeclare package Medium = Modelica.Media.Water.ConstantPropertyLiquidWater"
+]
 
 
 export_dymola_model(

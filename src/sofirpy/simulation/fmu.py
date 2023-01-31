@@ -6,15 +6,15 @@ from typing import Callable, Optional
 from fmpy import extract, read_model_description
 from fmpy.fmi2 import FMU2Slave
 from fmpy.simulation import (
+    apply_start_values,
     settable_in_initialization_mode,
     settable_in_instantiated,
-    apply_start_values,
 )
 
 from sofirpy.simulation.simulation_entity import (
-    StartValue,
-    SimulationEntity,
     ParameterValue,
+    SimulationEntity,
+    StartValue,
 )
 
 SetterFunction = Callable[[list[int], list[ParameterValue]], None]

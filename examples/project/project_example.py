@@ -1,4 +1,5 @@
 from pathlib import Path
+
 from sofirpy import Project
 
 # Initialize a project by giving it the path to a project directory and the

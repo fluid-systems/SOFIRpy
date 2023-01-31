@@ -6,6 +6,7 @@ from typing import Optional, Union
 ParameterValue = Union[bool, int, float]
 StartValue = Union[ParameterValue, tuple[ParameterValue, str]]
 
+
 class SimulationEntity(ABC):
     """Abstract object representing a simulation entity."""
 

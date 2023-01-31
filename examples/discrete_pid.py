@@ -1,7 +1,8 @@
 from sofirpy import SimulationEntity, store_input_arguments
+from sofirpy.project.serialize import HDF5Serialization
 
 
-class PID(SimulationEntity):
+class PID(SimulationEntity, HDF5Serialization):
     """Simple implementation of a discrete pid controller"""
 
     @store_input_arguments
@@ -51,7 +52,9 @@ class PID(SimulationEntity):
 
         self.parameters["u"] = u
 
-    def set_parameter(self, parameter_name, parameter_value) -> None: # mandatory method
+    def set_parameter(
+        self, parameter_name, parameter_value
+    ) -> None:  # mandatory method
         self.parameters[parameter_name] = parameter_value
 
     def get_parameter_value(self, output_name):  # mandatory method

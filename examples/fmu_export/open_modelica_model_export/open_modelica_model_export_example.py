@@ -1,4 +1,5 @@
 from pathlib import Path
+
 from sofirpy import export_open_modelica_model
 
 dir_path = Path(__file__).parent.parent

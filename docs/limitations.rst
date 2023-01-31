@@ -19,4 +19,3 @@ Project
 -------
 
 - basic functionalities for storing and reading data |rarr| RDM principles have to be implemented (more functionalities coming in the future)
- 

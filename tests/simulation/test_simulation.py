@@ -1,16 +1,17 @@
-from pathlib import Path
 import sys
+from pathlib import Path
 from typing import Union
+
 import numpy as np
 import pandas as pd
 import pytest
 
 from sofirpy.simulation.simulation import (
     SimulationEntity,
-    simulate,
     _validate_fmu_infos,
     _validate_input,
-    _validate_parameters_to_log
+    _validate_parameters_to_log,
+    simulate,
 )
 
 
@@ -107,9 +108,11 @@ def model_info() -> dict:
         }
     ]
 
+
 @pytest.fixture
 def parameters_to_log() -> dict:
     return {"DC_Motor": ["y", "MotorTorque.tau"], "pid": ["u"]}
+
 
 @pytest.fixture
 def system_names() -> dict:
@@ -127,7 +130,11 @@ def result_path() -> Path:
 
 
 def test_simulation(
-    fmu_info: list[dict], model_info: list[dict], pid: PID, result_path: Path, parameters_to_log: dict
+    fmu_info: list[dict],
+    model_info: list[dict],
+    pid: PID,
+    result_path: Path,
+    parameters_to_log: dict,
 ) -> None:
 
     control_class = {"pid": pid}
@@ -180,14 +187,14 @@ def test_simulate_with_no_parameters_to_log(
     assert np.isclose(results, test_results, atol=1e-6).all()
 
 
-@pytest.mark.parametrize("logging_step_size", [1e-3,1e-2,1e-1,1.0])
+@pytest.mark.parametrize("logging_step_size", [1e-3, 1e-2, 1e-1, 1.0])
 def test_simulate_with_bigger_log_step_size(
     fmu_info: list[dict],
     model_info: list[dict],
     pid: PID,
     result_path: Path,
     parameters_to_log: dict,
-    logging_step_size: float
+    logging_step_size: float,
 ) -> None:
 
     step_size = 1e-3
@@ -199,14 +206,16 @@ def test_simulate_with_bigger_log_step_size(
         model_infos=model_info,
         model_classes=control_class,
         parameters_to_log=parameters_to_log,
-        logging_step_size=logging_step_size
-
+        logging_step_size=logging_step_size,
     )
 
     test_results = pd.read_csv(result_path).to_numpy()
     results = results.to_numpy()
 
-    assert np.isclose(results, test_results[::int(logging_step_size/step_size)], atol=1e-6).all()
+    assert np.isclose(
+        results, test_results[:: int(logging_step_size / step_size)], atol=1e-6
+    ).all()
+
 
 @pytest.mark.parametrize(
     "fmu_info",
@@ -281,13 +290,19 @@ def test_validate_fmu_info_key_error(fmu_info: list[dict]) -> None:
     with pytest.raises(KeyError):
         _validate_fmu_infos(fmu_info)
 
-def test_validate_parameters_to_log_raises_type_error(parameters_to_log: dict, system_names: list[str]) -> None:
+
+def test_validate_parameters_to_log_raises_type_error(
+    parameters_to_log: dict, system_names: list[str]
+) -> None:
 
     parameters_to_log["DC_Motor"] = "var"
     with pytest.raises(TypeError):
         _validate_parameters_to_log(parameters_to_log, system_names)
 
-def test_validate_parameters_to_log_raises_value_error(parameters_to_log: dict, system_names: list[str]) -> None:
+
+def test_validate_parameters_to_log_raises_value_error(
+    parameters_to_log: dict, system_names: list[str]
+) -> None:
 
     system_names.pop(0)
     with pytest.raises(ValueError):

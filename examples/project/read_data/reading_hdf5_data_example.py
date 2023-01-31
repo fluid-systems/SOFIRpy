@@ -1,17 +1,19 @@
-# The hdf5 module makes is easy to browse a hdf5 file by providing 
+# The hdf5 module makes is easy to browse a hdf5 file by providing
 # methodes to read the content of entire hdf5 groups.
 # Start by importing the HDF5 class from sofirpy.
 
 from pathlib import Path
+
 import numpy as np
+
 from sofirpy import HDF5
 
 hdf5_path = Path(__file__).parent / "example.hdf5"
 
 hdf5 = HDF5(hdf5_path)
 
-# to read data we first need to store data inside the hdf5. 
-data1 = np.random.randint((4,3))
+# to read data we first need to store data inside the hdf5.
+data1 = np.random.randint((4, 3))
 data1_name = "matrix_random"
 data1_group_name = "matrices/random"
 
