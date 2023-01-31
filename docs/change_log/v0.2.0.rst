@@ -1,0 +1,8 @@
+This release includes mutliple improvments and changes:
+
+Simulation
+
+- renaming of keys in fmu and model infos
+- faster simulation
+- possiblity to set start values for models
+- possiblity to set a logging step size
