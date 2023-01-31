@@ -25,19 +25,19 @@ stages:
     - source venv/bin/activate
     - pip install -e ".[test, doc, dev]"
 
-.linting:
+linting:
   extends: .venv_setup
   stage: Static Analysis
   script:
     - pylint src/sofirpy
 
-.type_checking:
+type_checking:
   extends: .venv_setup
   stage: Static Analysis
   script:
     - mypy src/sofirpy
 
-.test:
+test:
   extends: .venv_setup
   stage: Test
   script:
@@ -48,14 +48,14 @@ stages:
       junit: report.xml
     when: always
 
-.doc:
+doc:
   extends: .venv_setup
   stage: Documentation
   script:
     - cd docs/
     - make html
 
-.upload:
+upload:
   extends: .venv_setup
   stage: Release
   rules:
