@@ -13,22 +13,22 @@ before_script:
   - source venv/bin/activate
   - pip install ".[test, doc, dev]"
 
-linting:
+.linting:
   stage: Static Analysis
   script:
     - pylint src/sofirpy
 
-type_checking:
+.type_checking:
   stage: Static Analysis
   script:
     - mypy src/sofirpy
 
-test:
+.test:
   stage: Test
   script:
     - pytest tests/
 
-doc:
+.doc:
   stage: Documentation
   script:
     - cd docs/
