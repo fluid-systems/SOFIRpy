@@ -2,7 +2,7 @@
 
 __author__ = "Daniele Inturri"
 __email__ = "daniele.inturri@stud.tu-darmstadt.de"
-__version__ = "0.2.2"
+__version__ = "0.2.3"
 
 __all__ = [
     "export_dymola_model",
