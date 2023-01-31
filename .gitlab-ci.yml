@@ -1,7 +1,14 @@
-include:
-  - remote: 'https://gitlab.com/yesolutions/gitlab-ci-templates/raw/main/templates/pre-commit-autofix.yaml'
+# include:
+#   - remote: 'https://gitlab.com/yesolutions/gitlab-ci-templates/raw/main/templates/pre-commit-autofix.yaml'
 
 image: python:3.9.14-bullseye
+
+variables:
+  PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
+
+cache:
+  paths:
+    - .cache/pip
 
 stages:
   - Static Analysis
@@ -30,13 +37,11 @@ type_checking:
 test:
   stage: Test
   script:
-    - pytest --cov=src/sofirpy --cov-report xml
-  coverage: '/(?i)total.*? (100(?:\.0+)?\%|[1-9]?\d(?:\.\d+)?\%)$/'
+    - pytest --junitxml=report.xml
   artifacts:
+    when: always
     reports:
-      coverage_report:
-        coverage_format: cobertura
-        path: coverage.xml
+      junit: report.xml
 doc:
   stage: Documentation
   script:
