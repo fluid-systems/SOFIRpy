@@ -37,9 +37,7 @@ type_checking:
 test:
   stage: Test
   script:
-    - pytest --junitxml=report.xml
-    - coverage report
-    - coverage xml
+    - pytest --cov=src/ tests/ --cov-report xml --junitxml=report.xml
   coverage: '/(?i)total.*? (100(?:\.0+)?\%|[1-9]?\d(?:\.\d+)?\%)$/'
   artifacts:
     reports:
