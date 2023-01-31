@@ -1,7 +1,7 @@
 Release notes
 =============
 
-v0.2.0
+v0.2.1
 ------
 .. include:: change_log/v0.2.0.rst
 
