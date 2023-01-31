@@ -50,7 +50,7 @@ release:
       fi
     - pip install build twine
     - python -m build
-    - echo ${TWINE_PASSWORD}
+    - echo ${TWINE_USERNAME}
     - TWINE_PASSWORD=${TWINE_PASSWORD} TWINE_USERNAME=${TWINE_USERNAME} twine upload --repository testpypi dist/*
   # release:
   #   tag_name: $CI_COMMIT_TAG
