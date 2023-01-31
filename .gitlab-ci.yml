@@ -30,8 +30,13 @@ type_checking:
 test:
   stage: Test
   script:
-    - pytest tests/
-
+    - pytest --cov=src/sofirpy --cov-report xml
+  coverage: '/(?i)total.*? (100(?:\.0+)?\%|[1-9]?\d(?:\.\d+)?\%)$/'
+  artifacts:
+    reports:
+      coverage_report:
+        coverage_format: cobertura
+        path: coverage.xml
 doc:
   stage: Documentation
   script:
