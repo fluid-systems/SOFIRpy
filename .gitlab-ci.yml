@@ -37,11 +37,16 @@ type_checking:
 test:
   stage: Test
   script:
-    - pytest --junitxml=report.xml
+    - pytest --junitxml=report.xml --cov=src/sofirpy --cov-report xml
+  coverage: '/(?i)total.*? (100(?:\.0+)?\%|[1-9]?\d(?:\.\d+)?\%)$/'
   artifacts:
-    when: always
     reports:
       junit: report.xml
+      coverage_report:
+        coverage_format: cobertura
+        path: coverage.xml
+    when: always
+      
 doc:
   stage: Documentation
   script:
