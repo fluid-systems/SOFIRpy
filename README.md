@@ -1,7 +1,7 @@
  # SOFIRpy
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
-![coverage](https://git.rwth-aachen.de/sofirpy/sofirpy/development/coverage.svg?job=coverage)
+![coverage](https://git.rwth-aachen.de/sofirpy/sofirpy/badges/development/coverage.svg?job=test)
 [![Documentation Status](https://readthedocs.org/projects/sofirpy/badge/?version=latest)](https://sofirpy.readthedocs.io/en/latest/?badge=latest)
 
 Co-**S**imulation **O**f **F**unctional Mock-up Units (FMU) with **I**ntegrated
