@@ -16,25 +16,29 @@ stages:
   - Documentation
   - Release
 
-before_script:
-  - python --version
-  - pip install --upgrade pip setuptools
-  - pip install virtualenv
-  - virtualenv venv
-  - source venv/bin/activate
-  - pip install -e ".[test, doc, dev]"
+.venv_setup:
+  before_script:
+    - python --version
+    - pip install --upgrade pip setuptools
+    - pip install virtualenv
+    - virtualenv venv
+    - source venv/bin/activate
+    - pip install -e ".[test, doc, dev]"
 
 .linting:
+  extends: .venv_setup
   stage: Static Analysis
   script:
     - pylint src/sofirpy
 
 .type_checking:
+  extends: .venv_setup
   stage: Static Analysis
   script:
     - mypy src/sofirpy
 
 .test:
+  extends: .venv_setup
   stage: Test
   script:
     - pytest --cov=src/ tests/ --junitxml=report.xml
@@ -45,12 +49,14 @@ before_script:
     when: always
 
 .doc:
+  extends: .venv_setup
   stage: Documentation
   script:
     - cd docs/
     - make html
 
 .upload:
+  extends: .venv_setup
   stage: Release
   rules:
     - if: $CI_COMMIT_TAG
