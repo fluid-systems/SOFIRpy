@@ -24,12 +24,12 @@ before_script:
   - source venv/bin/activate
   - pip install -e ".[test, doc, dev]"
 
-linting:
+.linting:
   stage: Static Analysis
   script:
     - pylint src/sofirpy
 
-type_checking:
+.type_checking:
   stage: Static Analysis
   script:
     - mypy src/sofirpy
@@ -44,7 +44,7 @@ test:
       junit: report.xml
     when: always
 
-doc:
+.doc:
   stage: Documentation
   script:
     - cd docs/
