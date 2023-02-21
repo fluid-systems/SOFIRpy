@@ -346,28 +346,37 @@ class HDF5:
         hdf5_object: Union[h5py.Group, h5py.Dataset],
         mode: Optional[str] = None,
     ) -> dict[str, Any]:
-        """Recursive function to achieve the following. If the path to a
-        dataset is "group1/subgroup1/data" it will convert this path into a
-        structured dictionary --> {"group1": {"subgroup1": {"data": <data>}}}.
+        """Function that calls itself recursively to achieve the following.
+        If the path to a dataset is "group1/subgroup1/data" it will convert this path
+        into a structured dictionary --> {"group1": {"subgroup1": {"data": <data>}}}.
         If mode is set to "full", the whole dataset is stored at <data>, if it
         is set to "short" only a description of the data is stored.
         """
         if "/" in name:
             split_name = name.split("/", 1)
-            base_name = split_name[0]
-            ext_name = split_name[1]
-            _dict[base_name] = self._place(
-                ext_name, _dict[base_name], hdf5_object, mode
+            base_name, ext_name = split_name
+            _dict[base_name]["content"] = self._place(
+                ext_name, _dict[base_name]["content"], hdf5_object, mode
             )
         else:
             if name not in _dict:
                 value: Union[None, str, dict[str, Any]] = {}
-                if isinstance(hdf5_object, h5py.Dataset):
+                if isinstance(hdf5_object, h5py.Group):
+                    _dict[name] = {
+                        "type": "group",
+                        "attributes": dict(hdf5_object.attrs),
+                        "content": {}
+                        }
+                else:
                     if mode == "full":
                         value = hdf5_object[()]
                     elif mode == "short":
                         value = str(hdf5_object)
                     else:
                         value = None
-                _dict[name] = value
+                    _dict[name] = {
+                        "type": "dataset",
+                        "attributes": dict(hdf5_object.attrs),
+                        "content": value
+                        }
         return _dict
