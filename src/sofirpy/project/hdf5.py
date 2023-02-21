@@ -58,7 +58,9 @@ class HDF5:
 
         self._hdf5_path = _hdf5_path
 
-    def create_group(self, group_path: str) -> None:
+    def create_group(
+        self, group_path: str, attributes: Optional[dict[str, Any]] = None
+    ) -> None:
         """Creates a group in the hdf5 file.
 
         Args:
@@ -80,22 +82,25 @@ class HDF5:
         """
         with h5py.File(str(self.hdf5_path), "a") as hdf5:
             if group_path in hdf5:
-                raise ValueError(f"Group {group_path} already exists in hdf5.")
-            hdf5.create_group(group_path)
+                raise ValueError(f"Group '{group_path}' already exists in hdf5.")
+            group = hdf5.create_group(group_path)
+            if attributes is not None:
+                for name, attr in attributes.items():
+                    group.attrs[name] = attr
 
     def store_data(
         self,
-        data_name: str,
         data: Any,
-        group_path: str,
+        data_name: str,
+        group_path: Optional[str] = None,
         attributes: Optional[dict[str, Any]] = None,
     ) -> None:
         """Stores data in a hdf5 group. If the group doesn't exist it will be created.
 
         Args:
-            data_name (str): Name of the data.
             data (Any): Data that should be stored.
-            group_path (str): Path to the hdf5 group.
+            data_name (str): Name of the data.
+            group_path (Optional[str], optional): Path to the hdf5 group.
             attributes (Optional[dict[str, Any]], optional): Data attributes dictionary
                 with attribute names as keys and the attributes as values.
                 Defaults to None.
@@ -104,15 +109,17 @@ class HDF5:
             ValueError: If data path already exists.
         """
         with h5py.File(str(self.hdf5_path), "a") as hdf5:
-            if group_path:
+            if (
+                not group_path
+            ):  # if group path is empty, the data will be stored at the top level
+                group = hdf5
+                data_path = data_name
+            else:
                 if group_path not in hdf5:
                     group = hdf5.create_group(group_path)
                 else:
                     group = hdf5[group_path]
                 data_path = f"{group_path}/{data_name}"
-            else:  # if group path is empty, the data will be stored in the top level
-                group = hdf5
-                data_path = data_name
             if data_path in hdf5:
                 overwrite = utils.get_user_input_for_overwriting(
                     data_path, "hdf5 dataset at"
@@ -128,31 +135,33 @@ class HDF5:
                 for name, attr in attributes.items():
                     dset.attrs[name] = attr
 
-    def append_attributes(self, path: str, attributes: dict[str, Any]) -> None:
+    def append_attributes(
+        self, attributes: dict[str, Any], path: Optional[str] = None
+    ) -> None:
         """Append attributes to a hdf5 Dataset or Group.
 
         Args:
-            path (str): hdf5 path to the dataset or group.
             attributes (dict[str, Any]): Attributes dictionary with attribute
                 names as keys and the attributes as values
+            path (Optional[str], optional): hdf5 path to the dataset or group.
         """
         with h5py.File(str(self.hdf5_path), "a") as hdf5:
-            dataset = hdf5[path]
+            hdf5_object: Union[h5py.Group, h5py.Dataset] = hdf5[path] if path else hdf5
             for name, attr in attributes.items():
-                dataset.attrs[name] = attr
+                hdf5_object.attrs[name] = attr
 
-    def delete_attribute(self, path: str, attribute_name: str) -> None:
+    def delete_attribute(self, attribute_name: str, path: Optional[str] = None) -> None:
         """Deletes a attribute of a hdf5 Dataset or Group.
 
         Args:
-            path (str): hdf5 path to the dataset or group.
+            path (Optional[str], optional): hdf5 path to the dataset or group.
             attribute_name (str): Name of the attribute.
 
         Raises:
             KeyError: If the attribute does not exist.
         """
         with h5py.File(str(self.hdf5_path), "a") as hdf5:
-            hdf5_object: Union[h5py.Group, h5py.Dataset] = hdf5[path]
+            hdf5_object: Union[h5py.Group, h5py.Dataset] = hdf5[path] if path else hdf5
             if attribute_name not in hdf5_object.attrs.keys():
                 raise KeyError(
                     f"Attribute with name '{attribute_name}' "
@@ -160,7 +169,7 @@ class HDF5:
                 )
             del hdf5_object.attrs[attribute_name]
 
-    def read_attributes(self, path: Optional[str]) -> dict[str, Any]:
+    def read_attributes(self, path: Optional[str] = None) -> dict[str, Any]:
         """Reads the attributes of a dataset or group.
 
         Args:
@@ -171,20 +180,20 @@ class HDF5:
             dict[str, Any]: Attributes of the given hdf5 group or dataset.
         """
         with h5py.File(str(self.hdf5_path), "a") as hdf5:
-
-            hdf5_object: Union[h5py.Group, h5py.Dataset] = (
-                hdf5.get(path) if path else hdf5
-            )
+            hdf5_object: Union[h5py.Group, h5py.Dataset] = hdf5[path] if path else hdf5
             return dict(hdf5_object.attrs)
 
     def read_data(
-        self, data_name: str, group_path: str, get_attributes: bool = False
+        self,
+        data_name: str,
+        group_path: Optional[str] = None,
+        get_attributes: bool = False,
     ) -> Union[Any, tuple[Any, dict[str, Any]]]:
         """Reads the data of at a given data path.
 
         Args:
             data_name (str): Name of the data.
-            group_path (str): Path to the hdf5 group.
+            group_path (Optional[str], optional): Path to the hdf5 group.
             get_attributes (bool, optional): If True attributes will
                 be returned as well. Defaults to False.
 
@@ -213,6 +222,44 @@ class HDF5:
 
         return data
 
+    def delete_group(self, group_path: str) -> None:
+        """Deletes hdf5 group.
+
+        Args:
+            group_path (str): Path to the hdf5 group.
+
+        Raises:
+            KeyError: If the hdf5 path doesn't exists.
+            ValueError: If the group_path does not lead to hdf5 Group.
+        """
+        with h5py.File(str(self.hdf5_path), "a") as hdf5:
+            group: h5py.Group = hdf5[group_path] if group_path else hdf5
+            if not isinstance(group, h5py.Group):
+                raise ValueError(f"'{group_path}' does not lead to a hdf5 Group.")
+            del hdf5[group_path]
+
+    def delete_data(self, data_name: str, group_path: Optional[str] = None) -> None:
+        """Deletes a hdf5 Dataset.
+
+        Args:
+            group_path (Optional[str], optional): Path to the hdf5 group the data is in.
+            data_name (str): Name of the data.
+
+        Raises:
+            KeyError: If the hdf5 path to the data doesn't exists.
+            ValueError: If the hdf5 path to the data does not lead to hdf5
+                Dataset.
+        """
+        with h5py.File(str(self.hdf5_path), "a") as hdf5:
+            if group_path:
+                data_path = f"{group_path}/{data_name}"
+            else:
+                data_path = data_name
+            data_object: h5py.Dataset = hdf5[data_path]
+            if not isinstance(data_object, h5py.Dataset):
+                raise ValueError(f"'{data_path}' does not lead to a dataset.")
+            del hdf5[data_path]
+
     def read_entire_group_data(
         self, group_path: Optional[str] = None
     ) -> dict[str, Any]:
@@ -240,55 +287,12 @@ class HDF5:
             self._place(name, datasets, hdf5_object, mode="full")
 
         with h5py.File(str(self.hdf5_path), "a") as hdf5:
-            if group_path is None:
-                group = hdf5
-            else:
-                group = hdf5.get(group_path)
+            group: h5py.Dataset = hdf5[group_path] if group_path else hdf5
             if not isinstance(group, h5py.Group):
                 raise ValueError(f"'{group_path}' does not lead to a hdf5 Group.")
             group.visititems(append_dataset)
 
         return datasets
-
-    def delete_group(self, group_path: str) -> None:
-        """Deletes hdf5 group.
-
-        Args:
-            group_path (str): Path to the hdf5 group.
-
-        Raises:
-            KeyError: If the hdf5 path doesn't exists.
-            ValueError: If the group_path does not lead to hdf5 Group.
-        """
-        with h5py.File(str(self.hdf5_path), "a") as hdf5:
-            group = hdf5.get(group_path)
-            if not group:
-                raise KeyError(f"'{group_path}' does not exist in hdf5.")
-            if not isinstance(group, h5py.Group):
-                raise ValueError(f"'{group_path}' does not lead to a hdf5 Group.")
-            del hdf5[group_path]
-
-    def delete_data(self, group_path: Optional[str], data_name: str) -> None:
-        """Deletes a hdf5 Dataset.
-
-        Args:
-            group_path (Optional[str]): Path to the hdf5 group the data is in.
-            data_name (str): Name of the data.
-
-        Raises:
-            KeyError: If the hdf5 path to the data doesn't exists.
-            ValueError: If the hdf5 path to the data does not lead to hdf5
-                Dataset.
-        """
-        with h5py.File(str(self.hdf5_path), "a") as hdf5:
-            if not group_path:
-                group_path = ""
-            path = f"{group_path}/{data_name}"
-            if not hdf5.get(path):
-                raise KeyError(f"'{path}' does not exist in hdf5.")
-            if not isinstance(hdf5.get(path), h5py.Dataset):
-                raise ValueError(f"'{path}' does not lead to a dataset.")
-            del hdf5[path]
 
     def read_hdf5_structure(
         self, group_path: Optional[str] = None
@@ -338,6 +342,39 @@ class HDF5:
             if hdf5.get(path) is None:
                 return False
         return True
+
+    def _get_group_or_dataset_names(
+        self, group_path: Optional[str], obj: Union[h5py.Group, h5py.Dataset]
+    ) -> list[str]:
+        with h5py.File(str(self.hdf5_path), "a") as hdf5:
+            group: h5py.Group = hdf5[group_path] if group_path else hdf5
+            if not isinstance(group, h5py.Group):
+                raise ValueError(f"'{group_path}' does not lead to a hdf5 Group.")
+            return [name for name in group.keys() if isinstance(group[name], obj)]
+
+    def get_group_names(self, group_path: Optional[str] = None) -> list[str]:
+        """Get all group names inside a group:
+
+        Args:
+            group_path (Optional[str], optional): Path to a hdf5 group.
+                Defaults to None.
+
+        Returns:
+            list[str]: List group names inside the given hdf5 group.
+        """
+        return self._get_group_or_dataset_names(group_path, h5py.Group)
+
+    def get_dataset_names(self, group_path: Optional[str] = None) -> list[str]:
+        """Get all dataset names inside a group:
+
+        Args:
+            group_path (Optional[str], optional): Path to a hdf5 group.
+                Defaults to None.
+
+        Returns:
+            list[str]: List dataset names inside the given hdf5 group.
+        """
+        return self._get_group_or_dataset_names(group_path, h5py.Dataset)
 
     def _place(
         self,
