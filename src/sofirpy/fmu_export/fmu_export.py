@@ -94,4 +94,4 @@ class FmuExport:
 
 
 class FmuExportError(Exception):
-    pass
+    """Exception for failed fmu export."""

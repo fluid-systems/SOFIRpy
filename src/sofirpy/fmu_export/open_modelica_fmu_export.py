@@ -1,7 +1,7 @@
 """This module allows to export a OpenModelica model as a fmu."""
 
 from pathlib import Path
-from typing import Optional, Union
+from typing import Union
 
 from OMPython import ModelicaSystem
 
