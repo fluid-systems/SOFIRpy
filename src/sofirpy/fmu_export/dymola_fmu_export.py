@@ -7,8 +7,6 @@ from html import unescape
 from pathlib import Path
 from typing import Optional, Union
 
-import fmpy
-
 from sofirpy import utils
 from sofirpy.fmu_export.fmu_export import FmuExport, FmuExportError
 
