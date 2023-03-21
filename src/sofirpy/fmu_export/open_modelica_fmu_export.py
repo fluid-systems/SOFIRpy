@@ -6,11 +6,71 @@ from typing import Optional, Union
 from OMPython import ModelicaSystem
 
 from sofirpy import utils
-from sofirpy.fmu_export.fmu_export import FmuExport
+from sofirpy.fmu_export.fmu_export import FmuExport, FmuExportError
 
 
 class OpenModelicaFmuExport(FmuExport):
     """Object that performs the OpenModelica fmu export"""
+
+    files_to_delete = [
+        ".c",
+        ".exe",
+        ".libs",
+        ".log",
+        ".makefile",
+        ".o",
+        "_01exo.c",
+        "_01exo.o",
+        "_02nls.c",
+        "_02nls.o",
+        "_03lsy.c",
+        "_03lsy.o",
+        "_04set.c",
+        "_04set.o",
+        "_05evt.c",
+        "_05evt.o",
+        "_06inz.c",
+        "_06inz.o",
+        "_07dly.c",
+        "_07dly.o",
+        "_08bnd.c",
+        "_08bnd.o",
+        "_09alg.c",
+        "_09alg.o",
+        "_10asr.c",
+        "_10asr.o",
+        "_11mix.c",
+        "_11mix.h",
+        "_11mix.o",
+        "_12jac.c",
+        "_12jac.h",
+        "_12jac.o",
+        "_13opt.c",
+        "_13opt.h",
+        "_13opt.o",
+        "_14lnz.c",
+        "_14lnz.o",
+        "_15syn.c",
+        "_15syn.o",
+        "_16dae.c",
+        "_16dae.h",
+        "_16dae.o",
+        "_17inl.c",
+        "_17inl.o",
+        "_functions.c",
+        "_functions.h",
+        "_functions.o",
+        "_includes.h",
+        "_info.json",
+        "_init.xml",
+        "_literals.h",
+        "_model.h",
+        "_records.c",
+        "_records.o",
+        "_FMU.libs",
+        "_FMU.log",
+        "_FMU.makefile",
+    ]
 
     def __init__(self, model_path: Path, model_name: str) -> None:
         """Initialize the OpenModelicaFmuExport object.
@@ -27,68 +87,11 @@ class OpenModelicaFmuExport(FmuExport):
         self.model_name = model_name
 
         files_to_delete = [
-            f"{self.model_name}.c",
-            f"{self.model_name}.exe",
-            f"{self.model_name}.libs",
-            f"{self.model_name}.log",
-            f"{self.model_name}.makefile",
-            f"{self.model_name}.o",
-            f"{self.model_name}_01exo.c",
-            f"{self.model_name}_01exo.o",
-            f"{self.model_name}_02nls.c",
-            f"{self.model_name}_02nls.o",
-            f"{self.model_name}_03lsy.c",
-            f"{self.model_name}_03lsy.o",
-            f"{self.model_name}_04set.c",
-            f"{self.model_name}_04set.o",
-            f"{self.model_name}_05evt.c",
-            f"{self.model_name}_05evt.o",
-            f"{self.model_name}_06inz.c",
-            f"{self.model_name}_06inz.o",
-            f"{self.model_name}_07dly.c",
-            f"{self.model_name}_07dly.o",
-            f"{self.model_name}_08bnd.c",
-            f"{self.model_name}_08bnd.o",
-            f"{self.model_name}_09alg.c",
-            f"{self.model_name}_09alg.o",
-            f"{self.model_name}_10asr.c",
-            f"{self.model_name}_10asr.o",
-            f"{self.model_name}_11mix.c",
-            f"{self.model_name}_11mix.h",
-            f"{self.model_name}_11mix.o",
-            f"{self.model_name}_12jac.c",
-            f"{self.model_name}_12jac.h",
-            f"{self.model_name}_12jac.o",
-            f"{self.model_name}_13opt.c",
-            f"{self.model_name}_13opt.h",
-            f"{self.model_name}_13opt.o",
-            f"{self.model_name}_14lnz.c",
-            f"{self.model_name}_14lnz.o",
-            f"{self.model_name}_15syn.c",
-            f"{self.model_name}_15syn.o",
-            f"{self.model_name}_16dae.c",
-            f"{self.model_name}_16dae.h",
-            f"{self.model_name}_16dae.o",
-            f"{self.model_name}_17inl.c",
-            f"{self.model_name}_17inl.o",
-            f"{self.model_name}_functions.c",
-            f"{self.model_name}_functions.h",
-            f"{self.model_name}_functions.o",
-            f"{self.model_name}_includes.h",
-            f"{self.model_name}_info.json",
-            f"{self.model_name}_init.xml",
-            f"{self.model_name}_literals.h",
-            f"{self.model_name}_model.h",
-            f"{self.model_name}_records.c",
-            f"{self.model_name}_records.o",
-            f"{self.model_name}_FMU.libs",
-            f"{self.model_name}_FMU.log",
-            f"{self.model_name}_FMU.makefile",
+            f"{self.model_name}{file_name}" for file_name in self.files_to_delete
         ]
-
-        self.paths_to_delete = list(
-            map(lambda file_name: self._dump_directory / file_name, files_to_delete)
-        )
+        self.paths_to_delete = [
+            self._dump_directory / file_name for file_name in files_to_delete
+        ]
 
     def export_fmu(self) -> None:
         """Exports the model as an fmu."""
@@ -101,7 +104,7 @@ class OpenModelicaFmuExport(FmuExport):
 
 def export_open_modelica_model(
     model_path: Union[Path, str], model_name: str, output_directory: Union[Path, str]
-) -> Optional[OpenModelicaFmuExport]:
+) -> Path:
     """Exports a modelica model as an fmu and moves the fmu to the output directory
 
     Args:
@@ -111,7 +114,7 @@ def export_open_modelica_model(
         output_directory (Union[Path, str]): Path to the output directory.
 
     Returns:
-        Optional[OpenModelicaFmuExport]: OpenModelicaFmuExport object
+        Path: Path to the exported FMU.
     """
 
     _model_path = utils.convert_str_to_path(model_path, "model_path")
@@ -124,11 +127,9 @@ def export_open_modelica_model(
         # delete unnecessary files
         utils.delete_paths(om_fmu_export.paths_to_delete)
 
-    if om_fmu_export.fmu_path.exists():
-        print("The FMU Export was successful.")
-        om_fmu_export.move_fmu(_output_directory)
-        return om_fmu_export
+    if not om_fmu_export.fmu_path.exists():
+        raise FmuExportError("FMU export was not successful.")
 
-    print("The FMU Export was not successful")
+    om_fmu_export.move_fmu(_output_directory)
 
-    return None
+    return om_fmu_export.fmu_path

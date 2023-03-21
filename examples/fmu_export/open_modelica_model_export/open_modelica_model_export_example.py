@@ -7,4 +7,4 @@ model_path = dir_path / "DC_Motor.mo"
 model_name = "DC_Motor"
 output_directory = dir_path
 
-export_open_modelica_model(model_path, model_name, dir_path)
+fmu_path = export_open_modelica_model(model_path, model_name, dir_path)

@@ -91,3 +91,7 @@ class FmuExport:
         new_fmu_path = target_directory / self.fmu_path.name
         utils.move_file(self.fmu_path, new_fmu_path)
         self._fmu_path = new_fmu_path
+
+
+class FmuExportError(Exception):
+    pass

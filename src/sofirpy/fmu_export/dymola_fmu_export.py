@@ -10,7 +10,7 @@ from typing import Optional, Union
 import fmpy
 
 from sofirpy import utils
-from sofirpy.fmu_export.fmu_export import FmuExport
+from sofirpy.fmu_export.fmu_export import FmuExport, FmuExportError
 
 ParameterValue = Union[str, int, float, list[Union[int, float, str, bool]], bool]
 
@@ -88,28 +88,25 @@ class DymolaFmuExport(FmuExport):
             self.model_directory / f"errors_{self.model_name}_{time_stamp}.txt"
         )
 
-        if not parameters:
+        if parameters is None:
             parameters = {}
         self.parameters = parameters
 
-        if not model_modifiers:
+        if model_modifiers is None:
             model_modifiers = []
         self.model_modifiers = model_modifiers
 
-        if not packages:
+        if packages is None:
             packages = []
 
         # converts paths to strings if paths are given as Path object
-        self._packages = list(
-            map(lambda path: utils.convert_str_to_path(path, "package_path"), packages)
-        )
+        self._packages = [
+            utils.convert_str_to_path(path, "package_path") for path in packages
+        ]
 
-        self.paths_to_delete = list(
-            map(
-                lambda name: self.model_directory / name,
-                DymolaFmuExport.files_to_delete,
-            )
-        )
+        self.paths_to_delete = [
+            self.model_directory / name for name in self.files_to_delete
+        ]
 
     @property
     def dymola_exe_path(self) -> Path:
@@ -131,16 +128,10 @@ class DymolaFmuExport(FmuExport):
             TypeError: dymola_exe_path type was not 'Path'
             ValueError: File at dymola_exe_path doesn't exist
         """
-        if not isinstance(dymola_exe_path, (Path, str)):
-            raise TypeError(
-                f"'dymola_exe_path' is {type(dymola_exe_path)};  expected Path, str"
-            )
+        _dymola_exe_path = utils.convert_str_to_path(dymola_exe_path, "dymola_exe_path")
 
-        if isinstance(dymola_exe_path, str):
-            dymola_exe_path = Path(dymola_exe_path)
-
-        if not dymola_exe_path.exists():
-            raise ValueError(f"{dymola_exe_path} does not exit")
+        if not _dymola_exe_path.exists():
+            raise ValueError(f"{_dymola_exe_path} does not exit")
         self._dymola_exe_path = dymola_exe_path
 
     @property
@@ -162,9 +153,7 @@ class DymolaFmuExport(FmuExport):
         Raises:
             TypeError: type of model_name was invalid
         """
-        if not isinstance(model_name, str):
-            raise TypeError(f"'model_name' is {type(model_name)};  expected str")
-
+        utils.check_type(model_name, "model_name", str)
         self._model_name = model_name
 
     @property
@@ -191,18 +180,14 @@ class DymolaFmuExport(FmuExport):
             TypeError: type of value in dictionary was not
                 'str', 'int', 'bool', 'float', 'list'
         """
-        if not isinstance(parameters, dict):
-            raise TypeError(f"'parameters' is {type(parameters)};  expected dict")
+        utils.check_type(parameters, "parameters", dict)
 
         self._parameters = {}
         for com_sym, value in parameters.items():
-            if not isinstance(com_sym, str):
-                raise TypeError(f"key of parameters is {type(com_sym)}; expected str")
-            if not isinstance(value, (str, int, bool, float, list)):
-                raise TypeError(
-                    f"value of parameters is {type(value)}; "
-                    "expected str, int, float, bool or list"
-                )
+            utils.check_type(com_sym, "key of parameters", str)
+            utils.check_type(
+                value, "value of parameters", (str, int, bool, float, list)
+            )
             self._parameters[com_sym] = value
 
     @property
@@ -225,16 +210,9 @@ class DymolaFmuExport(FmuExport):
             TypeError: 'model_modifiers' type was not 'list'
             TypeError: type of element in 'model_modifiers' was not 'str'
         """
-        if not isinstance(model_modifiers, list):
-            raise TypeError(
-                f"'model_modifier' is {type(model_modifiers)}; expected list"
-            )
-
+        utils.check_type(model_modifiers, "model_modifier", list)
         for modifier in model_modifiers:
-            if not isinstance(modifier, str):
-                raise TypeError(
-                    f"element in 'model_modifier' is {type(modifier)}; expected str"
-                )
+            utils.check_type(modifier, "element in 'model_modifier'", str)
 
         self._model_modifiers = list(
             map(lambda elm: re.sub(" +", " ", elm.strip()), model_modifiers)
@@ -242,8 +220,8 @@ class DymolaFmuExport(FmuExport):
 
     def export_fmu(
         self,
-        export_simulator_log: Optional[bool] = True,
-        export_error_log: Optional[bool] = True,
+        export_simulator_log: bool = True,
+        export_error_log: bool = True,
     ) -> None:
         """Execute commands to export a fmu.
 
@@ -263,8 +241,8 @@ class DymolaFmuExport(FmuExport):
 
     def write_mos_script(
         self,
-        export_simulator_log: Optional[bool] = True,
-        export_error_log: Optional[bool] = True,
+        export_simulator_log: bool = True,
+        export_error_log: bool = True,
     ) -> str:
         """Write the content for the mos file/script.
 
@@ -334,7 +312,6 @@ class DymolaFmuExport(FmuExport):
         """
 
         def convert_to_modelica_value(value: ParameterValue) -> str:
-
             if isinstance(value, str):
                 return value
             if isinstance(value, bool):
@@ -389,21 +366,8 @@ def export_dymola_model(
     packages: Optional[list[Union[str, Path]]] = None,
     keep_log: bool = True,
     keep_mos: bool = True,
-) -> Optional[DymolaFmuExport]:
+) -> Path:
     """Export a dymola model as a fmu.
-
-    The following steps are performed:
-    1. Initializes the DymolaFmuExport object.
-    2. Tries to export a dymola model as an fmu.
-    3. When exporting, multiple unnecessary files will be generated. These
-    files will be deleted.
-    4. If the export was successful, all generated files that are to be kept
-    are moved to the specified output directory.
-    5. If the export was not successful the model is exported without imported
-    parameters.
-    6. If the export without imported parameters was successful a list of
-    parameters is generated that were tried to be imported but are not part of
-    the model.
 
     Args:
         dymola_exe_path (Union[Path, str]):  Path to the dymola executable.
@@ -436,7 +400,7 @@ def export_dymola_model(
             else it will be deleted. Defaults to True.
 
     Returns:
-        Optional[DymolaFmuExport]: DymolaFmuExport object.
+        Path: Path to the exported FMU.
     """
 
     _dymola_exe_path = utils.convert_str_to_path(dymola_exe_path, "dymola_exe_path")
@@ -456,82 +420,18 @@ def export_dymola_model(
     if not keep_mos:
         dymola_fmu_export.mos_file_path.unlink()
 
-    if dymola_fmu_export.fmu_path.exists():
-        print("The FMU Export was successful.")
+    if not dymola_fmu_export.fmu_path.exists():
+        with open(dymola_fmu_export.error_log_path, "r", encoding="utf-8") as error_log:
+            err = unescape(error_log.read())
         dymola_fmu_export.error_log_path.unlink()
-        dymola_fmu_export.move_fmu(_output_directory)
-        if keep_mos:
-            dymola_fmu_export.move_mos_script(_output_directory)
-        if keep_log:
-            dymola_fmu_export.move_log_file(_output_directory)
-        return dymola_fmu_export
+        raise FmuExportError(
+            f"Fmu export was not successful. \nDymola error message: {err} \n"
+        )
 
-    print("The FMU Export was not successful")
-    print("Dymola Error Message: ")
-    print("======================")
-    with open(dymola_fmu_export.error_log_path, "r", encoding="utf-8") as error_log:
-        print(unescape(error_log.read()))
-    print("======================")
     dymola_fmu_export.error_log_path.unlink()
-    if parameters:
-        print("Checking if added parameters exist in the model...")
-        print("Exporting model without parameters and model modifiers...")
-
-        dymola_fmu_export = DymolaFmuExport(_dymola_exe_path, _model_path, model_name)
-        dymola_fmu_export.export_fmu(export_simulator_log=False, export_error_log=False)
-        dymola_fmu_export.mos_file_path.unlink()
-        utils.delete_paths(dymola_fmu_export.paths_to_delete)
-        if dymola_fmu_export.fmu_path.exists():
-            print(
-                "FMU Export without added parameters "
-                "and model modifiers was successful."
-            )
-            parameters_in_model = read_model_parameters(dymola_fmu_export.fmu_path)
-            not_valid_parameters = check_not_valid_parameters(
-                list(parameters.keys()), parameters_in_model
-            )
-            print(f"Possible parameters that do not exist:\n{not_valid_parameters}")
-            dymola_fmu_export.fmu_path.unlink()
-        else:
-            print(
-                "FMU Export without added parameters and "
-                "model modifiers was not successful."
-            )
-
-    return None
-
-
-def read_model_parameters(fmu_path: Path) -> list[str]:
-    """Read the models parameters of the given fmu.
-
-    Args:
-        fmu_path (Path): Path to a fmu.
-
-    Returns:
-        list[str]: List of parameters is the model.
-    """
-    model_description: fmpy.model_description.ModelDescription = (
-        fmpy.read_model_description(fmu_path)
-    )
-
-    return [variable.name for variable in model_description.modelVariables]
-
-
-def check_not_valid_parameters(
-    imported_parameters: list[str], parameters_in_model: list[str]
-) -> list[str]:
-    """Return parameters that were tried to be imported but were not part of the model.
-
-    Args:
-        imported_parameters (list[str]): Parameter names that were imported.
-        parameters_in_model (list[str]): Parameters names in the model.
-
-    Returns:
-        list[str]: List of parameters names that are were tried to be imported
-        but were not part of the model
-    """
-    return [
-        parameter
-        for parameter in imported_parameters
-        if parameter not in parameters_in_model
-    ]
+    dymola_fmu_export.move_fmu(_output_directory)
+    if keep_mos:
+        dymola_fmu_export.move_mos_script(_output_directory)
+    if keep_log:
+        dymola_fmu_export.move_log_file(_output_directory)
+    return dymola_fmu_export.fmu_path
