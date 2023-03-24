@@ -1,13 +1,12 @@
 from sofirpy import SimulationEntity, store_input_arguments
-from sofirpy.project.serialize import HDF5Serialization
 
 
-class PID(SimulationEntity, HDF5Serialization):
+class PID(SimulationEntity):
     """Simple implementation of a discrete pid controller"""
 
     @store_input_arguments
     def __init__(
-        self, step_size, K_p=1, K_i=0, K_d=0, set_point=0, u_max=1000, u_min=-1000
+        self, step_size=1e-3, K_p=1, K_i=0, K_d=0, set_point=0, u_max=1000, u_min=-1000
     ):
 
         self.T_a = step_size
@@ -36,7 +35,6 @@ class PID(SimulationEntity, HDF5Serialization):
         self.parameters[input_name] = input_value
 
     def do_step(self, _):  # mandatory method
-
         self.compute_error()
         u = (
             self.parameters["u"]
@@ -67,3 +65,8 @@ class PID(SimulationEntity, HDF5Serialization):
 
         for name, value in start_values.items():
             self.parameters[name] = value
+
+
+PID.__module__ = "__main__"
+
+# %%
