@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from enum import Enum
+from numbers import Real
 from pathlib import Path
 from typing import Optional, TypedDict, Union
 
@@ -11,11 +12,35 @@ import numpy as np
 import numpy.typing as npt
 import pandas as pd
 from tqdm import tqdm
-from typing_extensions import NotRequired
 
 from sofirpy import utils
 from sofirpy.simulation.fmu import Fmu
 from sofirpy.simulation.simulation_entity import SimulationEntity, StartValue
+
+FmuPaths = dict[str, Union[str, Path]]
+ModelInstances = dict[str, SimulationEntity]
+
+
+class _Connection(TypedDict):
+    parameter_name: str
+    connect_to_system: str
+    connect_to_external_parameter: str
+
+
+class ConnectionKeys(Enum):
+    """Enum containing the keys that define a connection"""
+
+    INPUT_PARAMETER = "parameter_name"
+    CONNECTED_SYSTEM = "connect_to_system"
+    OUTPUT_PARAMETER = "connect_to_external_parameter"
+
+
+Connections = list[_Connection]
+ConnectionsConfig = dict[str, Connections]
+
+Units = dict[str, Optional[str]]
+StartValues = dict[str, dict[str, StartValue]]
+ParametersToLog = dict[str, list[str]]
 
 
 @dataclass(frozen=True)
@@ -96,7 +121,9 @@ class Simulation:
 
         1. A time array is created starting from 0 to the specified stop time. The
            intervals have the size of the step size. If the last element in the array
-           is greater than the stop time, it is deleted.
+           is greater than the stop time, it is deleted. Advancing in time this way,
+           leads to less numerical errors in comparison than using a while loop and
+           adding the step size in each iteration.
 
         2. The logging multiple is calculated from the logging step size. Since the
            logging step size needs to be a multiple of the step size, the logging
@@ -258,45 +285,15 @@ class Simulation:
         return units
 
 
-ConnectionInfo = dict[str, str]
-
-ConnectionInfos = list[ConnectionInfo]
-
-
-class FmuInfo(TypedDict):
-    """TypedDict for fmu_info."""
-
-    name: str
-    path: Union[str, Path]
-    connections: NotRequired[ConnectionInfos]
-
-
-class ModelInfo(TypedDict):
-    """TypedDict for model_info."""
-
-    name: str
-    connections: NotRequired[ConnectionInfos]
-
-
-FmuInfos = list[FmuInfo]
-ModelInfos = list[ModelInfo]
-SystemInfo = Union[ModelInfo, FmuInfo]
-SystemInfos = list[SystemInfo]
-
-Units = dict[str, Optional[str]]
-
-StartValues = dict[str, dict[str, StartValue]]
-
-
 def simulate(
-    stop_time: Union[float, int],
-    step_size: Union[float, int],
-    fmu_infos: Optional[FmuInfos] = None,
-    model_infos: Optional[ModelInfos] = None,
-    model_classes: Optional[dict[str, SimulationEntity]] = None,
+    stop_time: float,
+    step_size: float,
+    fmu_paths: Optional[FmuPaths] = None,
+    model_instances: Optional[ModelInstances] = None,
+    connections_config: Optional[ConnectionsConfig] = None,
     start_values: Optional[StartValues] = None,
-    parameters_to_log: Optional[dict[str, list[str]]] = None,
-    logging_step_size: Optional[Union[float, int]] = None,
+    parameters_to_log: Optional[ParametersToLog] = None,
+    logging_step_size: Optional[float] = None,
     get_units: bool = False,
 ) -> Union[pd.DataFrame, tuple[pd.DataFrame, Units]]:
     """Simulate fmus and models written in python.
@@ -305,83 +302,87 @@ def simulate(
     python model or fmu has to be simulated.
 
     Args:
-        stop_time (Union[float,int]): stop time for the simulation
-        step_size (Union[float, int]): step size for the simulation
-        fmu_infos (Optional[FmuInfos], optional):
-            Defines which fmus should be simulated and how they are connected
-            to other systems. It needs to have the following format:
+        stop_time (float): stop time for the simulation
+        step_size (float): step size for the simulation
+        fmu_paths (Optional[FmuPaths], optional):
+            Dictionary which defines which fmu should be simulated.
+            key -> name of the fmu; value -> path to the fmu
 
-            >>> fmu_infos = [
-            ... {"name": "<name of the fmu>",
-            ...  "path": "<path to the fmu>",
-            ...  "connections":
-            ...     [
-            ...     {
-            ...         "parameter_name":       "<name of the input"
-            ...                                 "parameter of the fmu>",
-            ...         "connect_to_system":    "<name of the system the input"
-            ...                                 "parameter should be connected to>",
-            ...         "connect_to_external_parameter":    "<name of the output"
-            ...                                             "parameter in the"
-            ...                                             "connected system the"
-            ...                                             "input parameter should"
-            ...                                             "be connected to>"
-            ...         },
-            ...         {
-            ...         "parameter_name":       "<name of the input"
-            ...                                 "parameter of the fmu>",
-            ...         "connect_to_system":    "<name of the system the input"
-            ...                                  "parameter should be connected to>",
-            ...         "connect_to_external_parameter":    "<name of the output"
-            ...                                             "parameter in the"
-            ...                                             "connected system the"
-            ...                                             "input parameter should"
-            ...                                             "be connected to>"
-            ...         }
-            ...     ]
-            ...     },
-            ... {"name": "<name of the fmu>",
-            ...  "path": "<path to the fmu>",
-            ...  "connections":
-            ...     [
-            ...     {
-            ...         "parameter_name":       "<name of the input"
-            ...                                 "parameter of the fmu>",
-            ...         "connect_to_system":    "<name of the system the input"
-            ...                                  "parameter should be connected to>",
-            ...         "connect_to_external_parameter":    "<name of the output"
-            ...                                             "parameter in the"
-            ...                                             "connected system the"
-            ...                                             "input parameter should"
-            ...                                             "be connected to>"
-            ...        }
+            >>> fmu_paths = {
+            ...    "<name of the fmu 1>": <Path to the fmu1>,
+            ...    "<name of the fmu 2>": <Path to the fmu2>,
             ... }
-            ... ]
 
             Note: The name of the fmus can be chosen arbitrarily, but each name
-            in 'fmu_infos' and 'model_infos' must occur only once.
+            in 'fmu_paths' and 'model_instances' must occur only once.
             Defaults to None.
-        model_infos (Optional[ModelInfos], optional):
-            Defines which python models should be simulated and how they are
-            connected to other systems. It needs to have the same format as
-            'fmu_infos' with the difference that
-            the key "path" is not part of the dictionaries.
+        model_instances (Optional[ModelInstances], optional):
+            Dictionary which defines which Python Models should be simulated.
+            key -> name of the model; value -> Instance of th model. The class that
+            defines the model must inherit from the abstract class SimulationEntity
+
+            >>> model_instances = {
+            ...    "<name of the model 1>": <Instance of the model1>
+            ...    "<name of the model 2>": <Instance of the model2>
+            ... }
+
             Note: The name of the models can be chosen arbitrarily, but each
-            name in 'fmu_infos' and 'model_infos' must occur only once.
+            name in 'fmu_paths' and 'model_instances' must occur only once.
             Defaults to None.
-        model_classes (Optional[dict[str, SimulationEntity]], optional): Dictionary
-            with the name of the python model as keys and a instance of the
-            model class as values. The name in the dictionary must be
-            chosen according to the names specified in 'model_infos'.
+        connections_config (Optional[ConnectionsConfig], optional):
+            Dictionary which defines how the inputs and outputs of the systems
+            (fmu or python model) are connected.
+            key -> name of the system; value -> list of connections
+
+            >>> connections_config = {
+            ...     "<name of the system 1>": [
+            ...         {
+            ...             "parameter_name":       "<name of the input"
+            ...                                     "parameter of the system>",
+            ...             "connect_to_system":    "<name of the system the input"
+            ...                                     "parameter should be connected to>",
+            ...             "connect_to_external_parameter":    "<name of the output"
+            ...                                                 "parameter in the"
+            ...                                                 "connected system the"
+            ...                                                 "input parameter should"
+            ...                                                 "be connected to>"
+            ...         },
+            ...         {
+            ...             "parameter_name":       "<name of the input"
+            ...                                     "parameter of the system>",
+            ...             "connect_to_system":    "<name of the system the input"
+            ...                                     "parameter should be connected to>",
+            ...             "connect_to_external_parameter":    "<name of the output"
+            ...                                                 "parameter in the"
+            ...                                                 "connected system the"
+            ...                                                 "input parameter should"
+            ...                                                 "be connected to>"
+            ...         }
+            ...     ],
+            ...     "<name of the system 2>": [
+            ...         {
+            ...             "parameter_name":       "<name of the input"
+            ...                                     "parameter of the system>",
+            ...             "connect_to_system":    "<name of the system the input"
+            ...                                     "parameter should be connected to>",
+            ...             "connect_to_external_parameter":    "<name of the output"
+            ...                                                 "parameter in the"
+            ...                                                 "connected system the"
+            ...                                                 "input parameter should"
+            ...                                                 "be connected to>"
+            ...         }
+            ...     ]
+            ... }
+
             Defaults to None.
-        start_values (Optional[StartValues], optional): Dictionary with start values for
-            the simulation. For Fmus the unit can also be specified as a string.
-            It has the following format:
+        start_values (Optional[StartValues], optional): Dictionary which defines start
+            values for the systems. For Fmus the unit can also be specified as a string.
+            key -> name of the system;
+            value -> dictionary (key -> name of the parameter; value -> start value)
 
             >>> start_values =
             ... {
-            ...     "<name of system 1 (corresponding to the names specified in"
-            ...     "'model_infos' or 'fmu_infos')>":
+            ...     "<name of system 1>":
             ...     {
             ...         "<name of parameter 1>": "<start value>",
             ...         "<name of parameter 2>", "(<start value>, unit e.g 'kg.m2')"
@@ -392,14 +393,15 @@ def simulate(
             ...         "<name of parameter 2>": "<start value>"
             ...     }
             ... }
+
+            Defaults to None.
         parameters_to_log (Optional[dict[str, list[str]]], optional):
             Dictionary that defines which parameters should be logged.
-            It needs to have the following format:
+            key -> name of the system; value -> list of parameters names to be logged
 
             >>> parameters_to_log =
             ... {
-            ...     "<name of system 1 (corresponding to the names specified in"
-            ...     "'model_infos' or 'fmu_infos')>":
+            ...     "<name of system 1>":
             ...     [
             ...         "<name of parameter 1>",
             ...         "<name of parameter 2>",
@@ -412,10 +414,10 @@ def simulate(
             ... }
 
             Defaults to None.
-        logging_step_size (Optional[Union[float, int]], optional): step_size
-            for logging. It must be a multiple of the chosen simulation 'step_size'.
+        logging_step_size (Optional[float], optional): step size
+            for logging. It must be a multiple of the chosen simulation step size.
             Example:
-            If the simulation 'step_size' is set to 1e-3 and 'logging_step_size'
+            If the simulation step size is set to 1e-3 and logging step size
             is set to 2e-3, every second time step is logged. Defaults to None.
         get_units (bool, optional): Determines whether the units of
             the logged parameter should be returned. Defaults to False.
@@ -438,9 +440,9 @@ def simulate(
     _validate_input(
         stop_time,
         step_size,
-        fmu_infos,
-        model_infos,
-        model_classes,
+        fmu_paths,
+        model_instances,
+        connections_config,
         parameters_to_log,
         logging_step_size,
         start_values,
@@ -452,30 +454,28 @@ def simulate(
     if logging_step_size is None:
         logging_step_size = step_size
 
-    logging_step_size = float(logging_step_size)
+    _logging_step_size = float(logging_step_size)
 
-    if fmu_infos is None:
-        fmu_infos = []
-    if model_infos is None:
-        model_infos = []
-    if model_classes is None:
-        model_classes = {}
+    if connections_config is None:
+        connections_config = {}
+    if fmu_paths is None:
+        fmu_paths = {}
+    if model_instances is None:
+        model_instances = {}
     if start_values is None:
         start_values = {}
 
     start_values = start_values.copy()  # copy so mutating doesn't affect passed dict
 
-    fmus = init_fmus(fmu_infos, step_size, start_values)
+    fmus = init_fmus(fmu_paths, step_size, start_values)
 
-    models = init_models(model_infos, model_classes, start_values)
+    models = init_models(model_instances, start_values)
 
-    systems = {**fmus, **models}
-
-    connections = init_connections([*fmu_infos, *model_infos])
+    connections = init_connections(connections_config)
     _parameters_to_log = init_parameter_list(parameters_to_log)
 
-    simulator = Simulation(systems, connections, _parameters_to_log)
-    results = simulator.simulate(stop_time, step_size, logging_step_size)
+    simulator = Simulation({**fmus, **models}, connections, _parameters_to_log)
+    results = simulator.simulate(stop_time, step_size, _logging_step_size)
 
     if get_units:
         units = simulator.get_units()
@@ -484,19 +484,8 @@ def simulate(
     return results
 
 
-class SystemInfoKeys(Enum):
-    """Enum containing the keys of fmu_info and model_info"""
-
-    SYSTEM_NAME = "name"
-    FMU_PATH = "path"
-    CONNECTIONS = "connections"
-    INPUT_PARAMETER = "parameter_name"
-    CONNECTED_SYSTEM = "connect_to_system"
-    OUTPUT_PARAMETER = "connect_to_external_parameter"
-
-
 def init_fmus(
-    fmu_infos: FmuInfos, step_size: float, start_values: StartValues
+    fmu_paths: FmuPaths, step_size: float, start_values: StartValues
 ) -> dict[str, System]:
     """Initialize all System object and stores them in a dictionary.
 
@@ -513,15 +502,11 @@ def init_fmus(
         step_size (float): step size of the simulation
 
     Returns:
-        dict[str, System]: Dictionary with system names as keys and the
-            corresponding System instance as values.
+        dict[str, System]: key -> fmu name; value -> System instance
     """
-    fmus = {}
-    for fmu_info in fmu_infos:
-        fmu_name: str = fmu_info[SystemInfoKeys.SYSTEM_NAME.value]
-        fmu_path: Path = utils.convert_str_to_path(
-            fmu_info[SystemInfoKeys.FMU_PATH.value], "fmu_path"
-        )
+    fmus: dict[str, System] = {}
+    for fmu_name, _fmu_path in fmu_paths.items():
+        fmu_path: Path = utils.convert_str_to_path(_fmu_path, "fmu_path")
         fmu = Fmu(fmu_path, fmu_name, step_size)
         _start_values = start_values.get(fmu_name) or {}
         fmu.initialize(start_values=_start_values)
@@ -533,8 +518,7 @@ def init_fmus(
 
 
 def init_models(
-    model_infos: ModelInfos,
-    model_classes: dict[str, SimulationEntity],
+    model_instances: ModelInstances,
     start_values: StartValues,
 ) -> dict[str, System]:
     """Initialize all System object and stores them in a dictionary.
@@ -552,24 +536,21 @@ def init_models(
         step_size (float): step size of the simulation
 
     Returns:
-        dict[str, System]: Dictionary with system names as keys and the
-            corresponding System instance as values.
+        dict[str, System]: key -> model name; value -> System instance
     """
 
-    models = {}
-    for model_info in model_infos:
-        model_name: str = model_info[SystemInfoKeys.SYSTEM_NAME.value]
-        model = model_classes[model_name]
+    models: dict[str, System] = {}
+    for model_name, model_instance in model_instances.items():
         _start_values = start_values.get(model_name) or {}
-        model.initialize(_start_values)
-        system = System(model, model_name)
+        model_instance.initialize(_start_values)
+        system = System(model_instance, model_name)
         models[model_name] = system
         print(f"Model '{model_name}' initialized.")
 
     return models
 
 
-def init_connections(system_infos: SystemInfos) -> list[Connection]:
+def init_connections(connections_config: ConnectionsConfig) -> list[Connection]:
     """Initialize all the connections.
 
     Args:
@@ -581,22 +562,19 @@ def init_connections(system_infos: SystemInfos) -> list[Connection]:
     """
     all_connections: list[Connection] = []
 
-    for system_info in system_infos:
-        if SystemInfoKeys.CONNECTIONS.value in system_info:
-            connections = system_info[SystemInfoKeys.CONNECTIONS.value]
-            this_system_name = system_info[SystemInfoKeys.SYSTEM_NAME.value]
-            for con in connections:
-                this_parameter_name = con[SystemInfoKeys.INPUT_PARAMETER.value]
-                this_connection_point = SystemParameter(
-                    this_system_name, this_parameter_name
-                )
-                other_system_name = con[SystemInfoKeys.CONNECTED_SYSTEM.value]
-                other_parameter_name = con[SystemInfoKeys.OUTPUT_PARAMETER.value]
-                other_connection_point = SystemParameter(
-                    other_system_name, other_parameter_name
-                )
-                connection = Connection(this_connection_point, other_connection_point)
-                all_connections.append(connection)
+    for this_system_name, connections in connections_config.items():
+        for con in connections:
+            this_parameter_name = con[ConnectionKeys.INPUT_PARAMETER.value]
+            this_connection_point = SystemParameter(
+                this_system_name, this_parameter_name
+            )
+            other_system_name = con[ConnectionKeys.CONNECTED_SYSTEM.value]
+            other_parameter_name = con[ConnectionKeys.OUTPUT_PARAMETER.value]
+            other_connection_point = SystemParameter(
+                other_system_name, other_parameter_name
+            )
+            connection = Connection(this_connection_point, other_connection_point)
+            all_connections.append(connection)
 
     return all_connections
 
@@ -628,18 +606,18 @@ def init_parameter_list(
 
 
 def _validate_input(
-    stop_time: Union[float, int],
-    step_size: Union[float, int],
-    fmu_infos: Optional[FmuInfos],
-    model_infos: Optional[ModelInfos],
-    model_classes: Optional[dict[str, SimulationEntity]],
+    stop_time: float,
+    step_size: float,
+    fmu_paths: Optional[FmuPaths],
+    model_instances: Optional[ModelInstances],
+    connections_config: Optional[ConnectionsConfig],
     parameters_to_log: Optional[dict[str, list[str]]],
     logging_step_size: Optional[float],
     start_values: Optional[StartValues],
 ) -> None:
 
-    utils.check_type(stop_time, "stop_time", (float, int))
-    utils.check_type(step_size, "step_size", (float, int))
+    utils.check_type(stop_time, "stop_time", Real)
+    utils.check_type(step_size, "step_size", Real)
 
     if stop_time <= 0:
         raise ValueError(f"'stop_time' is {stop_time}; expected > 0")
@@ -647,26 +625,21 @@ def _validate_input(
     if step_size <= 0 or step_size >= stop_time:
         raise ValueError(f"'step_size' is {step_size}; expected (0, {stop_time})")
 
-    if not fmu_infos and not model_infos:
+    if not fmu_paths and not model_instances:
         raise ValueError(
-            "'fmu_infos' and 'model_infos' are empty; "
+            "'fmu_paths' and 'model_instances' are empty; "
             "expected at least one to be not empty"
         )
 
-    fmu_names = _validate_fmu_infos(fmu_infos)
-    model_names = _validate_model_infos(model_infos)
+    fmu_names = _validate_fmu_paths(fmu_paths)
+    model_names = _validate_model_instances(model_instances)
 
     all_system_names = fmu_names + model_names
 
     if len(set(all_system_names)) < len(all_system_names):
         raise ValueError("Duplicate names in system infos.")
 
-    fmu_infos = fmu_infos or []
-    model_infos = model_infos or []
-
-    _validate_connection_infos([*fmu_infos, *model_infos], all_system_names)
-
-    _validate_model_classes(model_classes, model_names)
+    _validate_connection_config(connections_config, all_system_names)
 
     if parameters_to_log is not None:
         _validate_parameters_to_log(parameters_to_log, all_system_names)
@@ -678,109 +651,79 @@ def _validate_input(
         _validate_start_values(start_values, all_system_names)
 
 
-def _validate_fmu_infos(fmu_infos: Optional[FmuInfos]) -> list[str]:
+def _validate_fmu_paths(fmu_paths: Optional[FmuPaths]) -> list[str]:
 
-    if fmu_infos is None:
+    if fmu_paths is None:
         return []
 
-    utils.check_type(fmu_infos, "fmu_infos", list)
+    utils.check_type(fmu_paths, "fmu_paths", dict)
 
     fmu_names: list[str] = []
 
-    for fmu_info in fmu_infos:
-        utils.check_type(fmu_info, "element in list 'fmu_infos", dict)
-        _check_key_exists(SystemInfoKeys.SYSTEM_NAME.value, fmu_info)
+    for fmu_name, fmu_path in fmu_paths.items():
         utils.check_type(
-            fmu_info[SystemInfoKeys.SYSTEM_NAME.value],
-            f"Value to key '{SystemInfoKeys.SYSTEM_NAME.value}' in 'fmu_infos",
-            str,
+            fmu_path, f"value of key {fmu_name} in 'fmu_paths", (str, Path)
         )
-        fmu_names.append(fmu_info[SystemInfoKeys.SYSTEM_NAME.value])
-        _check_key_exists(SystemInfoKeys.FMU_PATH.value, fmu_info)
-        utils.check_type(
-            fmu_info[SystemInfoKeys.FMU_PATH.value],
-            f"Value to key '{SystemInfoKeys.FMU_PATH.value}' in 'fmu_infos",
-            (str, Path),
-        )
+        fmu_names.append(fmu_name)
 
     return fmu_names
 
 
-def _validate_model_infos(model_infos: Optional[ModelInfos]) -> list[str]:
+def _validate_model_instances(model_instances: Optional[ModelInstances]) -> list[str]:
 
-    if model_infos is None:
+    if model_instances is None:
         return []
 
-    utils.check_type(model_infos, "model_infos", list)
+    utils.check_type(model_instances, "model_infos", dict)
 
     model_names: list[str] = []
 
-    for model_info in model_infos:
-        utils.check_type(model_info, "element in list 'model_info", dict)
-        _check_key_exists(SystemInfoKeys.SYSTEM_NAME.value, model_info)
+    for model_name, model_instance in model_instances.items():
         utils.check_type(
-            model_info[SystemInfoKeys.SYSTEM_NAME.value],
-            f"Value to key '{SystemInfoKeys.SYSTEM_NAME.value}' in 'model_infos",
-            str,
+            model_instance,
+            f"value to key '{model_name}' in 'model_instances'",
+            SimulationEntity,
         )
-        model_names.append(model_info[SystemInfoKeys.SYSTEM_NAME.value])
+        model_names.append(model_name)
 
     return model_names
 
 
-def _validate_connection_infos(
-    system_infos: SystemInfos, system_names: list[str]
+def _validate_connection_config(
+    connections_config: Optional[ConnectionsConfig], system_names: list[str]
 ) -> None:
 
-    for system_info in system_infos:
-        if SystemInfoKeys.CONNECTIONS.value in system_info:
-            utils.check_type(
-                system_info[SystemInfoKeys.CONNECTIONS.value],
-                f"Value to key '{SystemInfoKeys.CONNECTIONS.value}",
-                list,
-            )
-            for connection in system_info[SystemInfoKeys.CONNECTIONS.value]:
-                utils.check_type(connection, "element in list 'connections", dict)
-                for key in (
-                    SystemInfoKeys.INPUT_PARAMETER.value,
-                    SystemInfoKeys.OUTPUT_PARAMETER.value,
-                    SystemInfoKeys.CONNECTED_SYSTEM.value,
-                ):
-                    _check_key_exists(key, connection)
-                    utils.check_type(
-                        connection[key], f"Value to key '{key}' in 'connections", str
-                    )
-                connected_system = connection[SystemInfoKeys.CONNECTED_SYSTEM.value]
-                if connected_system not in system_names:
-                    raise ValueError(
-                        f"System '{connected_system}' specified "
-                        "in connections doesn't exist."
-                    )
-
-
-def _check_key_exists(key: str, info_dict: Union[SystemInfo, ConnectionInfo]) -> None:
-
-    if key not in info_dict:
-        raise KeyError(f"missing key '{key}' in {info_dict}")
-
-
-def _validate_model_classes(
-    model_classes: Optional[dict[str, SimulationEntity]],
-    model_names: Optional[list[str]],
-) -> None:
-
-    if model_classes is None:
-        if model_names:
-            raise ValueError("Models are defined but 'model_classes' is 'None'")
+    if connections_config is None:
         return
 
-    if model_names is None:
-        model_names = []
+    for system_name, connections in connections_config.items():
+        utils.check_type(
+            connections, f"value to key {system_name} in 'connections_info'", list
+        )
+        for connection in connections:
+            utils.check_type(connection, "element in list 'connections'", dict)
+            for key, value in connection.items():
+                _check_key_exists(key, connection, system_name)
+                utils.check_type(
+                    value,
+                    f"Value to key '{key}' in connections"
+                    f"specified for system {system_name}",
+                    str,
+                )
+            connected_system = connection[ConnectionKeys.CONNECTED_SYSTEM.value]
+            if connected_system not in system_names:
+                raise ValueError(
+                    f"System '{connected_system}' specified "
+                    "in connections doesn't exist."
+                )
 
-    utils.check_type(model_classes, "model_classes", dict)
 
-    if not set(model_classes.keys()) == set(model_names):
-        raise ValueError("Names in 'model_classes' and in 'model_info' do not match.")
+def _check_key_exists(key: str, connection: _Connection, system_name: str) -> None:
+
+    if key not in connection:
+        raise KeyError(
+            f"missing key '{key}' in connections specified for system '{system_name}'"
+        )
 
 
 def _validate_parameters_to_log(
@@ -800,11 +743,9 @@ def _validate_parameters_to_log(
         )
 
 
-def _validate_logging_step_size(
-    logging_step_size: Union[int, float], step_size: Union[int, float]
-) -> None:
+def _validate_logging_step_size(logging_step_size: float, step_size: float) -> None:
 
-    utils.check_type(logging_step_size, "logging_step_size", (int, float))
+    utils.check_type(logging_step_size, "logging_step_size", Real)
 
     if not round(logging_step_size / step_size, 10).is_integer():
         raise ValueError(
