@@ -207,7 +207,7 @@ def check_type(var: Any, var_name: str, expected_type: Any) -> None:
         TypeError: type variable of was not expected type
     """
     if not isinstance(var, expected_type):
-        msg = f"'{var_name}' has type {type(var).__name__}; expected "
+        msg = f"{var_name} has type {type(var).__name__}; expected "
         if isinstance(expected_type, tuple):
             msg += ", ".join([typ.__name__ for typ in expected_type])
         else:

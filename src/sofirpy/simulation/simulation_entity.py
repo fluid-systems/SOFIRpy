@@ -3,7 +3,7 @@
 from abc import ABC, abstractmethod
 from typing import Optional, Union
 
-ParameterValue = Union[bool, int, float]
+ParameterValue = Union[bool, float]
 StartValue = Union[ParameterValue, tuple[ParameterValue, str]]
 
 

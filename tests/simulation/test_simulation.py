@@ -8,7 +8,6 @@ import pytest
 
 from sofirpy.simulation.simulation import (
     SimulationEntity,
-    _validate_fmu_infos,
     _validate_input,
     _validate_parameters_to_log,
     simulate,
@@ -70,7 +69,7 @@ class PID(SimulationEntity):
 
 
 @pytest.fixture
-def fmu_info() -> dict:
+def fmu_paths() -> dict:
     if sys.platform == "linux" or sys.platform == "linux2":
         fmu_path = Path(__file__).parent / "DC_Motor_linux.fmu"
     elif sys.platform == "win32":
@@ -78,35 +77,27 @@ def fmu_info() -> dict:
     elif sys.platform == "darwin":
         fmu_path = Path(__file__).parent / "DC_Motor_mac.fmu"
 
-    return [
-        {
-            "name": "DC_Motor",
-            "path": fmu_path,
-            "connections": [
-                {
-                    "parameter_name": "u",
-                    "connect_to_system": "pid",
-                    "connect_to_external_parameter": "u",
-                }
-            ],
-        }
-    ]
+    return {"DC_Motor": fmu_path}
 
 
 @pytest.fixture
-def model_info() -> dict:
-    return [
-        {
-            "name": "pid",
-            "connections": [
-                {
-                    "parameter_name": "speed",
-                    "connect_to_system": "DC_Motor",
-                    "connect_to_external_parameter": "y",
-                }
-            ],
-        }
-    ]
+def connections_config() -> dict:
+    return {
+        "DC_Motor": [
+            {
+                "parameter_name": "u",
+                "connect_to_system": "pid",
+                "connect_to_external_parameter": "u",
+            }
+        ],
+        "pid": [
+            {
+                "parameter_name": "speed",
+                "connect_to_system": "DC_Motor",
+                "connect_to_external_parameter": "y",
+            }
+        ],
+    }
 
 
 @pytest.fixture
@@ -130,8 +121,8 @@ def result_path() -> Path:
 
 
 def test_simulation(
-    fmu_info: list[dict],
-    model_info: list[dict],
+    connections_config: dict,
+    fmu_paths: dict,
     pid: PID,
     result_path: Path,
     parameters_to_log: dict,
@@ -141,9 +132,9 @@ def test_simulation(
     results, units = simulate(
         stop_time=2,
         step_size=1e-3,
-        fmu_infos=fmu_info,
-        model_infos=model_info,
-        model_classes=control_class,
+        fmu_paths=fmu_paths,
+        model_instances=control_class,
+        connections_config=connections_config,
         parameters_to_log=parameters_to_log,
         get_units=True,
     )
@@ -158,17 +149,11 @@ def test_simulation(
     assert np.isclose(results, test_results, atol=1e-6).all()
 
 
-def test_validate_input_duplicate_name_value_error(
-    fmu_info: list[dict], model_info: list[dict]
-) -> None:
-
-    model_info[0]["name"] = fmu_info[0]["name"]
-    with pytest.raises(ValueError, match="Duplicate names in system infos."):
-        _validate_input(1, 0.1, fmu_info, model_info, None, None, None, None)
-
-
 def test_simulate_with_no_parameters_to_log(
-    fmu_info: list[dict], model_info: list[dict], pid: PID, result_path: Path
+    connections_config: dict,
+    fmu_paths: dict,
+    pid: PID,
+    result_path: Path,
 ) -> None:
 
     control_class = {"pid": pid}
@@ -176,9 +161,9 @@ def test_simulate_with_no_parameters_to_log(
     results = simulate(
         stop_time=2,
         step_size=1e-3,
-        fmu_infos=fmu_info,
-        model_infos=model_info,
-        model_classes=control_class,
+        fmu_paths=fmu_paths,
+        model_instances=control_class,
+        connections_config=connections_config,
     )
 
     test_results = pd.read_csv(result_path, usecols=["time"])
@@ -189,8 +174,8 @@ def test_simulate_with_no_parameters_to_log(
 
 @pytest.mark.parametrize("logging_step_size", [1e-3, 1e-2, 1e-1, 1.0])
 def test_simulate_with_bigger_log_step_size(
-    fmu_info: list[dict],
-    model_info: list[dict],
+    connections_config: dict,
+    fmu_paths: dict,
     pid: PID,
     result_path: Path,
     parameters_to_log: dict,
@@ -202,9 +187,9 @@ def test_simulate_with_bigger_log_step_size(
     results = simulate(
         stop_time=2,
         step_size=step_size,
-        fmu_infos=fmu_info,
-        model_infos=model_info,
-        model_classes=control_class,
+        fmu_paths=fmu_paths,
+        model_instances=control_class,
+        connections_config=connections_config,
         parameters_to_log=parameters_to_log,
         logging_step_size=logging_step_size,
     )
@@ -217,78 +202,11 @@ def test_simulate_with_bigger_log_step_size(
     ).all()
 
 
-@pytest.mark.parametrize(
-    "fmu_info",
-    [
-        [
-            {
-                "path": str(Path(__file__).parent / "DC_Motor.fmu"),
-                "connections": [
-                    {
-                        "parameter_name": "u",
-                        "connect_to_system": "pid",
-                        "connect_to_external_parameter": "u",
-                    }
-                ],
-            }
-        ],
-        [
-            {
-                "name": "DC_Motor",
-                "path": str(Path(__file__).parent / "DC_Motor.fmu"),
-                "connections": [
-                    {
-                        "parameter_name": "u",
-                        "connect_to_system": "pid",
-                        "connect_to_external_parameter": "u",
-                    }
-                ],
-            },
-            {
-                "name": "DC_Motor",
-                "connections": [
-                    {
-                        "parameter_name": "u",
-                        "connect_to_system": "pid",
-                        "connect_to_external_parameter": "u",
-                    }
-                ],
-            },
-        ],
-        [
-            {
-                "path": str(Path(__file__).parent / "DC_Motor.fmu"),
-                "connections": [
-                    {
-                        "connect_to_system": "pid",
-                        "connect_to_external_parameter": "u",
-                    }
-                ],
-            },
-        ],
-        [
-            {
-                "path": str(Path(__file__).parent / "DC_Motor.fmu"),
-                "connections": [
-                    {
-                        "parameter_name": "u",
-                        "connect_to_external_parameter": "u",
-                    }
-                ],
-            },
-        ],
-        [
-            {
-                "path": str(Path(__file__).parent / "DC_Motor.fmu"),
-                "connections": [{"parameter_name": "u", "connect_to_system": "pid"}],
-            },
-        ],
-    ],
-)
-def test_validate_fmu_info_key_error(fmu_info: list[dict]) -> None:
-
-    with pytest.raises(KeyError):
-        _validate_fmu_infos(fmu_info)
+def test_validate_input_duplicate_name_value_error(fmu_paths: dict, pid: PID) -> None:
+    control_class = {"pid": pid}
+    fmu_paths[list(control_class.keys())[0]] = ""
+    with pytest.raises(ValueError, match="Duplicate names in system infos."):
+        _validate_input(1, 0.1, fmu_paths, control_class, None, None, None, None)
 
 
 def test_validate_parameters_to_log_raises_type_error(

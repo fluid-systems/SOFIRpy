@@ -100,20 +100,20 @@ def test_read_attributes(hdf5: HDF5) -> None:
 
 def test_delete_attribute(hdf5: HDF5) -> None:
 
-    hdf5.delete_attribute("test_delete_attribute", attribute_name="attr1")
+    hdf5.delete_attribute(attribute_name="attr1", path="test_delete_attribute")
     assert not hdf5.read_attributes("test_delete_attribute")
 
 
 def test_delete_attribute_exception(hdf5: HDF5) -> None:
 
     with pytest.raises(KeyError):
-        hdf5.delete_attribute("test_delete_attribute_exception", "i_do_not_exist")
+        hdf5.delete_attribute("i_do_not_exist", "test_delete_attribute_exception")
 
 
 def test_append_attributes(hdf5: HDF5) -> None:
 
     attr = {"attr1": 1, "attr4": "foo"}
-    hdf5.append_attributes("test_append_attributes", attr)
+    hdf5.append_attributes(attr, "test_append_attributes")
     assert attr == hdf5.read_attributes("test_append_attributes")
 
 
@@ -133,17 +133,27 @@ def test_read_data_exception(hdf5: HDF5) -> None:
 
 
 def test_read_entire_group_data(hdf5: HDF5) -> None:
-
+    print(hdf5.read_entire_group_data("test_delete_group"))
     assert hdf5.read_entire_group_data("test_delete_group") == {
-        "group1": {},
-        "group2": {"subgroup1": {}},
+        "group1": {"type": "group", "attributes": {}, "content": {}},
+        "group2": {
+            "type": "group",
+            "attributes": {},
+            "content": {
+                "subgroup1": {"type": "group", "attributes": {}, "content": {}}
+            },
+        },
     }
 
 
 def test_read_hdf5_structure(hdf5: HDF5) -> None:
     assert hdf5.read_hdf5_structure("test_read_data") == {
-        "subgroup1": {},
-        "test_data": '<HDF5 dataset "test_data": shape (10, 10), type "<f8">',
+        "subgroup1": {"attributes": {}, "content": {}, "type": "group"},
+        "test_data": {
+            "attributes": {"test": 1},
+            "content": '<HDF5 dataset "test_data": shape (10, 10), type "<f8">',
+            "type": "dataset",
+        },
     }
 
 
@@ -152,12 +162,12 @@ def test_store_data(hdf5: HDF5) -> None:
     data = np.zeros((10, 10))
     attr = {"test": 1}
     # test with already existing group "test_store_data"
-    hdf5.store_data("test_data", data, "test_store_data", attributes=attr)
+    hdf5.store_data(data, "test_data", "test_store_data", attributes=attr)
     _data, _attr = hdf5.read_data("test_data", "test_store_data", get_attributes=True)
     assert (_data == data).all()
     assert _attr == attr
     # test with not existing group
-    hdf5.store_data("test_data", data, "test_store_data/subgroup1", attributes=attr)
+    hdf5.store_data(data, "test_data", "test_store_data/subgroup1", attributes=attr)
     _data = hdf5.read_data("test_data", "test_store_data/subgroup1")
     assert (_data == data).all()
 
@@ -168,7 +178,7 @@ def test_store_data_with_already_existing_data_set(hdf5: HDF5) -> None:
 
 def test_delete_data(hdf5: HDF5) -> None:
 
-    hdf5.delete_data("test_delete_data", "delete_data")
+    hdf5.delete_data("delete_data", "test_delete_data")
     assert "test_delete_data/delete_data" not in hdf5
 
 
@@ -178,4 +188,4 @@ def test_delete_data_exception(hdf5: HDF5) -> None:
         hdf5.delete_data("test_read_data", "non_existing_path")
 
     with pytest.raises(ValueError):
-        hdf5.delete_data(None, "test_delete_data")
+        hdf5.delete_data("test_delete_data", None)
