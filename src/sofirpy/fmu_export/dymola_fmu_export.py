@@ -259,9 +259,7 @@ class DymolaFmuExport(FmuExport):
         # mos_script += (
         #     f'Modelica.Utilities.Files.removeFile("{self.error_log_path.name}");\n'
         # )
-        mos_script += (
-            f'Modelica.Utilities.Streams.print(errors, "{error_path_str}");\n'
-        )
+        mos_script += f'Modelica.Utilities.Streams.print(errors, "{error_path_str}");\n'
         mos_script += "Modelica.Utilities.System.exit();"
 
         return mos_script
@@ -312,7 +310,9 @@ class DymolaFmuExport(FmuExport):
 
         return parameter_declaration
 
-    def move_files_to_output_directory(self, export_successful: bool, keep_mos: bool, keep_log: bool) -> None:
+    def move_files_to_output_directory(
+        self, export_successful: bool, keep_mos: bool, keep_log: bool
+    ) -> None:
         """Move the fmu, the mos script and the log to the output directory.
 
         Args:

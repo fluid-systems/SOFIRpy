@@ -402,8 +402,8 @@ class HDF5:
                     _dict[name] = {
                         "type": "group",
                         "attributes": dict(hdf5_object.attrs),
-                        "content": {}
-                        }
+                        "content": {},
+                    }
                 else:
                     if mode == "full":
                         value = hdf5_object[()]
@@ -414,6 +414,6 @@ class HDF5:
                     _dict[name] = {
                         "type": "dataset",
                         "attributes": dict(hdf5_object.attrs),
-                        "content": value
-                        }
+                        "content": value,
+                    }
         return _dict
