@@ -9,7 +9,10 @@ sys.path.append(os.path.join(os.path.dirname(__file__), "../../"))
 
 from discrete_pid import PID  # custom implemented pid controller
 
-fmu_path = Path(__file__).parent.parent.parent / "DC_Motor_mac.fmu"
+if sys.platform == "win32":
+    fmu_path = Path(__file__).parent.parent.parent / "DC_Motor.fmu"
+elif sys.platform == "darwin":
+    fmu_path = Path(__file__).parent.parent.parent / "DC_Motor_mac.fmu"
 
 
 connections_config = {
