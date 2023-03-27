@@ -123,7 +123,6 @@ class OpenModelicaFmuExport(FmuExport):
         exc_tb: Optional[TracebackType],
     ) -> None:
         utils.delete_paths(self._paths_to_delete)
-        utils.delete_file_or_directory(self._dump_directory)
 
 
 def export_open_modelica_model(
