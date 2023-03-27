@@ -1,11 +1,13 @@
 """This module allows to export a Dymola model as a fmu."""
+from __future__ import annotations
 
 import re
 import subprocess
-from datetime import datetime
 from html import unescape
 from pathlib import Path
-from typing import Optional, Union
+import tempfile
+from typing import Optional, Union, Type
+from types import TracebackType
 
 from sofirpy import utils
 from sofirpy.fmu_export.fmu_export import FmuExport, FmuExportError
@@ -28,17 +30,16 @@ class DymolaFmuExport(FmuExport):
 
     def __init__(
         self,
-        dymola_exe_path: Path,
         model_path: Path,
         model_name: str,
         parameters: Optional[dict[str, ParameterValue]] = None,
         model_modifiers: Optional[list[str]] = None,
         packages: Optional[list[Union[str, Path]]] = None,
+        output_directory: Optional[Path] = None,
     ) -> None:
         """Initialize the DymolaFmuExport object.
 
         Args:
-            dymola_exe_path (Path): Path to the dymola executable.
             model_path (Path): Path to the modelica model that
                 should be exported.
             model_name (str): Name of the model that should be exported. If the
@@ -63,28 +64,21 @@ class DymolaFmuExport(FmuExport):
                 Defaults to None.
             packages (list[str], optional): List of model/package paths that
                 need to be loaded as dependencies for the model.
+            output_directory (Optional[Path], optional): Output directory for the fmu,
+                the log and the mos script.
         """
-
         self.model_name = model_name
-        self._dump_directory = model_path.parent
+        self._dump_directory = Path(tempfile.mkdtemp())
         fmu_name = self.model_name.replace("_", "_0").replace(".", "_")
         fmu_path = self._dump_directory / f"{fmu_name}.fmu"
 
-        super().__init__(model_path, fmu_path)
+        super().__init__(model_path, fmu_path, output_directory)
 
-        self._dymola_exe_path = dymola_exe_path
-
-        # add a time stamp to the mos file and log files
-        time_stamp = datetime.now().strftime("%y%m%d%H%M%S")
         self.mos_file_path = (
-            self.model_directory / f"export_script_{self.model_name}_{time_stamp}.mos"
+            self._dump_directory / f"export_script_{self.model_name}.mos"
         )
-        self._simulator_log_path = (
-            self.model_directory / f"log_{self.model_name}_{time_stamp}.txt"
-        )
-        self.error_log_path = (
-            self.model_directory / f"errors_{self.model_name}_{time_stamp}.txt"
-        )
+        self.simulator_log_path = self._dump_directory / f"log_{self.model_name}.txt"
+        self.error_log_path = self._dump_directory / f"errors_{self.model_name}.txt"
 
         if parameters is None:
             parameters = {}
@@ -97,40 +91,14 @@ class DymolaFmuExport(FmuExport):
         if packages is None:
             packages = []
 
-        # converts paths to strings if paths are given as Path object
-        self._packages = [
+        # converts strings to path if paths are given as a string
+        self.packages = [
             utils.convert_str_to_path(path, "package_path") for path in packages
         ]
 
-        self.paths_to_delete = [
+        self._paths_to_delete = [
             self.model_directory / name for name in self.files_to_delete
         ]
-
-    @property
-    def dymola_exe_path(self) -> Path:
-        """Path to the dymola executable.
-
-        Returns:
-            Path: Path to the dymola executable
-        """
-        return self._dymola_exe_path
-
-    @dymola_exe_path.setter
-    def dymola_exe_path(self, dymola_exe_path: Path) -> None:
-        """Set the Path to the dymola executable.
-
-        Args:
-            dymola_exe_path (Path): Path to the dymola executable.
-
-        Raises:
-            TypeError: dymola_exe_path type was not 'Path'
-            ValueError: File at dymola_exe_path doesn't exist
-        """
-        _dymola_exe_path = utils.convert_str_to_path(dymola_exe_path, "dymola_exe_path")
-
-        if not _dymola_exe_path.exists():
-            raise ValueError(f"{_dymola_exe_path} does not exit")
-        self._dymola_exe_path = dymola_exe_path
 
     @property
     def model_name(self) -> str:
@@ -212,35 +180,44 @@ class DymolaFmuExport(FmuExport):
         for modifier in model_modifiers:
             utils.check_type(modifier, "element in 'model_modifier'", str)
 
-        self._model_modifiers = list(
-            map(lambda elm: re.sub(" +", " ", elm.strip()), model_modifiers)
-        )
+        self._model_modifiers = [
+            re.sub(" +", " ", elm.strip()) for elm in model_modifiers
+        ]
 
     def export_fmu(
         self,
-        export_simulator_log: bool = True,
-        export_error_log: bool = True,
-    ) -> None:
+        dymola_exe_path: Path,
+    ) -> bool:
         """Execute commands to export a fmu.
 
         Args:
+            dymola_exe_path (Path): Path to the dymola executable.
             export_simulator_log (bool, optional): If True a simulator log file
                 will be generated. Defaults to True.
             export_error_log (bool, optional): If True a error log file will be
                 generated. Defaults to True.
-        """
-        mos_script = self.write_mos_script(export_simulator_log, export_error_log)
-        self.create_mos_file(mos_script)
 
-        cmd = [str(self._dymola_exe_path), str(self.mos_file_path), "/nowindow"]
+        Returns:
+            bool: True if export is successful else False
+        """
+        if not dymola_exe_path.exists():
+            raise FileNotFoundError(f"{dymola_exe_path} does not exit")
+
+        if not self.mos_file_path.exists():
+            raise FileNotFoundError(f"{self.mos_file_path} does not exit")
+
+        cmd = [str(dymola_exe_path), str(self.mos_file_path), "/nowindow"]
 
         with subprocess.Popen(cmd) as process:
             process.wait()
 
+        if self.fmu_path.exists():
+            return True
+        return False
+
     def write_mos_script(
         self,
         export_simulator_log: bool = True,
-        export_error_log: bool = True,
     ) -> str:
         """Write the content for the mos file/script.
 
@@ -261,12 +238,13 @@ class DymolaFmuExport(FmuExport):
 
         model_dir_str = str(self.model_directory).replace("\\", "/")
         model_path_str = str(self.model_path).replace("\\", "/")
-        log_path_str = str(self._simulator_log_path).replace("\\", "/")
+        log_path_str = str(self.simulator_log_path).replace("\\", "/")
+        error_path_str = str(self.error_log_path).replace("\\", "/")
 
         mos_script = f'cd("{model_dir_str}");\n'
 
-        if self._packages:
-            for package in self._packages:
+        if self.packages:
+            for package in self.packages:
                 package_path_str = str(package).replace("\\", "/")
                 mos_script += f'openModel("{package_path_str}")\n'
         mos_script += f'openModel("{model_path_str}");\n'
@@ -276,13 +254,14 @@ class DymolaFmuExport(FmuExport):
         )
         if export_simulator_log:
             mos_script += f'savelog("{log_path_str}");\n'
-        if export_error_log:
-            mos_script += "errors = getLastError();\n"
-            mos_script += (
-                f'Modelica.Utilities.Files.removeFile("{self.error_log_path.name}");\n'
-            )
-            mos_script += "Modelica.Utilities.Streams.print"
-            mos_script += f'(errors, "{self.error_log_path.name}");\n'
+
+        mos_script += "errors = getLastError();\n"
+        # mos_script += (
+        #     f'Modelica.Utilities.Files.removeFile("{self.error_log_path.name}");\n'
+        # )
+        mos_script += (
+            f'Modelica.Utilities.Streams.print(errors, "{error_path_str}");\n'
+        )
         mos_script += "Modelica.Utilities.System.exit();"
 
         return mos_script
@@ -302,8 +281,8 @@ class DymolaFmuExport(FmuExport):
         Format parameter values to adjust to dymola scripting syntax and
         stores the parameter names and values in a list in the following format.
 
-        >>> parameter_declaration = ['"Resistor.R" =  "1"',
-        ...                          '"Resistor.useHeatPort" = "true"']
+        >>> parameter_declaration = ['Resistor.R =  1',
+        ...                          'Resistor.useHeatPort = true']
 
         Returns:
             list[str]: List of parameters.
@@ -333,25 +312,53 @@ class DymolaFmuExport(FmuExport):
 
         return parameter_declaration
 
-    def move_mos_script(self, target_directory: Path) -> None:
-        """Move the mos script to a target directory.
+    def move_files_to_output_directory(self, export_successful: bool, keep_mos: bool, keep_log: bool) -> None:
+        """Move the fmu, the mos script and the log to the output directory.
 
         Args:
-            target_directory (Path): Path to the target directory.
+            export_successful (bool): If True fmu will be moved to the output directory.
+            keep_mos (bool): If True the mos script is moved to the output directory.
+            keep_log (bool): If True the simulator log is moved to the output directory.
         """
-        new_mos_path = target_directory / self.mos_file_path.name
+        if export_successful:
+            self.move_fmu()
+        if keep_mos:
+            self.move_mos_script()
+        if keep_log:
+            self.move_log_file()
+
+    def move_mos_script(self) -> None:
+        """Move the mos script to a target directory."""
+        new_mos_path = self.output_directory / self.mos_file_path.name
         utils.move_file(self.mos_file_path, new_mos_path)
         self.mos_file_path = new_mos_path
 
-    def move_log_file(self, target_directory: Path) -> None:
-        """Move the log file to a target directory.
+    def move_log_file(self) -> None:
+        """Move the log file to a target directory."""
+        new_log_path = self.output_directory / self.simulator_log_path.name
+        utils.move_file(self.simulator_log_path, new_log_path)
+        self.simulator_log_path = new_log_path
 
-        Args:
-            target_directory (Path): Path to the target directory.
+    def read_dymola_error(self) -> str:
+        """Read the Dymola error message.
+
+        Returns:
+            str: Dymola error message
         """
-        new_log_path = target_directory / self._simulator_log_path.name
-        utils.move_file(self._simulator_log_path, new_log_path)
-        self._simulator_log_path = new_log_path
+        with open(self.error_log_path, "r", encoding="utf-8") as error_log:
+            return unescape(error_log.read())
+
+    def __enter__(self) -> DymolaFmuExport:
+        return self
+
+    def __exit__(
+        self,
+        exc_type: Optional[Type[BaseException]],
+        exc_val: Optional[BaseException],
+        exc_tb: Optional[TracebackType],
+    ) -> None:
+        utils.delete_paths(self._paths_to_delete)
+        utils.delete_file_or_directory(self._dump_directory)
 
 
 def export_dymola_model(
@@ -374,7 +381,8 @@ def export_dymola_model(
         model_name (str): Name of the model that should be exported. If the
             model that should be exported is inside a package, separate the
             package name and the model name with a '.'.
-        output_directory (Union[Path, str]): Path to the output directory.
+        output_directory (Union[Path, str]): Output directory for the fmu, the log and
+            the mos script.
         parameters (dict[str, ParameterValue], optional):
             Dictionary of parameter names and values.
             Example:
@@ -400,36 +408,25 @@ def export_dymola_model(
     Returns:
         Path: Path to the exported FMU.
     """
-
     _dymola_exe_path = utils.convert_str_to_path(dymola_exe_path, "dymola_exe_path")
     _model_path = utils.convert_str_to_path(model_path, "model_path")
-
-    dymola_fmu_export = DymolaFmuExport(
-        _dymola_exe_path, _model_path, model_name, parameters, model_modifiers, packages
-    )
-
     _output_directory = utils.convert_str_to_path(output_directory, "output_directory")
 
-    dymola_fmu_export.export_fmu(keep_log)
-
-    # delete unnecessary files
-    utils.delete_paths(dymola_fmu_export.paths_to_delete)
-
-    if not keep_mos:
-        dymola_fmu_export.mos_file_path.unlink()
-
-    if not dymola_fmu_export.fmu_path.exists():
-        with open(dymola_fmu_export.error_log_path, "r", encoding="utf-8") as error_log:
-            err = unescape(error_log.read())
-        dymola_fmu_export.error_log_path.unlink()
-        raise FmuExportError(
-            f"Fmu export was not successful. \nDymola error message: {err} \n"
-        )
-
-    dymola_fmu_export.error_log_path.unlink()
-    dymola_fmu_export.move_fmu(_output_directory)
-    if keep_mos:
-        dymola_fmu_export.move_mos_script(_output_directory)
-    if keep_log:
-        dymola_fmu_export.move_log_file(_output_directory)
-    return dymola_fmu_export.fmu_path
+    with DymolaFmuExport(
+        _model_path,
+        model_name,
+        parameters,
+        model_modifiers,
+        packages,
+        _output_directory,
+    ) as dymola_exporter:
+        mos_script = dymola_exporter.write_mos_script(export_simulator_log=keep_log)
+        dymola_exporter.create_mos_file(mos_script)
+        successful = dymola_exporter.export_fmu(_dymola_exe_path)
+        dymola_exporter.move_files_to_output_directory(successful, keep_mos, keep_log)
+        if not successful:
+            err = dymola_exporter.read_dymola_error()
+            raise FmuExportError(
+                f"Fmu export was not successful.\nDymola error message:\n{err}\n"
+            )
+        return dymola_exporter.fmu_path
