@@ -256,9 +256,6 @@ class DymolaFmuExport(FmuExport):
             mos_script += f'savelog("{log_path_str}");\n'
 
         mos_script += "errors = getLastError();\n"
-        # mos_script += (
-        #     f'Modelica.Utilities.Files.removeFile("{self.error_log_path.name}");\n'
-        # )
         mos_script += f'Modelica.Utilities.Streams.print(errors, "{error_path_str}");\n'
         mos_script += "Modelica.Utilities.System.exit();"
 
