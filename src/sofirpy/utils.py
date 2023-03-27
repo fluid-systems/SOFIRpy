@@ -23,7 +23,7 @@ def delete_file_or_directory(
     if not path.exists():
         if not must_exist:
             return
-        raise ValueError(f"{str(path)} does not exist")
+        raise FileNotFoundError(f"{str(path)} does not exist")
 
     if path.is_dir():
         shutil.rmtree(str(path), ignore_errors=True)
@@ -207,7 +207,7 @@ def check_type(var: Any, var_name: str, expected_type: Any) -> None:
         TypeError: type variable of was not expected type
     """
     if not isinstance(var, expected_type):
-        msg = f"{var_name} has type {type(var).__name__}; expected "
+        msg = f"'{var_name}' has type {type(var).__name__}; expected "
         if isinstance(expected_type, tuple):
             msg += ", ".join([typ.__name__ for typ in expected_type])
         else:
