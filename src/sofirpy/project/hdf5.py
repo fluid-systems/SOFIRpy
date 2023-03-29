@@ -344,15 +344,26 @@ class HDF5:
         return True
 
     def _get_group_or_dataset_names(
-        self, group_path: Optional[str], obj: Union[h5py.Group, h5py.Dataset]
+        self,
+        group_path: Optional[str],
+        obj: Union[h5py.Group, h5py.Dataset],
+        filter_func=None,
     ) -> list[str]:
         with h5py.File(str(self.hdf5_path), "a") as hdf5:
             group: h5py.Group = hdf5[group_path] if group_path else hdf5
             if not isinstance(group, h5py.Group):
                 raise ValueError(f"'{group_path}' does not lead to a hdf5 Group.")
-            return [name for name in group.keys() if isinstance(group[name], obj)]
+            if filter_func is None:
+                return [name for name in group.keys() if isinstance(group[name], obj)]
+            return [
+                name
+                for name in group.keys()
+                if isinstance(group[name], obj) and filter_func(group[name])
+            ]
 
-    def get_group_names(self, group_path: Optional[str] = None) -> list[str]:
+    def get_group_names(
+        self, group_path: Optional[str] = None, filter_func=None
+    ) -> list[str]:
         """Get all group names inside a group:
 
         Args:
@@ -362,9 +373,11 @@ class HDF5:
         Returns:
             list[str]: List group names inside the given hdf5 group.
         """
-        return self._get_group_or_dataset_names(group_path, h5py.Group)
+        return self._get_group_or_dataset_names(group_path, h5py.Group, filter_func)
 
-    def get_dataset_names(self, group_path: Optional[str] = None) -> list[str]:
+    def get_dataset_names(
+        self, group_path: Optional[str] = None, filter_func=None
+    ) -> list[str]:
         """Get all dataset names inside a group:
 
         Args:
@@ -374,7 +387,7 @@ class HDF5:
         Returns:
             list[str]: List dataset names inside the given hdf5 group.
         """
-        return self._get_group_or_dataset_names(group_path, h5py.Dataset)
+        return self._get_group_or_dataset_names(group_path, h5py.Dataset, filter_func)
 
     def _place(
         self,
@@ -402,8 +415,8 @@ class HDF5:
                     _dict[name] = {
                         "type": "group",
                         "attributes": dict(hdf5_object.attrs),
-                        "content": {}
-                        }
+                        "content": {},
+                    }
                 else:
                     if mode == "full":
                         value = hdf5_object[()]
@@ -414,6 +427,6 @@ class HDF5:
                     _dict[name] = {
                         "type": "dataset",
                         "attributes": dict(hdf5_object.attrs),
-                        "content": value
-                        }
+                        "content": value,
+                    }
         return _dict
