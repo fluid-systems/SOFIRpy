@@ -1,0 +1,8 @@
+cd(".");
+openModel("DC_Motor.mo");
+modelInstance = "DC_Motor(damper.d = 0.1, damper.useHeatPort = false)";
+translateModelFMU(modelInstance, false, "", "2", "all", false, 2);
+savelog("log_DC_Motor.txt");
+errors = getLastError();
+Modelica.Utilities.Streams.print(errors, "errors_DC_Motor.txt");
+Modelica.Utilities.System.exit();
