@@ -107,7 +107,7 @@ class FmuExport:
         self._output_directory = output_directory
 
     def move_fmu(self) -> None:
-        """Move the log fmu to a target directory."""
+        """Move the log fmu to the output directory."""
         new_fmu_path = self.output_directory / self.fmu_path.name
         utils.move_file(self.fmu_path, new_fmu_path)
         self._fmu_path = new_fmu_path

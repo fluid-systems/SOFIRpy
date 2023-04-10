@@ -325,13 +325,13 @@ class DymolaFmuExport(FmuExport):
             self.move_log_file()
 
     def move_mos_script(self) -> None:
-        """Move the mos script to a target directory."""
+        """Move the mos script to the output directory."""
         new_mos_path = self.output_directory / self.mos_file_path.name
         utils.move_file(self.mos_file_path, new_mos_path)
         self.mos_file_path = new_mos_path
 
     def move_log_file(self) -> None:
-        """Move the log file to a target directory."""
+        """Move the log file to the output directory."""
         new_log_path = self.output_directory / self.simulator_log_path.name
         utils.move_file(self.simulator_log_path, new_log_path)
         self.simulator_log_path = new_log_path
