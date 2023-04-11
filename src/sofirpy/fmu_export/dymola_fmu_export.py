@@ -3,11 +3,11 @@ from __future__ import annotations
 
 import re
 import subprocess
+import tempfile
 from html import unescape
 from pathlib import Path
-import tempfile
-from typing import Optional, Union, Type, Literal
 from types import TracebackType
+from typing import Literal, Optional, Type, Union
 
 from sofirpy import utils
 from sofirpy.fmu_export.fmu_export import FmuExport, FmuExportError

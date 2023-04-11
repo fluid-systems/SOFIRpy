@@ -2,8 +2,8 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Union, Optional, Type
 from types import TracebackType
+from typing import Optional, Type, Union
 
 from OMPython import ModelicaSystem
 

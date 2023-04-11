@@ -1,7 +1,7 @@
 """This module allows to easily store and read data from a hdf5 file."""
 
 from pathlib import Path
-from typing import Any, Optional, Union, Callable
+from typing import Any, Callable, Optional, Union
 
 import h5py
 
