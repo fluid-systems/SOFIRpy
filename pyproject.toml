@@ -90,10 +90,9 @@ fail-under = 10
 
 [tool.pylint.design]
 max-args = 9
-max-attributes = 13
-max-locals = 17
 
 [tool.pylint.format]
 max-line-length = 88
+
 [tool.pylint."messages control"]
 disable = ["attribute-defined-outside-init"]
