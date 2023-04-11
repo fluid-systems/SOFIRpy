@@ -285,7 +285,7 @@ class Simulation:
         return units
 
 
-def simulate( # pylint: disable=too-many-locals
+def simulate(  # pylint: disable=too-many-locals
     stop_time: float,
     step_size: float,
     fmu_paths: Optional[FmuPaths] = None,
