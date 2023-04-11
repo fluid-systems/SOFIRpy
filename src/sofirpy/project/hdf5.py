@@ -1,7 +1,7 @@
 """This module allows to easily store and read data from a hdf5 file."""
 
 from pathlib import Path
-from typing import Any, Optional, Union
+from typing import Any, Optional, Union, Callable
 
 import h5py
 
@@ -347,7 +347,7 @@ class HDF5:
         self,
         group_path: Optional[str],
         obj: Union[h5py.Group, h5py.Dataset],
-        filter_func=None,
+        filter_func: Optional[Callable[[str], bool]] = None,
     ) -> list[str]:
         with h5py.File(str(self.hdf5_path), "a") as hdf5:
             group: h5py.Group = hdf5[group_path] if group_path else hdf5
@@ -362,7 +362,9 @@ class HDF5:
             ]
 
     def get_group_names(
-        self, group_path: Optional[str] = None, filter_func=None
+        self,
+        group_path: Optional[str] = None,
+        filter_func: Optional[Callable[[str], bool]] = None,
     ) -> list[str]:
         """Get all group names inside a group:
 
@@ -376,7 +378,9 @@ class HDF5:
         return self._get_group_or_dataset_names(group_path, h5py.Group, filter_func)
 
     def get_dataset_names(
-        self, group_path: Optional[str] = None, filter_func=None
+        self,
+        group_path: Optional[str] = None,
+        filter_func: Optional[Callable[[str], bool]] = None,
     ) -> list[str]:
         """Get all dataset names inside a group:
 
