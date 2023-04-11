@@ -70,7 +70,7 @@ class DymolaFmuExport(FmuExport):
         self.model_name = model_name
         self._dump_directory = Path(tempfile.mkdtemp())
         fmu_name = self.model_name.replace("_", "_0").replace(".", "_")
-        fmu_path = self._dump_directory / f"{fmu_name}.fmu"
+        fmu_path = model_path.parent / f"{fmu_name}.fmu"
 
         super().__init__(model_path, fmu_path, output_directory)
 
