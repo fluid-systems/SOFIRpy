@@ -6,7 +6,7 @@ import subprocess
 from html import unescape
 from pathlib import Path
 import tempfile
-from typing import Optional, Union, Type
+from typing import Optional, Union, Type, Literal
 from types import TracebackType
 
 from sofirpy import utils
@@ -15,7 +15,7 @@ from sofirpy.fmu_export.fmu_export import FmuExport, FmuExportError
 ParameterValue = Union[str, int, float, list[Union[int, float, str, bool]], bool]
 
 
-class DymolaFmuExport(FmuExport):
+class DymolaFmuExport(FmuExport): # pylint: disable=too-many-instance-attributes
     """Object that performs the Dymola fmu export."""
 
     files_to_delete = [
@@ -28,14 +28,19 @@ class DymolaFmuExport(FmuExport):
         "dsin.txt",
     ]
 
-    def __init__(
+    def __init__( # pylint: disable=too-many-arguments
         self,
         model_path: Path,
         model_name: str,
+        fmu_name: Optional[str] = None,
         parameters: Optional[dict[str, ParameterValue]] = None,
         model_modifiers: Optional[list[str]] = None,
         packages: Optional[list[Union[str, Path]]] = None,
         output_directory: Optional[Path] = None,
+        fmi_version: Literal[1, 2] = 2,
+        fmi_type: Literal["me", "cs", "all", "csSolver"] = "all",
+        include_source: bool = False,
+        include_image: Literal[0, 1, 2] = 2,
     ) -> None:
         """Initialize the DymolaFmuExport object.
 
@@ -66,11 +71,21 @@ class DymolaFmuExport(FmuExport):
                 need to be loaded as dependencies for the model.
             output_directory (Optional[Path], optional): Output directory for the fmu,
                 the log and the mos script.
+            fmi_version (Literal[1, 2], optional): FMI version, 1 or 2. Defaults to 2.
+            fmi_type (Literal["me", "cs", "all", "csSolver"], optional): FMI type,
+                me (model exchange), cs (co-simulation), all or csSolver (using Dymola
+                solver). Defaults to "all".
+            include_source (bool, optional): Whether to include source code in FMU.
+                Defaults to False.
+            include_image (Literal[0, 1, 2], optional): Whether to include the model
+                image (0 - no image, 1 icon, 2 diagram). Defaults to 2.
         """
         self.model_name = model_name
+        if fmu_name is None:
+            fmu_name = self.model_name
+        self.fmu_name = fmu_name
         self._dump_directory = Path(tempfile.mkdtemp())
-        fmu_name = self.model_name.replace("_", "_0").replace(".", "_")
-        fmu_path = model_path.parent / f"{fmu_name}.fmu"
+        fmu_path = model_path.parent / f"{self.fmu_name}.fmu"
 
         super().__init__(model_path, fmu_path, output_directory)
 
@@ -99,6 +114,11 @@ class DymolaFmuExport(FmuExport):
         self._paths_to_delete = [
             self.model_directory / name for name in self.files_to_delete
         ]
+
+        self.fmi_version = fmi_version
+        self.fmi_type = fmi_type
+        self.include_source = "true" if include_source else "false"
+        self.include_image = include_image
 
     @property
     def model_name(self) -> str:
@@ -250,7 +270,15 @@ class DymolaFmuExport(FmuExport):
         mos_script += f'openModel("{model_path_str}");\n'
         mos_script += f'modelInstance = "{self.model_name}(' + input_par + ')";\n'
         mos_script += (
-            'translateModelFMU(modelInstance, false, "", "2", "all", false, 2);\n'
+            "translateModelFMU("
+            "modelInstance, "
+            "false, "
+            f'"{self.fmu_name}", '
+            f'"{self.fmi_version}", '
+            f'"{self.fmi_type}", '
+            f"{self.include_source}, "
+            f"{self.include_image}"
+            ");\n"
         )
         if export_simulator_log:
             mos_script += f'savelog("{log_path_str}");\n'
@@ -358,14 +386,19 @@ class DymolaFmuExport(FmuExport):
         utils.delete_file_or_directory(self._dump_directory)
 
 
-def export_dymola_model(
+def export_dymola_model( # pylint: disable=too-many-arguments, too-many-locals
     dymola_exe_path: Union[Path, str],
     model_path: Union[Path, str],
     model_name: str,
-    output_directory: Union[Path, str],
+    fmu_name: Optional[str] = None,
+    output_directory: Optional[Union[Path, str]] = None,
     parameters: Optional[dict[str, ParameterValue]] = None,
     model_modifiers: Optional[list[str]] = None,
     packages: Optional[list[Union[str, Path]]] = None,
+    fmi_version: Literal[1, 2] = 2,
+    fmi_type: Literal["me", "cs", "all", "csSolver"] = "all",
+    include_source: bool = False,
+    include_image: Literal[0, 1, 2] = 2,
     keep_log: bool = True,
     keep_mos: bool = True,
 ) -> Path:
@@ -397,6 +430,14 @@ def export_dymola_model(
         packages (Optional[list[Union[str, Path]]], optional): List of
             model/package paths that need to be loaded as dependencies for the
             model.
+        fmi_version (Literal[1, 2], optional): FMI version, 1 or 2. Defaults to 2.
+        fmi_type (Literal["me", "cs", "all", "csSolver"], optional): FMI type,
+            me (model exchange), cs (co-simulation), all or
+            csSolver (using Dymola solver).Defaults to "all".
+        include_source (bool, optional): Whether to include source code in FMU.
+            Defaults to False.
+        include_image (Literal[0, 1, 2], optional): Whether to include the model image
+            (0 - no image, 1 icon, 2 diagram). Defaults to 2.
         keep_log (bool, optional): If True the simulator log is kept
             else it will be deleted. Defaults to True.
         keep_mos (bool, optional): If True the mos script is kept
@@ -405,21 +446,30 @@ def export_dymola_model(
     Returns:
         Path: Path to the exported FMU.
     """
-    _dymola_exe_path = utils.convert_str_to_path(dymola_exe_path, "dymola_exe_path")
-    _model_path = utils.convert_str_to_path(model_path, "model_path")
-    _output_directory = utils.convert_str_to_path(output_directory, "output_directory")
+    dymola_exe_path = utils.convert_str_to_path(dymola_exe_path, "dymola_exe_path")
+    model_path = utils.convert_str_to_path(model_path, "model_path")
+    if output_directory is not None:
+        output_directory = utils.convert_str_to_path(
+            output_directory, "output_directory"
+        )
+    _validate_fmu_export_settings(fmi_version, fmi_type, include_source, include_image)
 
     with DymolaFmuExport(
-        _model_path,
+        model_path,
         model_name,
+        fmu_name,
         parameters,
         model_modifiers,
         packages,
-        _output_directory,
+        output_directory,
+        fmi_version,
+        fmi_type,
+        include_source,
+        include_image,
     ) as dymola_exporter:
         mos_script = dymola_exporter.write_mos_script(export_simulator_log=keep_log)
         dymola_exporter.create_mos_file(mos_script)
-        successful = dymola_exporter.export_fmu(_dymola_exe_path)
+        successful = dymola_exporter.export_fmu(dymola_exe_path)
         dymola_exporter.move_files_to_output_directory(successful, keep_mos, keep_log)
         if not successful:
             err = dymola_exporter.read_dymola_error()
@@ -427,3 +477,20 @@ def export_dymola_model(
                 f"Fmu export was not successful.\nDymola error message:\n{err}\n"
             )
         return dymola_exporter.fmu_path
+
+
+def _validate_fmu_export_settings(
+    fmi_version: Literal[1, 2],
+    fmi_type: Literal["me", "cs", "all", "csSolver"],
+    include_source: bool,
+    include_image: Literal[0, 1, 2],
+) -> None:
+    if fmi_version not in [1, 2]:
+        raise ValueError(f"'fmi_version' is {fmi_version}; expected 1 or 2")
+    if fmi_type not in ["me", "cs", "all", "csSolver"]:
+        raise ValueError(
+            f"'fmi_type' is {fmi_type}; expected 'me', 'cs', 'all' or 'csSolver'"
+        )
+    utils.check_type(include_source, "include_source", bool)
+    if include_image not in [1, 2]:
+        raise ValueError(f"'include_image' is {include_image}; expected 0, 1 or 2")
