@@ -285,7 +285,7 @@ class Simulation:
         return units
 
 
-def simulate(
+def simulate( # pylint: disable=too-many-locals
     stop_time: float,
     step_size: float,
     fmu_paths: Optional[FmuPaths] = None,
@@ -454,7 +454,7 @@ def simulate(
     if logging_step_size is None:
         logging_step_size = step_size
 
-    _logging_step_size = float(logging_step_size)
+    logging_step_size = float(logging_step_size)
 
     if connections_config is None:
         connections_config = {}
@@ -475,7 +475,7 @@ def simulate(
     _parameters_to_log = init_parameter_list(parameters_to_log)
 
     simulator = Simulation({**fmus, **models}, connections, _parameters_to_log)
-    results = simulator.simulate(stop_time, step_size, _logging_step_size)
+    results = simulator.simulate(stop_time, step_size, logging_step_size)
 
     if get_units:
         units = simulator.get_units()
@@ -615,7 +615,6 @@ def _validate_input(
     logging_step_size: Optional[float],
     start_values: Optional[StartValues],
 ) -> None:
-
     utils.check_type(stop_time, "stop_time", Real)
     utils.check_type(step_size, "step_size", Real)
 
@@ -652,7 +651,6 @@ def _validate_input(
 
 
 def _validate_fmu_paths(fmu_paths: Optional[FmuPaths]) -> list[str]:
-
     if fmu_paths is None:
         return []
 
@@ -670,7 +668,6 @@ def _validate_fmu_paths(fmu_paths: Optional[FmuPaths]) -> list[str]:
 
 
 def _validate_model_instances(model_instances: Optional[ModelInstances]) -> list[str]:
-
     if model_instances is None:
         return []
 
@@ -692,7 +689,6 @@ def _validate_model_instances(model_instances: Optional[ModelInstances]) -> list
 def _validate_connection_config(
     connections_config: Optional[ConnectionsConfig], system_names: list[str]
 ) -> None:
-
     if connections_config is None:
         return
 
@@ -719,7 +715,6 @@ def _validate_connection_config(
 
 
 def _check_key_exists(key: str, connection: _Connection, system_name: str) -> None:
-
     if key not in connection:
         raise KeyError(
             f"missing key '{key}' in connections specified for system '{system_name}'"
@@ -729,7 +724,6 @@ def _check_key_exists(key: str, connection: _Connection, system_name: str) -> No
 def _validate_parameters_to_log(
     parameters_to_log: dict[str, list[str]], system_names: list[str]
 ) -> None:
-
     utils.check_type(parameters_to_log, "parameters_to_log", dict)
 
     for name, parameter_names in parameters_to_log.items():
@@ -744,7 +738,6 @@ def _validate_parameters_to_log(
 
 
 def _validate_logging_step_size(logging_step_size: float, step_size: float) -> None:
-
     utils.check_type(logging_step_size, "logging_step_size", Real)
 
     if not round(logging_step_size / step_size, 10).is_integer():
@@ -756,7 +749,6 @@ def _validate_logging_step_size(logging_step_size: float, step_size: float) -> N
 def _validate_start_values(
     start_values: StartValues, all_system_names: list[str]
 ) -> None:
-
     utils.check_type(start_values, "start_values", dict)
 
     for name in start_values:
