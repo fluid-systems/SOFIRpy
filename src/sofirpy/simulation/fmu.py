@@ -21,7 +21,7 @@ SetterFunction = Callable[[list[int], list[ParameterValue]], None]
 GetterFunction = Callable[[list[int]], list[ParameterValue]]
 
 
-class Fmu(SimulationEntity):
+class Fmu(SimulationEntity): # pylint: disable=too-many-instance-attributes
     """Class representing a fmu."""
 
     def __init__(self, fmu_path: Path, name: str, step_size: float) -> None:
@@ -109,7 +109,6 @@ class Fmu(SimulationEntity):
     def set_parameter(
         self, parameter_name: str, parameter_value: ParameterValue
     ) -> None:
-
         var_type = self.model_description_dict[parameter_name].type
         self.setter_functions[var_type](
             [self.model_description_dict[parameter_name].valueReference],
