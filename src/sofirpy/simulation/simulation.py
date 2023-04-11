@@ -487,19 +487,14 @@ def simulate(  # pylint: disable=too-many-locals
 def init_fmus(
     fmu_paths: FmuPaths, step_size: float, start_values: StartValues
 ) -> dict[str, System]:
-    """Initialize all System object and stores them in a dictionary.
+    """Initialize fmus as a System object and store them in a dictionary.
 
     Args:
-        fmu_infos (FmuInfos): Defines
-            which fmus should be simulated and how they are connected to other
-            systems.
-        model_infos (ModelInfos):
-            Defines which python models should be simulated and how they are
-            connected to other systems.
-        model_classes (dict[str, SimulationEntity]): Dictionary with the name of
-            the models as keys and a instance of the model class as
-            values.
+        fmu_paths (FmuPaths): Dictionary which defines which fmu should be simulated.
+            key -> name of the fmu; value -> path to the fmu
         step_size (float): step size of the simulation
+        start_values (StartValues): Dictionary which defines start values for the
+            systems.
 
     Returns:
         dict[str, System]: key -> fmu name; value -> System instance
@@ -521,22 +516,16 @@ def init_models(
     model_instances: ModelInstances,
     start_values: StartValues,
 ) -> dict[str, System]:
-    """Initialize all System object and stores them in a dictionary.
+    """Initialize python models as a System object and store them in a dictionary.
 
     Args:
-        fmu_infos (FmuInfos): Defines
-            which fmus should be simulated and how they are connected to other
+        model_instances (ModelInstances): Dictionary which defines which Python Models
+            should be simulated.
+        start_values (StartValues): Dictionary which defines start values for the
             systems.
-        model_infos (ModelInfos):
-            Defines which python models should be simulated and how they are
-            connected to other systems.
-        model_classes (dict[str, SimulationEntity]): Dictionary with the name of
-            the models as keys and a instance of the model class as
-            values.
-        step_size (float): step size of the simulation
 
     Returns:
-        dict[str, System]: key -> model name; value -> System instance
+        dict[str, System]: key -> python model name; value -> System instance
     """
 
     models: dict[str, System] = {}
@@ -554,7 +543,7 @@ def init_connections(connections_config: ConnectionsConfig) -> list[Connection]:
     """Initialize all the connections.
 
     Args:
-        system_infos (SystemInfos):
+        connections_config (ConnectionsConfig):
             Defines how all systems are connected.
 
     Returns:
