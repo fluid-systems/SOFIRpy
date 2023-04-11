@@ -50,6 +50,9 @@ class DymolaFmuExport(FmuExport):  # pylint: disable=too-many-instance-attribute
             model_name (str): Name of the model that should be exported. If the
                 model that should be exported is inside a package, separate the
                 package name and the model name with a '.'.
+            fmu_name (Optional[str], optional): Name the exported fmu should have. If
+                not specified the fmu will have the same name as the model.
+                Defaults to None.
             parameters (dict[str, ParameterValue], optional):
                 Dictionary of parameter names and values.
                 Example:
@@ -68,9 +71,9 @@ class DymolaFmuExport(FmuExport):  # pylint: disable=too-many-instance-attribute
 
                 Defaults to None.
             packages (list[str], optional): List of model/package paths that
-                need to be loaded as dependencies for the model.
+                need to be loaded as dependencies for the model. Defaults to None.
             output_directory (Optional[Path], optional): Output directory for the fmu,
-                the log and the mos script.
+                the log and the mos script. Defaults to None.
             fmi_version (Literal[1, 2], optional): FMI version, 1 or 2. Defaults to 2.
             fmi_type (Literal["me", "cs", "all", "csSolver"], optional): FMI type,
                 me (model exchange), cs (co-simulation), all or csSolver (using Dymola
@@ -411,15 +414,17 @@ def export_dymola_model(  # pylint: disable=too-many-arguments, too-many-locals
         model_name (str): Name of the model that should be exported. If the
             model that should be exported is inside a package, separate the
             package name and the model name with a '.'.
+        fmu_name (Optional[str], optional): Name the exported fmu should have. If not
+            specified the fmu will have the same name as the model. Defaults to None.
         output_directory (Union[Path, str]): Output directory for the fmu, the log and
-            the mos script.
+            the mos script. Defaults to None.
         parameters (dict[str, ParameterValue], optional):
             Dictionary of parameter names and values.
             Example:
 
             >>> parameters = {"Resistor.R" : "1", "Resistor.useHeatPort": True}
 
-                                Defaults to None.
+            Defaults to None.
         model_modifiers (list[str]], optional): List of model modifiers.
             Example
 
