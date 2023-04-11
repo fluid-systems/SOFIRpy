@@ -18,7 +18,8 @@ fmu_path = export_dymola_model(
     dymola_exe_path,
     model_path,
     model_name,
-    output_directory,
+    output_directory=output_directory,
     parameters=parameters,
     keep_mos=False,
+    keep_log=False,
 )
