@@ -84,7 +84,7 @@ class Connection:
     output_point: SystemParameter
 
 
-class Simulation:
+class Simulator:
     """Object that performs the simulation."""
 
     def __init__(
@@ -93,7 +93,7 @@ class Simulation:
         connections: list[Connection],
         parameters_to_log: Optional[list[SystemParameter]] = None,
     ) -> None:
-        """Initialize Simulation object.
+        """Initialize Simulator object.
 
         Args:
             systems (list[System]): list of systems which are to be simulated
@@ -474,7 +474,7 @@ def simulate(  # pylint: disable=too-many-locals
     connections = init_connections(connections_config)
     _parameters_to_log = init_parameter_list(parameters_to_log)
 
-    simulator = Simulation({**fmus, **models}, connections, _parameters_to_log)
+    simulator = Simulator({**fmus, **models}, connections, _parameters_to_log)
     results = simulator.simulate(stop_time, step_size, logging_step_size)
 
     if get_units:
