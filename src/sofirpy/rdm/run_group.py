@@ -104,11 +104,6 @@ HDF5Entity = Union[Group, Dataset]
 @dataclass
 class Attribute:
     parent: HDF5Entity
-    attributes: Attrs
-
-    @dataclass
-    class Attrs:
-        ...
 
     @classmethod
     @abstractmethod
@@ -116,14 +111,17 @@ class Attribute:
         ...
 
     @classmethod
+    @abstractmethod
     def from_hdf5(cls, hdf5: HDF5, parent: HDF5Entity) -> Self:
-        return cls(parent, **hdf5.read_attributes(parent.path))
+        ...
 
+    @abstractmethod
     def to_dict(self) -> dict[str, Any]:
-        return asdict(self.attributes)
+        ...
 
+    @abstractmethod
     def to_hdf5(self, hdf5: HDF5, parent: HDF5Entity) -> None:
-        hdf5.append_attributes(self.to_dict(), parent.path)
+        ...
 
 
 @dataclass
@@ -141,6 +139,13 @@ class RunGroup(Group):
     @property
     def name(self) -> str:
         return self.run_name
+
+    @property
+    def simulation_and_model_config(self) -> dict[str, Any]:  # TODO specify type
+        return {
+            **self.simulation_group.simulation_config,
+            **self.models_group.model_config,
+        }
 
     @classmethod
     def from_config(
@@ -176,17 +181,11 @@ class RunGroup(Group):
         self.simulation_group = simulation_group
         return self
 
-    def simulate(self) -> None:
-
-        _results = simulate(
-            **self.simulation_group.attr.attributes, **self.models_group.to_dict()
-        )
-        if isinstance(_results, tuple):
-            results, units = _results
-            self.simulation_group.time_series.data = results
-            self.simulation_group.time_series.attr.attributes = units
-            return
+    def store_simulation_results(
+        self, results: pd.DataFrame, units: Optional[Units]
+    ) -> None:
         self.simulation_group.time_series.data = results
+        self.simulation_group.time_series.attr = units
 
     def to_hdf5(self, hdf5_path: Path) -> None:
         assert self.simulation_group.time_series is not None
@@ -294,16 +293,38 @@ class ModelsGroup(Group):
         return self.GROUP_NAME
 
     @property
+    def model_config(self) -> dict[str, Any]:  # TODO specify type
+        return {
+            "start_values": self.start_values,
+            "connections_config": self.connections_config,
+            "parameters_to_log": self.parameters_to_log,
+            "fmu_paths": self.fmus_group.fmu_paths,
+            "model_instances": self.python_models_group.model_instances,
+        }
+
+    @property
     def start_values(self) -> StartValues:
-        return {}
+        return {
+            model.name: model.start_values_dataset.data
+            for model in self.fmus_group.fmu_groups
+            + self.python_models_group.python_model_groups
+        }
 
     @property
     def connections_config(self) -> ConnectionsConfig:
-        return {}
+        return {
+            model.name: model.connections_dataset.data
+            for model in self.fmus_group.fmu_groups
+            + self.python_models_group.python_model_groups
+        }
 
     @property
     def parameters_to_log(self) -> ParametersToLog:
-        return {}
+        return {
+            model.name: model.parameters_to_log_dataset.data
+            for model in self.fmus_group.fmu_groups
+            + self.python_models_group.python_model_groups
+        }
 
     @classmethod
     def from_config(
@@ -354,6 +375,10 @@ class FmusGroup(Group):
     def name(self) -> str:
         return self.GROUP_NAME
 
+    @property
+    def fmu_paths(self) -> FmuPaths:
+        return {fmu.name: fmu.fmu_path for fmu in self.fmu_groups}
+
     @classmethod
     def from_config(
         cls, models_config: dict[str, ModelConfig], parent: ModelsGroup
@@ -399,6 +424,13 @@ class PythonModelsGroup(Group):
     def name(self) -> str:
         return self.GROUP_NAME
 
+    @property
+    def model_instances(self) -> ModelInstances:
+        return {
+            python_model_group.name: python_model_group.model_instance
+            for python_model_group in self.python_model_groups
+        }
+
     @classmethod
     def from_config(
         cls,
@@ -406,6 +438,7 @@ class PythonModelsGroup(Group):
         model_instances: ModelInstances,
         parent: ModelsGroup,
     ) -> Self:
+        assert model_instances is not None
         self = cls(parent)
         python_models_config = {
             model_name: model_config
@@ -466,11 +499,18 @@ class ModelDataset(Dataset):
 
     @classmethod
     def from_hdf5(cls, hdf5: HDF5, parent: Union[PythonModelGroup, FmuGroup]) -> Self:
-        cls(parent, hdf5.read_data(cls.DATASET_NAME, parent.path))
+        return cls(
+            parent,
+            json.loads(hdf5.read_data(cls.DATASET_NAME, parent.path).decode("utf-8"))[
+                "data"
+            ],
+        )
 
     def to_hdf5(self, hdf5: HDF5) -> None:
         hdf5.store_data(
-            str(self.data), data_name=self.DATASET_NAME, group_path=self.parent.path
+            json.dumps({"data": self.data}),
+            data_name=self.DATASET_NAME,
+            group_path=self.parent.path,
         )
 
 
@@ -541,6 +581,12 @@ class FmuReferenceDataset(ModelDataset):
         fmu_hash = hashlib.sha256(fmu_content).hexdigest()
         return cls(parent=parent, data=fmu_hash, fmu_content=fmu_content)
 
+    @classmethod
+    def from_hdf5(cls, hdf5: HDF5, parent: Union[PythonModelGroup, FmuGroup]) -> Self:
+        return cls(
+            parent, hdf5.read_data(cls.DATASET_NAME, parent.path).decode("utf-8")
+        )
+
     def to_hdf5(self, hdf5: HDF5) -> None:
         fmus_storage_group = ModelStorageGroup.from_hdf5(hdf5).fmus_storage_group
         hdf5.store_data(self.data, self.name, self.parent.path)
@@ -553,22 +599,46 @@ class FmuReferenceDataset(ModelDataset):
 @dataclass
 class PythonModelReferenceDataset(ModelDataset):
     data: str
+    pickled_python_model: Optional[bytes] = None
     DATASET_NAME = "reference"
 
     @classmethod
     def from_config(
-        cls, model_config: ModelConfig, parent: Union[PythonModelGroup, FmuGroup]
+        cls, model_instance: SimulationEntity, parent: Union[PythonModelGroup, FmuGroup]
     ) -> Self:
-        return cls(parent, "Nothing")
+        cloudpickle.register_pickle_by_value(inspect.getmodule(model_instance))
+        pickled_python_model = cloudpickle.dumps(model_instance)
+        model_hash = hashlib.sha256(pickled_python_model).hexdigest()
+        return cls(
+            parent=parent, data=model_hash, pickled_python_model=pickled_python_model
+        )
+
+    @classmethod
+    def from_hdf5(cls, hdf5: HDF5, parent: Union[PythonModelGroup, FmuGroup]) -> Self:
+        return cls(
+            parent, hdf5.read_data(cls.DATASET_NAME, parent.path).decode("utf-8")
+        )
+
+    def to_hdf5(self, hdf5: HDF5) -> None:
+        python_models_storage_group = ModelStorageGroup.from_hdf5(
+            hdf5
+        ).python_models_storage_group
+        hdf5.store_data(self.data, self.name, self.parent.path)
+        if self.data in python_models_storage_group.get_references():
+            return
+        python_models_storage_group.store_model(
+            hdf5, self.pickled_python_model, self.data
+        )
+        self.pickled_python_model = None  # for memory purposes
 
 
 @dataclass
 class ModelGroup(Group):
-    DATASETS: ClassVar[list[ModelDataset]]
-
     parent: Union[FmusGroup, PythonModelsGroup]
     model_name: str
-    datasets: Optional[list[ModelDataset]] = None
+    connections_dataset: Optional[ConnectionDataset] = None
+    start_values_dataset: Optional[StartValuesDataset] = None
+    parameters_to_log_dataset: Optional[ParametersToLogDataset] = None
 
     @property
     def path(self) -> str:
@@ -579,53 +649,57 @@ class ModelGroup(Group):
         return self.model_name
 
     @classmethod
+    @abstractmethod
     def from_hdf5(cls, hdf5: HDF5, model_name: str, parent) -> Self:
-        self = cls(parent=parent, model_name=model_name, datasets=[])
-        for dataset in cls.DATASETS:
-            _dataset = dataset.from_hdf5(hdf5, self)
-            self.datasets.append(_dataset)
-        return self
+        ...
 
     def to_hdf5(self, hdf5: HDF5) -> Self:
         hdf5.create_group(self.path)
-        for dataset in self.datasets:
-            dataset.to_hdf5(hdf5)
+        self.connections_dataset.to_hdf5(hdf5)
+        self.start_values_dataset.to_hdf5(hdf5)
+        self.parameters_to_log_dataset.to_hdf5(hdf5)
 
 
 @dataclass
 class FmuGroup(ModelGroup):
-    DATASETS: ClassVar[list[ModelDataset]] = [
-        ConnectionDataset,
-        StartValuesDataset,
-        ParametersToLogDataset,
-        FmuReferenceDataset,
-    ]
-
-    fmu_path: Path = None
+    reference_dataset: Optional[FmuReferenceDataset] = None
+    fmu_path: Optional[Path] = None
 
     @classmethod
     def from_config(
         cls,
         model_name: str,
-        model_config: ModelConfig,
+        model_config: FmuConfig,
         parent: Union[FmusGroup, PythonModelsGroup],
     ) -> Self:
-        self = cls(parent, model_name)
-        datasets = []
-        for dataset in cls.DATASETS:
-            datasets.append(dataset.from_config(model_config, self))
-        self.datasets = datasets
+        self = cls(
+            parent=parent, model_name=model_name, fmu_path=model_config["fmu_path"]
+        )
+        self.connections_dataset = ConnectionDataset.from_config(model_config, self)
+        self.start_values_dataset = StartValuesDataset.from_config(model_config, self)
+        self.parameters_to_log_dataset = ParametersToLogDataset.from_config(
+            model_config, self
+        )
+        self.reference_dataset = FmuReferenceDataset.from_config(model_config, self)
         return self
+
+    @classmethod
+    def from_hdf5(cls, hdf5: HDF5, group_name: str, parent: Group) -> Self:
+        self = cls(parent=parent, model_name=group_name)
+        self.connections_dataset = ConnectionDataset.from_hdf5(hdf5, self)
+        self.start_values_dataset = StartValuesDataset.from_hdf5(hdf5, self)
+        self.parameters_to_log_dataset = ParametersToLogDataset.from_hdf5(hdf5, self)
+        self.reference_dataset = FmuReferenceDataset.from_hdf5(hdf5, self)
+        return self
+
+    def to_hdf5(self, hdf5: HDF5) -> Self:
+        super().to_hdf5(hdf5)
+        self.reference_dataset.to_hdf5(hdf5)
 
 
 @dataclass
 class PythonModelGroup(ModelGroup):
-    DATASETS: ClassVar[list[ModelDataset]] = [
-        ConnectionDataset,
-        StartValuesDataset,
-        ParametersToLogDataset,
-        PythonModelReferenceDataset,
-    ]
+    reference_dataset: Optional[PythonModelReferenceDataset] = None
     model_instance: Optional[SimulationEntity] = None
 
     @property
@@ -640,12 +714,29 @@ class PythonModelGroup(ModelGroup):
         model_config: ModelConfig,
         parent: Union[FmusGroup, PythonModelsGroup],
     ) -> Self:
-        self = cls(parent, model_name, model_instance)
-        datasets = []
-        for dataset in cls.DATASETS:
-            datasets.append(dataset.from_config(model_config, self))
-        self.datasets = datasets
+        self = cls(parent=parent, model_name=model_name, model_instance=model_instance)
+        self.connections_dataset = ConnectionDataset.from_config(model_config, self)
+        self.start_values_dataset = StartValuesDataset.from_config(model_config, self)
+        self.parameters_to_log_dataset = ParametersToLogDataset.from_config(
+            model_config, self
+        )
+        self.reference_dataset = PythonModelReferenceDataset.from_config(
+            model_instance, self
+        )
         return self
+
+    @classmethod
+    def from_hdf5(cls, hdf5: HDF5, group_name: str, parent: Group) -> Self:
+        self = cls(parent=parent, model_name=group_name)
+        self.connections_dataset = ConnectionDataset.from_hdf5(hdf5, self)
+        self.start_values_dataset = StartValuesDataset.from_hdf5(hdf5, self)
+        self.parameters_to_log_dataset = ParametersToLogDataset.from_hdf5(hdf5, self)
+        self.reference_dataset = PythonModelReferenceDataset.from_hdf5(hdf5, self)
+        return self
+
+    def to_hdf5(self, hdf5: HDF5) -> Self:
+        super().to_hdf5(hdf5)
+        self.reference_dataset.to_hdf5(hdf5)
 
 
 @dataclass
@@ -658,11 +749,15 @@ class SimulationResultsGroup(Group):
 
     @property
     def path(self) -> str:
-        return f"{self.parent.path}/{self.GROUP_NAME}"
+        return f"{self.parent.path}/{self.name}"
 
     @property
     def name(self) -> str:
         return self.GROUP_NAME
+
+    @property
+    def simulation_config(self) -> SimulationConfig:
+        return self.attr.to_dict()
 
     @classmethod
     def from_config(cls, config: Config, parent: RunGroup) -> Self:
@@ -691,6 +786,7 @@ class SimulationResultsGroup(Group):
 @dataclass
 class SimulationResultsAttr(Attribute):
     parent: SimulationResultsGroup
+    attributes: Attrs
 
     CONFIG_KEY = "simulation_config"
 
@@ -706,6 +802,10 @@ class SimulationResultsAttr(Attribute):
         step_size: float
         logging_step_size: Optional[float] = None
         get_units: bool = False
+
+        def __post_init__(self) -> None:
+            if self.logging_step_size is None:
+                self.logging_step_size = self.step_size
 
     @classmethod
     def from_config(cls, config: Config, parent: SimulationResultsGroup) -> Self:
@@ -728,27 +828,37 @@ class TimeSeriesDataset(Dataset):
 
     parent: SimulationResultsGroup
     data: Optional[pd.DataFrame] = None
-    attr: Optional[SimulationResultsAttr] = None
+    _attr: Optional[TimeSeriesAttr] = None
 
     @property
     def path(self) -> str:
-        return f"{self.parent.path}/{self.DATASET_NAME}"
+        return f"{self.parent.path}/{self.name}"
 
     @property
     def name(self) -> str:
         return self.DATASET_NAME
 
+    @property
+    def attr(self):
+        return self._attr.attributes
+
+    @attr.setter
+    def attr(self, unit: Optional[Units]) -> None:  # TODO make this better/different
+        self._attr.attributes = unit
+
     @classmethod
     def from_config(cls, parent: HDF5Entity) -> Self:
-        return cls(parent)
+        self = cls(parent)
+        self._attr = TimeSeriesAttr(self)
+        return self
 
     @classmethod
     def from_hdf5(cls, hdf5: HDF5, parent: SimulationResultsGroup) -> Self:
         _time_series = hdf5.read_data(cls.DATASET_NAME, parent.path)
-        # time_series = pd.DataFrame.from_records(_time_series)
-        self = cls(parent, _time_series)
+        time_series = pd.DataFrame.from_records(_time_series)
+        self = cls(parent, time_series)
         attr = TimeSeriesAttr.from_hdf5(hdf5, self)
-        self.attr = attr
+        self._attr = attr
         return self
 
     def to_hdf5(self, hdf5: HDF5) -> None:
@@ -761,14 +871,37 @@ class TimeSeriesDataset(Dataset):
             data_name=self.name,
             group_path=self.parent.path,
         )
-        # self.attr.to_hdf5(hdf5)
+        self._attr.to_hdf5(hdf5)
 
 
 @dataclass
 class TimeSeriesAttr(Attribute):
+    attributes: Optional[Units] = None
+
+    # @dataclass
+    # class Attr:
+    #     @classmethod
+    #     def from_dict(cls, units: Optional[dict]):
+    #         if units is None:
+    #             return cls()
+    #         return make_dataclass(
+    #             cls.__name__, [(key, type(val)) for key, val in units.items()]
+    #         )(**units)
+
     @classmethod
     def from_hdf5(cls, hdf5: HDF5, parent: HDF5Entity) -> Self:
-        return cls(parent, cls.Attrs(**hdf5.read_attributes(parent.path)))
+        return cls(parent=parent, attributes=hdf5.read_attributes(parent.path))
+
+    def to_dict(self) -> dict[str, Any]:
+        return self.attributes
+
+    def to_hdf5(self, hdf5: HDF5) -> None:
+        if not self.attributes:
+            return
+        hdf5.append_attributes(
+            {k: v if v is not None else "" for k, v in self.attributes.items()},
+            self.parent.path,
+        )
 
 
 @dataclass
@@ -877,6 +1010,11 @@ class PythonModelsStorageGroup(Group):
         self.python_models = python_models
         return self
 
+    def store_model(self, hdf5: HDF5, pickled_model: bytes, model_hash: str) -> None:
+        PythonModelsContentDataset(
+            parent=self, dataset_name=model_hash, data=pickled_model
+        ).to_hdf5(hdf5)
+
     def to_hdf5(self, hdf5: HDF5) -> None:
         hdf5.create_group(self.path)
 
@@ -944,7 +1082,6 @@ def generate_meta() -> dict[str, Union[str, list[str]]]:
 
 
 def get_init_key_value() -> tuple[str, str]:
-
     return (
         "Initialization",
         "Created with sofirpy. See Documentation here: https://sofirpy.readthedocs.io",
@@ -952,7 +1089,6 @@ def get_init_key_value() -> tuple[str, str]:
 
 
 def init_hdf5(hdf5_path: Path) -> HDF5:
-
     hdf5 = HDF5(hdf5_path)
     if is_hdf5_initialized(hdf5):
         print("HDF5 already initialized")
@@ -969,7 +1105,6 @@ def init_hdf5(hdf5_path: Path) -> HDF5:
 
 
 def is_hdf5_initialized(hdf5: HDF5) -> bool:
-
     key, value = get_init_key_value()
     attr = hdf5.read_attributes("")
     if key not in attr:
@@ -987,7 +1122,6 @@ class RunAttrKeys(Enum):
 
 
 def get_run_group_meta(run_name: str) -> dict[str, str]:
-
     return {
         RunAttrKeys.RUN_NAME.value: run_name,
         RunAttrKeys.ID.value: generate_id(),

@@ -393,6 +393,9 @@ class HDF5:
         """
         return self._get_group_or_dataset_names(group_path, h5py.Dataset, filter_func)
 
+    def get_dataset_with_attr_value(self, attr: str, expr: Optional[str] = None) -> Any:
+        ...
+
     def _place(
         self,
         name: str,
