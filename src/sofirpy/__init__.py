@@ -11,7 +11,8 @@ __all__ = [
     "simulate",
     "plot_results",
     "HDF5",
-    "Run" "store_input_arguments",
+    "Run",
+    "store_input_arguments",
 ]
 
 from .fmu_export.dymola_fmu_export import export_dymola_model
