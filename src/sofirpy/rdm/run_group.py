@@ -20,7 +20,7 @@ from typing_extensions import NotRequired, Self
 
 import sofirpy
 import sofirpy.utils as utils
-from sofirpy import HDF5, SimulationEntity, simulate
+from sofirpy import HDF5
 from sofirpy.simulation.simulation import (
     Connections,
     ConnectionsConfig,
@@ -30,7 +30,7 @@ from sofirpy.simulation.simulation import (
     StartValues,
     Units,
 )
-from sofirpy.simulation.simulation_entity import StartValue
+from sofirpy.simulation.simulation_entity import SimulationEntity, StartValue
 
 
 class Config(TypedDict):
@@ -583,9 +583,20 @@ class FmuReferenceDataset(ModelDataset):
 
     @classmethod
     def from_hdf5(cls, hdf5: HDF5, parent: Union[PythonModelGroup, FmuGroup]) -> Self:
-        return cls(
-            parent, hdf5.read_data(cls.DATASET_NAME, parent.path).decode("utf-8")
-        )
+        fmu_hash = hdf5.read_data(cls.DATASET_NAME, parent.path).decode("utf-8")
+        fmu_content = ModelStorageGroup.from_hdf5(
+            hdf5
+        ).fmus_storage_group.get_fmu_content_from_reference(hdf5, fmu_hash)
+        return cls(parent, data=fmu_hash, fmu_content=fmu_content)
+
+    def write_fmu_content_to_tmp_dir(self) -> Path:
+        tmp_dir = Path(tempfile.mkdtemp())
+        fmu_path = tmp_dir / f"{self.parent.model_name}.fmu"
+        fmu_path.touch()
+        with open(fmu_path, "wb") as fmu_file:
+            fmu_file.write(self.fmu_content)
+        self.fmu_content = None
+        return fmu_path
 
     def to_hdf5(self, hdf5: HDF5) -> None:
         fmus_storage_group = ModelStorageGroup.from_hdf5(hdf5).fmus_storage_group
@@ -615,9 +626,14 @@ class PythonModelReferenceDataset(ModelDataset):
 
     @classmethod
     def from_hdf5(cls, hdf5: HDF5, parent: Union[PythonModelGroup, FmuGroup]) -> Self:
-        return cls(
-            parent, hdf5.read_data(cls.DATASET_NAME, parent.path).decode("utf-8")
-        )
+        model_hash = hdf5.read_data(cls.DATASET_NAME, parent.path).decode("utf-8")
+        pickled_python_model = ModelStorageGroup.from_hdf5(
+            hdf5
+        ).python_models_storage_group.get_pickled_model_by_reference(hdf5, model_hash)
+        return cls(parent, data=model_hash, pickled_python_model=pickled_python_model)
+
+    def unpickle_python_model(self) -> SimulationEntity:
+        return cloudpickle.loads(self.pickled_python_model)
 
     def to_hdf5(self, hdf5: HDF5) -> None:
         python_models_storage_group = ModelStorageGroup.from_hdf5(
@@ -690,6 +706,7 @@ class FmuGroup(ModelGroup):
         self.start_values_dataset = StartValuesDataset.from_hdf5(hdf5, self)
         self.parameters_to_log_dataset = ParametersToLogDataset.from_hdf5(hdf5, self)
         self.reference_dataset = FmuReferenceDataset.from_hdf5(hdf5, self)
+        self.fmu_path = self.reference_dataset.write_fmu_content_to_tmp_dir()
         return self
 
     def to_hdf5(self, hdf5: HDF5) -> Self:
@@ -732,6 +749,8 @@ class PythonModelGroup(ModelGroup):
         self.start_values_dataset = StartValuesDataset.from_hdf5(hdf5, self)
         self.parameters_to_log_dataset = ParametersToLogDataset.from_hdf5(hdf5, self)
         self.reference_dataset = PythonModelReferenceDataset.from_hdf5(hdf5, self)
+        self.model_instance = self.reference_dataset.unpickle_python_model()
+        self.reference_dataset.pickled_python_model = None
         return self
 
     def to_hdf5(self, hdf5: HDF5) -> Self:
@@ -953,6 +972,9 @@ class FmusStorageGroup(Group):
     def to_hdf5(self, hdf5: HDF5) -> None:
         hdf5.create_group(self.path)
 
+    def get_fmu_content_from_reference(self, hdf5: HDF5, reference: str) -> bytes:
+        return hdf5.read_data(reference, self.path)
+
     def store_fmu(self, hdf5: HDF5, fmu_content: bytes, fmu_hash: str) -> None:
         FmuContentDataset(parent=self, dataset_name=fmu_hash, data=fmu_content).to_hdf5(
             hdf5
@@ -1009,6 +1031,9 @@ class PythonModelsStorageGroup(Group):
             )
         self.python_models = python_models
         return self
+
+    def get_pickled_model_by_reference(self, hdf5: HDF5, reference: str) -> bytes:
+        return hdf5.read_data(reference, self.path)
 
     def store_model(self, hdf5: HDF5, pickled_model: bytes, model_hash: str) -> None:
         PythonModelsContentDataset(

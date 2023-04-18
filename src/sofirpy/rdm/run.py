@@ -45,4 +45,8 @@ class Run:
         self.run_group.store_simulation_results(_results, None)
 
     def to_hdf5(self, hdf5_path: Path) -> None:
+        if self.simulation_results is None:
+            raise ValueError(
+                "No simulation performed"
+            )  # TODO allow the user to store before doing a simulation?
         self.run_group.to_hdf5(hdf5_path)
