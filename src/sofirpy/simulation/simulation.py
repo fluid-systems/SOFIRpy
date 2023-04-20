@@ -384,13 +384,13 @@ def simulate(  # pylint: disable=too-many-locals
             ... {
             ...     "<name of system 1>":
             ...     {
-            ...         "<name of parameter 1>": "<start value>",
-            ...         "<name of parameter 2>", "(<start value>, unit e.g 'kg.m2')"
+            ...         "<name of parameter 1>": <start value>,
+            ...         "<name of parameter 2>", (<start value>, unit e.g 'kg.m2')
             ...     },
             ...     "<name of system 2>":
             ...     {
-            ...         "<name of parameter 1>": "<start value>",
-            ...         "<name of parameter 2>": "<start value>"
+            ...         "<name of parameter 1>": <start value>,
+            ...         "<name of parameter 2>": <start value>
             ...     }
             ... }
 
