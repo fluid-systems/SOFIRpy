@@ -19,6 +19,7 @@ from pip._internal.operations import freeze
 from typing_extensions import NotRequired, Self
 
 import sofirpy
+import sofirpy.rdm.run as rdm_run
 import sofirpy.utils as utils
 from sofirpy import HDF5
 from sofirpy.simulation.simulation import (
@@ -63,65 +64,35 @@ class SimulationConfig(TypedDict):
 
 
 @dataclass
-class Group(ABC):
+class HDF5Entity(ABC):
+    parent: Optional[HDF5Object]
+
     @property
     @abstractmethod
     def path(self) -> str:
         ...
 
-    @property
-    @abstractmethod
-    def name(self) -> str:
-        ...
-
-    # @abstractmethod
-    # @classmethod
-    # def from_config(cls, config: dict[str, Any], parent: Optional[Group] = None) -> Group:...
-
 
 @dataclass
-class Dataset(ABC):
+class HDF5Object(HDF5Entity):
     parent: Optional[Group]
 
     @property
     @abstractmethod
-    def path(self) -> str:
-        ...
-
-    @property
-    @abstractmethod
     def name(self) -> str:
         ...
 
-    # @classmethod
-    # @abstractmethod
-    # def from_config(cls, config: dict[str, Any], parent: Optional[HDF5Entity] = None) -> Self:...
+
+class Group(HDF5Object):
+    ...
 
 
-HDF5Entity = Union[Group, Dataset]
+class Dataset(HDF5Object):
+    ...
 
 
-@dataclass
-class Attribute:
-    parent: HDF5Entity
-
-    @classmethod
-    @abstractmethod
-    def from_config(cls, config: dict[str, Any], parent: HDF5Entity) -> Self:
-        ...
-
-    @classmethod
-    @abstractmethod
-    def from_hdf5(cls, hdf5: HDF5, parent: HDF5Entity) -> Self:
-        ...
-
-    @abstractmethod
-    def to_dict(self) -> dict[str, Any]:
-        ...
-
-    @abstractmethod
-    def to_hdf5(self, hdf5: HDF5, parent: HDF5Entity) -> None:
-        ...
+class Attribute(HDF5Entity):
+    ...
 
 
 @dataclass
@@ -155,8 +126,8 @@ class RunGroup(Group):
         model_instances: Optional[ModelInstances] = None,
     ) -> Self:
         with open(config_path) as config_file:
-            config: dict[str, Any] = json.load(config_file)
-        self = cls(run_name)
+            config: Config = json.load(config_file)
+        self = cls(run_name=run_name, parent=None)
         config_dataset = RunConfigDataset.from_config(config, self)
         self.config_dataset = config_dataset
         attr = RunAttr.from_config(config, self)
@@ -170,9 +141,18 @@ class RunGroup(Group):
         return self
 
     @classmethod
+    def from_run(cls, run: sofirpy.Run) -> Self:
+        self = cls(run_name=run.run_name, parent=None)
+        self.config_dataset = RunConfigDataset.from_run(run=run, parent=self)
+        self.attr = RunAttr.from_run(run=run, parent=self)
+        self.models_group = ModelsGroup.from_run(run=run, parent=self)
+        self.simulation_group = SimulationResultsGroup.from_run(run=run, parent=self)
+        return self
+
+    @classmethod
     def from_hdf5(cls, hdf5_path: Path, run_name: str) -> Self:
         hdf5 = HDF5(hdf5_path)
-        self = cls(run_name)
+        self = cls(run_name=run_name, parent=None)
         attr = RunAttr.from_hdf5(hdf5, self)
         self.attr = attr
         models_group = ModelsGroup.from_hdf5(hdf5, self)
@@ -180,6 +160,45 @@ class RunGroup(Group):
         simulation_group = SimulationResultsGroup.from_hdf5(hdf5, self)
         self.simulation_group = simulation_group
         return self
+
+    def to_run(self) -> rdm_run.Run:
+        run_name = self.run_name
+        run_meta = rdm_run.RunMeta(**self.attr.to_dict())
+        fmus = {
+            fmu.name: rdm_run.Fmu(
+                name=fmu.name,
+                fmu_path=fmu.fmu_path,
+                connections=fmu.connections_dataset.data,
+                start_values=fmu.start_values_dataset.data,
+                parameters_to_log=fmu.parameters_to_log_dataset.data,
+            )
+            for fmu in self.models_group.fmus_group.fmu_groups
+        }
+        python_models = {
+            python_model.name: rdm_run.PythonModel(
+                name=python_model.name,
+                model_instance=python_model.model_instance,
+                connections=python_model.connections_dataset.data,
+                start_values=python_model.start_values_dataset.data,
+                parameters_to_log=python_model.parameters_to_log_dataset.data,
+            )
+            for python_model in self.models_group.python_models_group.python_model_groups
+        }
+        _models = rdm_run.Models(fmus=fmus, python_models=python_models)
+        simulation_config = rdm_run.SimulationConfig(
+            **self.simulation_group.attr.to_dict()
+        )
+        results = rdm_run.Results(
+            time_series=self.simulation_group.time_series.data,
+            units=self.simulation_group.time_series.attr,
+        )
+        return rdm_run.Run(
+            run_name=run_name,
+            run_meta=run_meta,
+            _models=_models,
+            simulation_config=simulation_config,
+            results=results,
+        )
 
     def store_simulation_results(
         self, results: pd.DataFrame, units: Optional[Units]
@@ -217,14 +236,18 @@ class RunConfigDataset(Dataset):
 
     @property
     def path(self) -> str:
-        return f"{self.parent.parent}/{self.DATASET_NAME}"
+        return f"{self.parent.parent}/{self.name}"
+
+    @classmethod
+    def from_run(cls, run: Run, parent: Group) -> Self:
+        return cls(parent=parent, data=run.get_config())
 
     @classmethod
     def from_config(cls, config: Config, parent: HDF5Entity) -> Self:
         return cls(parent, config)
 
     def to_hdf5(self, hdf5: HDF5) -> None:
-        hdf5.store_data(json.dumps(self.data), self.DATASET_NAME, self.parent.path)
+        hdf5.store_data(json.dumps(self.data), self.name, self.parent.path)
 
 
 @dataclass
@@ -240,17 +263,19 @@ class RunAttr(Attribute):
 
     @dataclass
     class Attrs:
-        run_name: str
         description: str
         keywords: list[str]
         date: str = datetime.now().strftime("%d-%b-%Y %H:%M:%S")
         python_version: str = sys.version
         sofirpy_version: str = sofirpy.__version__
-        typ: str = "run"
 
     @property
-    def description(self) -> str:
-        return self.attributes.description
+    def path(self) -> str:
+        return self.parent.path
+
+    @classmethod
+    def from_run(cls, run: sofirpy.Run, parent: HDF5Object) -> Self:
+        return cls(parent=parent, attributes=cls.Attrs(**asdict(run.run_meta)))
 
     @classmethod
     def from_config(cls, config: dict[str, Any], parent: RunGroup) -> Self:
@@ -266,10 +291,13 @@ class RunAttr(Attribute):
 
     @classmethod
     def from_hdf5(cls, hdf5: HDF5, parent: RunGroup) -> Self:
-        return cls(parent, cls.Attrs(**hdf5.read_attributes(parent.path)))
+        attr = hdf5.read_attributes(parent.path)
+        del attr["typ"]
+        return cls(parent, cls.Attrs(**attr))
 
     def to_hdf5(self, hdf5: HDF5) -> None:
-        hdf5.append_attributes(self.to_dict(), self.parent.path)
+        hdf5.append_attributes({"typ": "run"}, self.path)
+        hdf5.append_attributes(self.to_dict(), self.path)
 
     def to_dict(self) -> MetaConfig:  # TODO right type
         return asdict(self.attributes)
@@ -286,45 +314,18 @@ class ModelsGroup(Group):
 
     @property
     def path(self) -> None:
-        return f"{self.parent.path}/{self.GROUP_NAME}"
+        return f"{self.parent.path}/{self.name}"
 
     @property
     def name(self) -> None:
         return self.GROUP_NAME
 
-    @property
-    def model_config(self) -> dict[str, Any]:  # TODO specify type
-        return {
-            "start_values": self.start_values,
-            "connections_config": self.connections_config,
-            "parameters_to_log": self.parameters_to_log,
-            "fmu_paths": self.fmus_group.fmu_paths,
-            "model_instances": self.python_models_group.model_instances,
-        }
-
-    @property
-    def start_values(self) -> StartValues:
-        return {
-            model.name: model.start_values_dataset.data
-            for model in self.fmus_group.fmu_groups
-            + self.python_models_group.python_model_groups
-        }
-
-    @property
-    def connections_config(self) -> ConnectionsConfig:
-        return {
-            model.name: model.connections_dataset.data
-            for model in self.fmus_group.fmu_groups
-            + self.python_models_group.python_model_groups
-        }
-
-    @property
-    def parameters_to_log(self) -> ParametersToLog:
-        return {
-            model.name: model.parameters_to_log_dataset.data
-            for model in self.fmus_group.fmu_groups
-            + self.python_models_group.python_model_groups
-        }
+    @classmethod
+    def from_run(cls, run: sofirpy.Run, parent: Group) -> Self:
+        self = cls(parent=parent)
+        self.fmus_group = FmusGroup.from_run(run, self)
+        self.python_models_group = PythonModelsGroup.from_run(run, self)
+        return self
 
     @classmethod
     def from_config(
@@ -380,6 +381,14 @@ class FmusGroup(Group):
         return {fmu.name: fmu.fmu_path for fmu in self.fmu_groups}
 
     @classmethod
+    def from_run(cls, run: sofirpy.Run, parent: Group) -> Self:
+        self = cls(parent)
+        self.fmu_groups = [
+            FmuGroup.from_run(fmu, self) for fmu in run._models.fmus.values()
+        ]
+        return self
+
+    @classmethod
     def from_config(
         cls, models_config: dict[str, ModelConfig], parent: ModelsGroup
     ) -> Self:
@@ -430,6 +439,15 @@ class PythonModelsGroup(Group):
             python_model_group.name: python_model_group.model_instance
             for python_model_group in self.python_model_groups
         }
+
+    @classmethod
+    def from_run(cls, run: sofirpy.Run, parent: Group) -> Self:
+        self = cls(parent)
+        self.python_model_groups = [
+            PythonModelGroup.from_run(python_model, self)
+            for python_model in run._models.python_models.values()
+        ]
+        return self
 
     @classmethod
     def from_config(
@@ -522,6 +540,10 @@ class ConnectionDataset(ModelDataset):
     CONFIG_KEY = "connections"
 
     @classmethod
+    def from_run(cls, model: run.Model, parent: Group) -> Self:
+        return cls(parent=parent, data=model.connections or [])
+
+    @classmethod
     def from_config(
         cls, model_config: ModelConfig, parent: Union[PythonModelGroup, FmuGroup]
     ) -> Self:
@@ -537,6 +559,10 @@ class StartValuesDataset(ModelDataset):
     CONFIG_KEY = "start_values"
 
     @classmethod
+    def from_run(cls, model: run.Model, parent: Group) -> Self:
+        return cls(parent=parent, data=model.start_values or {})
+
+    @classmethod
     def from_config(
         cls, model_config: ModelConfig, parent: Union[PythonModelGroup, FmuGroup]
     ) -> Self:
@@ -550,6 +576,10 @@ class ParametersToLogDataset(ModelDataset):
 
     DATASET_NAME = "parameters_to_log"
     CONFIG_KEY = "parameters_to_log"
+
+    @classmethod
+    def from_run(cls, model: run.Model, parent: Group) -> Self:
+        return cls(parent=parent, data=model.parameters_to_log or [])
 
     @classmethod
     def from_config(
@@ -570,6 +600,13 @@ class FmuReferenceDataset(ModelDataset):
     @classmethod
     def from_hdf5(cls, hdf5: HDF5, parent: FmuGroup) -> Self:
         return cls(parent=parent, data=hdf5.read_data(cls.DATASET_NAME, parent.path))
+
+    @classmethod
+    def from_run(cls, model: run.Fmu, parent: Group) -> Self:
+        with open(model.fmu_path, "rb") as fmu:
+            fmu_content = fmu.read()
+        fmu_hash = hashlib.sha256(fmu_content).hexdigest()
+        return cls(parent=parent, data=fmu_hash, fmu_content=fmu_content)
 
     @classmethod
     def from_config(
@@ -612,6 +649,15 @@ class PythonModelReferenceDataset(ModelDataset):
     data: str
     pickled_python_model: Optional[bytes] = None
     DATASET_NAME = "reference"
+
+    @classmethod
+    def from_run(cls, model: run.PythonModel, parent: Group) -> Self:
+        cloudpickle.register_pickle_by_value(inspect.getmodule(model.model_instance))
+        pickled_python_model = cloudpickle.dumps(model.model_instance)
+        model_hash = hashlib.sha256(pickled_python_model).hexdigest()
+        return cls(
+            parent=parent, data=model_hash, pickled_python_model=pickled_python_model
+        )
 
     @classmethod
     def from_config(
@@ -682,6 +728,15 @@ class FmuGroup(ModelGroup):
     fmu_path: Optional[Path] = None
 
     @classmethod
+    def from_run(cls, model: run.Fmu, parent: Group) -> Self:
+        self = cls(parent=parent, model_name=model.name, fmu_path=model.fmu_path)
+        self.connections_dataset = ConnectionDataset.from_run(model, self)
+        self.start_values_dataset = StartValuesDataset.from_run(model, self)
+        self.parameters_to_log_dataset = ParametersToLogDataset.from_run(model, self)
+        self.reference_dataset = FmuReferenceDataset.from_run(model, self)
+        return self
+
+    @classmethod
     def from_config(
         cls,
         model_name: str,
@@ -722,6 +777,17 @@ class PythonModelGroup(ModelGroup):
     @property
     def path(self) -> str:
         return f"{self.parent.path}/{self.model_name}"
+
+    @classmethod
+    def from_run(cls, model: run.PythonModel, parent: Group) -> Self:
+        self = cls(
+            parent=parent, model_name=model.name, model_instance=model.model_instance
+        )
+        self.connections_dataset = ConnectionDataset.from_run(model, self)
+        self.start_values_dataset = StartValuesDataset.from_run(model, self)
+        self.parameters_to_log_dataset = ParametersToLogDataset.from_run(model, self)
+        self.reference_dataset = PythonModelReferenceDataset.from_run(model, self)
+        return self
 
     @classmethod
     def from_config(
@@ -779,6 +845,13 @@ class SimulationResultsGroup(Group):
         return self.attr.to_dict()
 
     @classmethod
+    def from_run(cls, run: sofirpy.Run, parent: Group) -> Self:
+        self = cls(parent=parent)
+        self.time_series = TimeSeriesDataset.from_run(run, self)
+        self.attr = SimulationResultsAttr.from_run(run, self)
+        return self
+
+    @classmethod
     def from_config(cls, config: Config, parent: RunGroup) -> Self:
         self = cls(parent)
         attr = SimulationResultsAttr.from_config(config, self)
@@ -820,11 +893,21 @@ class SimulationResultsAttr(Attribute):
         stop_time: float
         step_size: float
         logging_step_size: Optional[float] = None
-        get_units: bool = False
+        get_units: bool = True
 
         def __post_init__(self) -> None:
             if self.logging_step_size is None:
                 self.logging_step_size = self.step_size
+
+    @property
+    def path(self) -> str:
+        return self.parent.path
+
+    @classmethod
+    def from_run(cls, run: sofirpy.Run, parent: HDF5Object) -> Self:
+        return cls(
+            parent=parent, attributes=cls.Attrs(**run.simulation_config.to_dict())
+        )
 
     @classmethod
     def from_config(cls, config: Config, parent: SimulationResultsGroup) -> Self:
@@ -838,7 +921,7 @@ class SimulationResultsAttr(Attribute):
         return asdict(self.attributes)
 
     def to_hdf5(self, hdf5: HDF5) -> None:
-        hdf5.append_attributes(self.to_dict(), self.parent.path)
+        hdf5.append_attributes(self.to_dict(), self.path)
 
 
 @dataclass
@@ -864,6 +947,15 @@ class TimeSeriesDataset(Dataset):
     @attr.setter
     def attr(self, unit: Optional[Units]) -> None:  # TODO make this better/different
         self._attr.attributes = unit
+
+    @classmethod
+    def from_run(cls, run: sofirpy.Run, parent: Group) -> Self:
+        self = cls(parent=parent)
+        if run.results is None:
+            raise ValueError
+        self.data = run.results.time_series
+        self._attr = TimeSeriesAttr.from_run(run, self)
+        return self
 
     @classmethod
     def from_config(cls, parent: HDF5Entity) -> Self:
@@ -895,6 +987,7 @@ class TimeSeriesDataset(Dataset):
 
 @dataclass
 class TimeSeriesAttr(Attribute):
+    parent: Optional[HDF5Object]
     attributes: Optional[Units] = None
 
     # @dataclass
@@ -906,9 +999,18 @@ class TimeSeriesAttr(Attribute):
     #         return make_dataclass(
     #             cls.__name__, [(key, type(val)) for key, val in units.items()]
     #         )(**units)
+    @property
+    def path(self) -> str:
+        return self.parent.path
 
     @classmethod
-    def from_hdf5(cls, hdf5: HDF5, parent: HDF5Entity) -> Self:
+    def from_run(cls, run: sofirpy.Run, parent: HDF5Object) -> Self:
+        if run.results is None:
+            raise ValueError
+        return cls(parent=parent, attributes=run.results.units)
+
+    @classmethod
+    def from_hdf5(cls, hdf5: HDF5, parent: HDF5Object) -> Self:
         return cls(parent=parent, attributes=hdf5.read_attributes(parent.path))
 
     def to_dict(self) -> dict[str, Any]:
@@ -919,7 +1021,7 @@ class TimeSeriesAttr(Attribute):
             return
         hdf5.append_attributes(
             {k: v if v is not None else "" for k, v in self.attributes.items()},
-            self.parent.path,
+            self.path,
         )
 
 
@@ -1067,7 +1169,7 @@ class ModelStorageGroup(Group):
     def initialize(cls, hdf5: HDF5) -> Self:
         if is_hdf5_initialized(hdf5):
             return cls.from_hdf5(hdf5)
-        self = cls()
+        self = cls(parent=None)
         self.fmus_storage_group = FmusStorageGroup(self)
         self.fmus_storage_group.to_hdf5(hdf5)
         self.python_models_storage_group = PythonModelsStorageGroup(self)
@@ -1076,7 +1178,7 @@ class ModelStorageGroup(Group):
 
     @classmethod
     def from_hdf5(cls, hdf5: HDF5) -> Self:
-        self = cls()
+        self = cls(parent=None)
         fmus_storage_group = FmusStorageGroup.from_hdf5(hdf5, self)
         self.fmus_storage_group = fmus_storage_group
         python_models_storage_group = PythonModelsStorageGroup.from_hdf5(hdf5, self)
