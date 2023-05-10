@@ -426,7 +426,7 @@ def export_dymola_model(  # pylint: disable=too-many-arguments, too-many-locals
 
             Defaults to None.
         model_modifiers (list[str]], optional): List of model modifiers.
-            Example
+            Example:
 
             >>> model_modifiers = ["redeclare package Medium ="
             ...     "Modelica.Media.Water.ConstantPropertyLiquidWater"]
@@ -438,7 +438,7 @@ def export_dymola_model(  # pylint: disable=too-many-arguments, too-many-locals
         fmi_version (Literal[1, 2], optional): FMI version, 1 or 2. Defaults to 2.
         fmi_type (Literal["me", "cs", "all", "csSolver"], optional): FMI type,
             me (model exchange), cs (co-simulation), all or
-            csSolver (using Dymola solver).Defaults to "all".
+            csSolver (using Dymola solver). Defaults to "all".
         include_source (bool, optional): Whether to include source code in FMU.
             Defaults to False.
         include_image (Literal[0, 1, 2], optional): Whether to include the model image
