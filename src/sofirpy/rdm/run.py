@@ -67,6 +67,13 @@ class _SimulationConfig(TypedDict):
 
 @dataclass
 class Run:
+    """Run object representing a simulation Run.
+
+    Run can be initiated from a config file or loaded from a hdf5 file. It provides
+    several methods for changing the configuration of the run. Runs can be saved to a
+    hdf5 file.
+    """
+
     run_name: str
     _run_meta: RunMeta
     _models: Models
@@ -78,105 +85,247 @@ class Run:
 
     @property
     def description(self) -> str:
+        """Description of the Run.
+
+        Returns:
+            str: Description of the Run.
+        """
         return self._run_meta.description
 
     @description.setter
     def description(self, description: str) -> None:
+        """Description of the Run.
+
+        Args:
+            description (str): Description of the Run.
+        """
         self._run_meta.description = description
 
     @property
     def keywords(self) -> list[str]:
+        """Keywords describing the run.
+
+        Returns:
+            list[str]: Keywords describing the run.
+        """
         return self._run_meta.keywords
 
     @keywords.setter
     def keywords(self, keywords: list[str]) -> None:
+        """Keywords describing the run.
+
+        Args:
+            keywords (list[str]): Keywords describing the run.
+        """
         self._run_meta.keywords = keywords
 
     def remove_keyword(self, keyword: str) -> None:
+        """Remove a keyword from the list of keywords.
+
+        Args:
+            keyword (str): Keywords to be removed.
+        """
         self._run_meta.keywords.remove(keyword)
 
     def add_keyword(self, keyword: str) -> None:
+        """Add a keywords to the list of keywords.
+
+        Args:
+            keyword (str): Keyword to be added.
+        """
         self._run_meta.keywords.append(keyword)
 
     @property
     def sofirpy_version(self) -> str:
+        """Version of sofirpy the run was performed with.
+
+        Returns:
+            str: Version of sofirpy the run was performed with.
+        """
         return self._run_meta.sofirpy_version
 
     @property
     def python_version(self) -> str:
+        """Version of Python the run was performed with.
+
+        Returns:
+            str: Version of Python the run was performed with.
+        """
         return self._run_meta.python_version
 
     @property
     def stop_time(self) -> float:
+        """Stop time for the simulation.
+
+        Returns:
+            float: Stop time for the simulation.
+        """
         return self._simulation_config.stop_time
 
     @stop_time.setter
     def stop_time(self, stop_time: float) -> None:
+        """Stop time for the simulation.
+
+        Args:
+            stop_time (float): Stop time for the simulation.
+        """
         self._simulation_config.stop_time = stop_time
 
     @property
     def step_size(self) -> float:
+        """Step size of the simulation.
+
+        Returns:
+            float: Step size of the simulation.
+        """
         return self._simulation_config.step_size
 
     @step_size.setter
     def step_size(self, step_size: float) -> None:
+        """Step size of the simulation.
+
+        Args:
+            step_size (float): Step size of the simulation.
+        """
         self._simulation_config.step_size = step_size
 
     @property
     def logging_step_size(self) -> float:
+        """Logging step size of the simulation.
+
+        Returns:
+            float: Logging step size of the simulation.
+        """
         return self._simulation_config.logging_step_size or self.step_size
 
     @logging_step_size.setter
     def logging_step_size(self, logging_step_size: float) -> None:
+        """Logging step size of the simulation.
+
+        Args:
+            logging_step_size (float): Logging step size of the simulation.
+        """
         self._simulation_config.logging_step_size = logging_step_size
 
     @property
     def models(self) -> dict[str, Model]:
+        """Models of the run. key -> name of the model; value -> Model object
+
+        Returns:
+            dict[str, Model]: Models of the run. key -> name of the model; value -> Model object
+        """
         return self._models.models
 
     def change_model_name(self, prev_model_name: str, new_model_name: str) -> None:
+        """Change the name of a model.
+
+        Args:
+            prev_model_name (str): Name of the model to be changed.
+            new_model_name (str): New model name.
+        """
         self._models.change_model_name(prev_model_name, new_model_name)
 
     @property
     def start_values(self) -> Optional[StartValues]:
+        """Start values of the simulation.
+
+        Returns:
+            Optional[StartValues]: Start values of the simulation.
+        """
         return self._models.start_values
 
     @start_values.setter
     def start_values(self, start_values: Optional[StartValues]) -> None:
+        """Start values of the simulation.
+
+        Args:
+            start_values (Optional[StartValues]): Start values of the simulation.
+        """
         self._models.start_values = start_values
 
     def get_start_values_of_model(
         self, model_name: str
     ) -> Optional[dict[str, StartValue]]:
+        """Get the start values of a model.
+
+        Args:
+            model_name (str): Name of the model.
+
+        Returns:
+            Optional[dict[str, StartValue]]: Start values of the model.
+        """
         return self._models.get_start_values_of_model(model_name)
 
     def set_start_values_of_model(
         self, model_name: str, start_values: dict[str, StartValue]
     ) -> None:
+        """Set the start values of a model.
+
+        Args:
+            model_name (str): Name of the model.
+            start_values (dict[str, StartValue]): Start values for the model.
+        """
         self._models.set_start_values_of_model(model_name, start_values)
 
     def remove_start_values_of_model(self, model_name: str) -> None:
+        """Remove all start values of a model.
+
+        Args:
+            model_name (str): Name of the model.
+        """
         self._models.remove_start_values_of_model(model_name)
 
     def get_start_value(
         self, model_name: str, parameter_name: str
     ) -> Optional[StartValue]:
+        """Get a start value from a model.
+
+        Args:
+            model_name (str): Name of the model.
+            parameter_name (str): Name of the parameter inside the model.
+
+        Returns:
+            Optional[StartValue]: Start value
+        """
         return self._models.get_start_value(model_name, parameter_name)
 
     def set_start_value(
         self, model_name: str, parameter_name: str, value: StartValue
     ) -> None:
+        """Set a start value for a parameter inside a model.
+
+        Args:
+            model_name (str): Name of the model.
+            parameter_name (str): Name of the parameter.
+            value (StartValue): Start value.
+        """
         self._models.set_start_value(model_name, parameter_name, value)
 
     def remove_start_value(self, model_name: str, parameter_name: str) -> None:
+        """Remove the start value of parameter inside a model.
+
+        Args:
+            model_name (str): Name of the model.
+            parameter_name (str): Name of the parameter.
+        """
         self._models.remove_start_value(model_name, parameter_name)
 
     @property
     def connections(self) -> Optional[ConnectionsConfig]:
+        """Connection configuration for the simulation.
+
+        Returns:
+            Optional[ConnectionsConfig]: Connection configuration for the simulation.
+        """
         return self._models.connections_config
 
     @connections.setter
     def connections(self, connections: ConnectionsConfig) -> None:
+        """Connection configuration for the simulation.
+
+        Args:
+            connections (ConnectionsConfig): Connection configuration for the simulation.
+        """
         self._models.connections_config = connections
 
     def get_connections_of_model(self, model_name: str) -> Optional[Connections]:
