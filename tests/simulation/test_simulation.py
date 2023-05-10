@@ -11,6 +11,7 @@ from sofirpy.simulation.simulation import (
     FmuPaths,
     ModelInstances,
     ParametersToLog,
+    StartValues,
     _validate_input,
     _validate_parameters_to_log,
     simulate,
@@ -56,6 +57,7 @@ def test_simulation(
     connections_config: ConnectionsConfig,
     fmu_paths: FmuPaths,
     model_instances: ModelInstances,
+    start_values: StartValues,
     result_path: Path,
     parameters_to_log: ParametersToLog,
 ) -> None:
@@ -66,6 +68,7 @@ def test_simulation(
         fmu_paths=fmu_paths,
         model_instances=model_instances,
         connections_config=connections_config,
+        start_values=start_values,
         parameters_to_log=parameters_to_log,
         get_units=True,
     )
@@ -84,6 +87,7 @@ def test_simulate_with_no_parameters_to_log(
     connections_config: ConnectionsConfig,
     fmu_paths: FmuPaths,
     model_instances: ModelInstances,
+    start_values: StartValues,
     result_path: Path,
 ) -> None:
 
@@ -92,6 +96,7 @@ def test_simulate_with_no_parameters_to_log(
         step_size=1e-3,
         fmu_paths=fmu_paths,
         model_instances=model_instances,
+        start_values=start_values,
         connections_config=connections_config,
     )
 
@@ -106,6 +111,7 @@ def test_simulate_with_bigger_log_step_size(
     connections_config: ConnectionsConfig,
     fmu_paths: FmuPaths,
     model_instances: ModelInstances,
+    start_values: StartValues,
     result_path: Path,
     parameters_to_log: ParametersToLog,
     logging_step_size: float,
@@ -117,6 +123,7 @@ def test_simulate_with_bigger_log_step_size(
         step_size=step_size,
         fmu_paths=fmu_paths,
         model_instances=model_instances,
+        start_values=start_values,
         connections_config=connections_config,
         parameters_to_log=parameters_to_log,
         logging_step_size=logging_step_size,
