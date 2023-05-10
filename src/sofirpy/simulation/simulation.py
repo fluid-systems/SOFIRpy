@@ -425,10 +425,9 @@ def simulate(  # pylint: disable=too-many-locals
     Raises:
         TypeError: start_time type was invalid
         TypeError: step_size type was invalid
-        TypeError: fmu_infos type was invalid
-        TypeError: model_infos type was invalid
-        ValueError: fmu_infos and model_infos were 'None'
-        TypeError: model_classes type was invalid
+        TypeError: fmu_paths type was invalid
+        TypeError: model_instances type was invalid
+        ValueError: fmu_paths and model_instances were 'None'
         ValueError: start_time value was invalid
         ValueError: step_size value was invalid
 
@@ -451,19 +450,12 @@ def simulate(  # pylint: disable=too-many-locals
     stop_time = float(stop_time)
     step_size = float(step_size)
 
-    if logging_step_size is None:
-        logging_step_size = step_size
+    logging_step_size = float(logging_step_size or step_size)
 
-    logging_step_size = float(logging_step_size)
-
-    if connections_config is None:
-        connections_config = {}
-    if fmu_paths is None:
-        fmu_paths = {}
-    if model_instances is None:
-        model_instances = {}
-    if start_values is None:
-        start_values = {}
+    connections_config = connections_config or {}
+    fmu_paths = fmu_paths or {}
+    model_instances = model_instances or {}
+    start_values = start_values or {}
 
     start_values = start_values.copy()  # copy so mutating doesn't affect passed dict
 
