@@ -253,11 +253,11 @@ class Run:
         return rg.RunGroup.from_hdf5(hdf5_path, run_name).to_run()
 
     def get_config(self) -> Config:
-        return {
-            self._run_meta.CONFIG_KEY: self._run_meta.to_dict(),
-            self._models.CONFIG_KEY: self._models.to_dict(),
-            self._simulation_config.CONFIG_KEY: self._simulation_config.to_dict(),
-        }
+        return Config(
+            run_meta=self._run_meta.to_dict(),
+            models=self._models.to_dict(),
+            simulation_config=self._simulation_config.to_dict(),
+        )
 
     def simulate(self) -> None:
         results = simulate(
