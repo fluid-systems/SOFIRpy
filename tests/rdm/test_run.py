@@ -1,3 +1,4 @@
+import json
 import sys
 from pathlib import Path
 
@@ -5,7 +6,18 @@ import numpy as np
 import pytest
 
 from sofirpy import HDF5, Run
-from sofirpy.rdm.run import Fmu, Model, Models, PythonModel, Results, RunMeta
+from sofirpy.rdm.run import (
+    Config,
+    Fmu,
+    MetaConfig,
+    Model,
+    Models,
+    PythonModel,
+    Results,
+    RunMeta,
+    SimulationConfig,
+    _SimulationConfig,
+)
 from sofirpy.simulation.simulation import FmuPaths, ModelInstances
 
 
@@ -20,7 +32,12 @@ def hdf5_path() -> Path:
 
 
 @pytest.fixture
-def run(fmu_paths: FmuPaths, model_instances: ModelInstances) -> Run:
+def config_path() -> Path:
+    return Path(__file__).parent / "test_config.json"
+
+
+@pytest.fixture
+def run(config_path: Path, fmu_paths: FmuPaths, model_instances: ModelInstances) -> Run:
     if sys.platform == "linux" or sys.platform == "linux2":
         run_name = "test_run_linux"
     elif sys.platform == "win32":
@@ -29,15 +46,57 @@ def run(fmu_paths: FmuPaths, model_instances: ModelInstances) -> Run:
         run_name = "test_run_mac"
     return Run.from_config(
         run_name=run_name,
-        config_path=Path(__file__).parent / "test_config.json",
+        config_path=config_path,
         fmu_paths=fmu_paths,
         model_instances=model_instances,
     )
 
 
+def test_get_config(run: Run, config_path: Path) -> None:
+    compare_config(run.get_config(), json.load(config_path.open()))
+
+
+def compare_config(this_config: Config, other_config: Config) -> None:
+    compare_meta_config(
+        this_config[RunMeta.CONFIG_KEY], other_config[RunMeta.CONFIG_KEY]
+    )
+    compare_simulation_config_dict(
+        this_config[SimulationConfig.CONFIG_KEY],
+        other_config[SimulationConfig.CONFIG_KEY],
+    )
+
+
+def compare_meta_config(
+    this_meta_config: MetaConfig, other_meta_config: MetaConfig
+) -> None:
+    assert this_meta_config == other_meta_config
+
+
+def compare_simulation_config_dict(
+    this_simulation_config: _SimulationConfig,
+    other_simulation_config: _SimulationConfig,
+) -> None:
+    assert float(other_simulation_config["step_size"]) == pytest.approx(
+        float(this_simulation_config["step_size"])
+    )
+    assert float(other_simulation_config["stop_time"]) == pytest.approx(
+        float(this_simulation_config["stop_time"])
+    )
+    if not this_simulation_config["logging_step_size"]:
+        assert (
+            this_simulation_config["logging_step_size"]
+            == other_simulation_config["logging_step_size"]
+        )
+    else:
+        assert float(other_simulation_config["logging_step_size"]) == pytest.approx(
+            float(this_simulation_config["logging_step_size"])
+        )
+
+
 def test_loaded_hdf5_run_is_identical_to_run_from_config(
     run: Run, hdf5_path: Path
 ) -> None:
+    # TODO do this with snapshots
     run.simulate()
     compare_runs(run, Run.from_hdf5(run.run_name, hdf5_path))
 
@@ -45,6 +104,7 @@ def test_loaded_hdf5_run_is_identical_to_run_from_config(
 def compare_runs(this_run: Run, other_run: Run) -> None:
     compare_meta(this_run._run_meta, other_run._run_meta)
     compare_models(this_run._models, other_run._models)
+    compare_simulation_config(this_run._simulation_config, other_run._simulation_config)
     compare_results(this_run._results, other_run._results)
 
 
@@ -52,6 +112,17 @@ def compare_meta(this_run_meta: RunMeta, other_run_meta: RunMeta) -> None:
     assert this_run_meta.description == other_run_meta.description
     assert this_run_meta.keywords == other_run_meta.keywords
     assert this_run_meta.sofirpy_version == other_run_meta.sofirpy_version
+
+
+def compare_simulation_config(
+    this_simulation_config: SimulationConfig, other_simulation_config: SimulationConfig
+) -> None:
+    assert this_simulation_config.step_size == other_simulation_config.step_size
+    assert this_simulation_config.stop_time == other_simulation_config.stop_time
+    assert (
+        this_simulation_config.logging_step_size
+        == other_simulation_config.logging_step_size
+    )
 
 
 def compare_models(this_run_models: Models, other_run_models: Models) -> None:
@@ -65,11 +136,11 @@ def compare_models(this_run_models: Models, other_run_models: Models) -> None:
 
 
 def compare_fmu(this_run_fmu: Fmu, other_run_fmu: Fmu) -> None:
+    compare_model(this_run_fmu, other_run_fmu)
     assert (
         this_run_fmu.fmu_path.open("rb").read()
         == other_run_fmu.fmu_path.open("rb").read()
     )
-    compare_model(this_run_fmu, other_run_fmu)
 
 
 def compare_python_model(
