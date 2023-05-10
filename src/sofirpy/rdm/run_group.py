@@ -141,7 +141,7 @@ class RunGroup(Group):
         return self
 
     @classmethod
-    def from_run(cls, run: sofirpy.Run) -> Self:
+    def from_run(cls, run: rdm_run.Run) -> Self:
         self = cls(run_name=run.run_name, parent=None)
         self.config_dataset = RunConfigDataset.from_run(run=run, parent=self)
         self.attr = RunAttr.from_run(run=run, parent=self)
@@ -194,10 +194,10 @@ class RunGroup(Group):
         )
         return rdm_run.Run(
             run_name=run_name,
-            run_meta=run_meta,
+            _run_meta=run_meta,
             _models=_models,
-            simulation_config=simulation_config,
-            results=results,
+            _simulation_config=simulation_config,
+            _results=results,
         )
 
     def store_simulation_results(
@@ -210,9 +210,7 @@ class RunGroup(Group):
         assert self.simulation_group.time_series is not None
         hdf5 = HDF5(hdf5_path)
         if not is_hdf5_initialized(hdf5):
-            raise HDF5NotInitialized(
-                f"HDF5 at '{hdf5.hdf5_path}' needs to be initialized before creating a run"
-            )
+            raise Valueerror
         try:
             hdf5.create_group(self.path)
             self.attr.to_hdf5(hdf5)
@@ -239,7 +237,7 @@ class RunConfigDataset(Dataset):
         return f"{self.parent.parent}/{self.name}"
 
     @classmethod
-    def from_run(cls, run: Run, parent: Group) -> Self:
+    def from_run(cls, run: rdm_run.Run, parent: Group) -> Self:
         return cls(parent=parent, data=run.get_config())
 
     @classmethod
@@ -274,8 +272,8 @@ class RunAttr(Attribute):
         return self.parent.path
 
     @classmethod
-    def from_run(cls, run: sofirpy.Run, parent: HDF5Object) -> Self:
-        return cls(parent=parent, attributes=cls.Attrs(**asdict(run.run_meta)))
+    def from_run(cls, run: rdm_run.Run, parent: HDF5Object) -> Self:
+        return cls(parent=parent, attributes=cls.Attrs(**asdict(run._run_meta)))
 
     @classmethod
     def from_config(cls, config: dict[str, Any], parent: RunGroup) -> Self:
@@ -321,7 +319,7 @@ class ModelsGroup(Group):
         return self.GROUP_NAME
 
     @classmethod
-    def from_run(cls, run: sofirpy.Run, parent: Group) -> Self:
+    def from_run(cls, run: rdm_run.Run, parent: Group) -> Self:
         self = cls(parent=parent)
         self.fmus_group = FmusGroup.from_run(run, self)
         self.python_models_group = PythonModelsGroup.from_run(run, self)
@@ -381,7 +379,7 @@ class FmusGroup(Group):
         return {fmu.name: fmu.fmu_path for fmu in self.fmu_groups}
 
     @classmethod
-    def from_run(cls, run: sofirpy.Run, parent: Group) -> Self:
+    def from_run(cls, run: rdm_run.Run, parent: Group) -> Self:
         self = cls(parent)
         self.fmu_groups = [
             FmuGroup.from_run(fmu, self) for fmu in run._models.fmus.values()
@@ -441,7 +439,7 @@ class PythonModelsGroup(Group):
         }
 
     @classmethod
-    def from_run(cls, run: sofirpy.Run, parent: Group) -> Self:
+    def from_run(cls, run: rdm_run.Run, parent: Group) -> Self:
         self = cls(parent)
         self.python_model_groups = [
             PythonModelGroup.from_run(python_model, self)
@@ -540,7 +538,7 @@ class ConnectionDataset(ModelDataset):
     CONFIG_KEY = "connections"
 
     @classmethod
-    def from_run(cls, model: run.Model, parent: Group) -> Self:
+    def from_run(cls, model: rdm_run.Model, parent: Group) -> Self:
         return cls(parent=parent, data=model.connections or [])
 
     @classmethod
@@ -559,7 +557,7 @@ class StartValuesDataset(ModelDataset):
     CONFIG_KEY = "start_values"
 
     @classmethod
-    def from_run(cls, model: run.Model, parent: Group) -> Self:
+    def from_run(cls, model: rdm_run.Model, parent: Group) -> Self:
         return cls(parent=parent, data=model.start_values or {})
 
     @classmethod
@@ -578,7 +576,7 @@ class ParametersToLogDataset(ModelDataset):
     CONFIG_KEY = "parameters_to_log"
 
     @classmethod
-    def from_run(cls, model: run.Model, parent: Group) -> Self:
+    def from_run(cls, model: rdm_run.Model, parent: Group) -> Self:
         return cls(parent=parent, data=model.parameters_to_log or [])
 
     @classmethod
@@ -602,7 +600,7 @@ class FmuReferenceDataset(ModelDataset):
         return cls(parent=parent, data=hdf5.read_data(cls.DATASET_NAME, parent.path))
 
     @classmethod
-    def from_run(cls, model: run.Fmu, parent: Group) -> Self:
+    def from_run(cls, model: rdm_run.Fmu, parent: Group) -> Self:
         with open(model.fmu_path, "rb") as fmu:
             fmu_content = fmu.read()
         fmu_hash = hashlib.sha256(fmu_content).hexdigest()
@@ -651,7 +649,7 @@ class PythonModelReferenceDataset(ModelDataset):
     DATASET_NAME = "reference"
 
     @classmethod
-    def from_run(cls, model: run.PythonModel, parent: Group) -> Self:
+    def from_run(cls, model: rdm_run.PythonModel, parent: Group) -> Self:
         cloudpickle.register_pickle_by_value(inspect.getmodule(model.model_instance))
         pickled_python_model = cloudpickle.dumps(model.model_instance)
         model_hash = hashlib.sha256(pickled_python_model).hexdigest()
@@ -728,7 +726,7 @@ class FmuGroup(ModelGroup):
     fmu_path: Optional[Path] = None
 
     @classmethod
-    def from_run(cls, model: run.Fmu, parent: Group) -> Self:
+    def from_run(cls, model: rdm_run.Fmu, parent: Group) -> Self:
         self = cls(parent=parent, model_name=model.name, fmu_path=model.fmu_path)
         self.connections_dataset = ConnectionDataset.from_run(model, self)
         self.start_values_dataset = StartValuesDataset.from_run(model, self)
@@ -779,7 +777,7 @@ class PythonModelGroup(ModelGroup):
         return f"{self.parent.path}/{self.model_name}"
 
     @classmethod
-    def from_run(cls, model: run.PythonModel, parent: Group) -> Self:
+    def from_run(cls, model: rdm_run.PythonModel, parent: Group) -> Self:
         self = cls(
             parent=parent, model_name=model.name, model_instance=model.model_instance
         )
@@ -845,7 +843,7 @@ class SimulationResultsGroup(Group):
         return self.attr.to_dict()
 
     @classmethod
-    def from_run(cls, run: sofirpy.Run, parent: Group) -> Self:
+    def from_run(cls, run: rdm_run.Run, parent: Group) -> Self:
         self = cls(parent=parent)
         self.time_series = TimeSeriesDataset.from_run(run, self)
         self.attr = SimulationResultsAttr.from_run(run, self)
@@ -865,8 +863,7 @@ class SimulationResultsGroup(Group):
         self = cls(parent)
         time_series_dataset = TimeSeriesDataset.from_hdf5(hdf5, self)
         self.time_series = time_series_dataset
-        attr = SimulationResultsAttr.from_hdf5(hdf5, self)
-        self.attr = attr
+        self.attr = SimulationResultsAttr.from_hdf5(hdf5, self)
         return self
 
     def to_hdf5(self, hdf5: HDF5) -> None:
@@ -904,9 +901,9 @@ class SimulationResultsAttr(Attribute):
         return self.parent.path
 
     @classmethod
-    def from_run(cls, run: sofirpy.Run, parent: HDF5Object) -> Self:
+    def from_run(cls, run: rdm_run.Run, parent: HDF5Object) -> Self:
         return cls(
-            parent=parent, attributes=cls.Attrs(**run.simulation_config.to_dict())
+            parent=parent, attributes=cls.Attrs(**run._simulation_config.to_dict())
         )
 
     @classmethod
@@ -949,11 +946,11 @@ class TimeSeriesDataset(Dataset):
         self._attr.attributes = unit
 
     @classmethod
-    def from_run(cls, run: sofirpy.Run, parent: Group) -> Self:
+    def from_run(cls, run: rdm_run.Run, parent: Group) -> Self:
         self = cls(parent=parent)
-        if run.results is None:
+        if run._results is None:
             raise ValueError
-        self.data = run.results.time_series
+        self.data = run._results.time_series
         self._attr = TimeSeriesAttr.from_run(run, self)
         return self
 
@@ -1004,14 +1001,18 @@ class TimeSeriesAttr(Attribute):
         return self.parent.path
 
     @classmethod
-    def from_run(cls, run: sofirpy.Run, parent: HDF5Object) -> Self:
-        if run.results is None:
+    def from_run(cls, run: rdm_run.Run, parent: HDF5Object) -> Self:
+        if run._results is None:
             raise ValueError
-        return cls(parent=parent, attributes=run.results.units)
+        return cls(parent=parent, attributes=run._results.units)
 
     @classmethod
     def from_hdf5(cls, hdf5: HDF5, parent: HDF5Object) -> Self:
-        return cls(parent=parent, attributes=hdf5.read_attributes(parent.path))
+        attr = {
+            parameter_name: (unit or None)
+            for parameter_name, unit in hdf5.read_attributes(parent.path).items()
+        }
+        return cls(parent=parent, attributes=attr)
 
     def to_dict(self) -> dict[str, Any]:
         return self.attributes
@@ -1204,7 +1205,7 @@ def generate_meta() -> dict[str, Union[str, list[str]]]:
         MetaKeys.CREATION_DATE.value: datetime.now().strftime("%d-%b-%Y %H:%M:%S"),
         MetaKeys.PYTHON_VERSION.value: sys.version,
         MetaKeys.SOFIRPY_VERSION.value: sofirpy.__version__,
-        MetaKeys.ENVIRONMENT_INFORMATION.value: get_environment_information(),
+        # MetaKeys.ENVIRONMENT_INFORMATION.value: get_environment_information(),
     }
 
 
@@ -1237,6 +1238,8 @@ def is_hdf5_initialized(hdf5: HDF5) -> bool:
     if key not in attr:
         return False
     if not attr[key] == value:
+        return False
+    if not "models" in hdf5:  # TODO overthink init behavior
         return False
     return True
 

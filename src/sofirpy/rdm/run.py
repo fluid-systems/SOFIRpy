@@ -68,59 +68,67 @@ class _SimulationConfig(TypedDict):
 @dataclass
 class Run:
     run_name: str
-    run_meta: RunMeta
+    _run_meta: RunMeta
     _models: Models
-    simulation_config: SimulationConfig
-    results: Optional[Results] = None
+    _simulation_config: SimulationConfig
+    _results: Optional[Results] = None
 
     def __repr__(self) -> str:
-        return f"Run: '{self.run_name}'\nDescription: {self.description}"
+        return f"Run: '{self.run_name}'\nDescription: '{self.description}'"
 
     @property
     def description(self) -> str:
-        return self.run_meta.description
+        return self._run_meta.description
 
     @description.setter
     def description(self, description: str) -> None:
-        self.run_meta.description = description
+        self._run_meta.description = description
 
     @property
     def keywords(self) -> list[str]:
-        return self.run_meta.keywords
+        return self._run_meta.keywords
 
     @keywords.setter
     def keywords(self, keywords: list[str]) -> None:
-        self.run_meta.keywords = keywords
+        self._run_meta.keywords = keywords
 
     def remove_keyword(self, keyword: str) -> None:
-        self.run_meta.keywords.remove(keyword)
+        self._run_meta.keywords.remove(keyword)
 
     def add_keyword(self, keyword: str) -> None:
-        self.run_meta.keywords.append(keyword)
+        self._run_meta.keywords.append(keyword)
 
     @property
     def sofirpy_version(self) -> str:
-        return self.run_meta.sofirpy_version
+        return self._run_meta.sofirpy_version
 
     @property
     def python_version(self) -> str:
-        return self.run_meta.python_version
+        return self._run_meta.python_version
 
     @property
     def stop_time(self) -> float:
-        return self.simulation_config.stop_time
+        return self._simulation_config.stop_time
 
     @stop_time.setter
     def stop_time(self, stop_time: float) -> None:
-        self.simulation_config.stop_time = stop_time
+        self._simulation_config.stop_time = stop_time
 
     @property
     def step_size(self) -> float:
-        return self.simulation_config.step_size
+        return self._simulation_config.step_size
 
     @step_size.setter
     def step_size(self, step_size: float) -> None:
-        self.simulation_config.step_size = step_size
+        self._simulation_config.step_size = step_size
+
+    @property
+    def logging_step_size(self) -> float:
+        return self._simulation_config.logging_step_size or self.step_size
+
+    @logging_step_size.setter
+    def logging_step_size(self, logging_step_size: float) -> None:
+        self._simulation_config.logging_step_size = logging_step_size
 
     @property
     def models(self) -> dict[str, Model]:
@@ -216,6 +224,12 @@ class Run:
     def remove_parameter_to_log(self, model_name: str, parameter_name: str) -> None:
         self._models.remove_parameter_to_log(model_name, parameter_name)
 
+    @property
+    def time_series(self) -> pd.DataFrame:
+        if self._results is None:
+            raise AttributeError("No simulation performed yet.")
+        return self._results.time_series
+
     @classmethod
     def from_config(
         cls,
@@ -229,9 +243,9 @@ class Run:
 
         return cls(
             run_name=run_name,
-            run_meta=RunMeta.from_config(config),
+            _run_meta=RunMeta.from_config(config),
             _models=Models.from_config(config, fmu_paths, model_instances),
-            simulation_config=SimulationConfig.from_config(config),
+            _simulation_config=SimulationConfig.from_config(config),
         )
 
     @classmethod
@@ -240,19 +254,19 @@ class Run:
 
     def get_config(self) -> Config:
         return {
-            self.run_meta.CONFIG_KEY: self.run_meta.to_dict(),
+            self._run_meta.CONFIG_KEY: self._run_meta.to_dict(),
             self._models.CONFIG_KEY: self._models.to_dict(),
-            self.simulation_config.CONFIG_KEY: self.simulation_config.to_dict(),
+            self._simulation_config.CONFIG_KEY: self._simulation_config.to_dict(),
         }
 
     def simulate(self) -> None:
         results = simulate(
-            **self.simulation_config.get_simulation_args(),
+            **self._simulation_config.get_simulation_args(),
             **self._models.get_simulation_args(),
         )
         assert isinstance(results, tuple)
         time_series, units = results
-        self.results = Results(time_series=time_series, units=units)
+        self._results = Results(time_series=time_series, units=units)
 
     def to_hdf5(self, hdf5_path: Path) -> None:
         rg.RunGroup.from_run(self).to_hdf5(hdf5_path)
