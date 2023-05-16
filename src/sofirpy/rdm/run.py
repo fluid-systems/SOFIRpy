@@ -1,22 +1,11 @@
 from __future__ import annotations
 
-import dataclasses as dc
 import json
 import sys
 from dataclasses import asdict, dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import (
-    Any,
-    ClassVar,
-    Final,
-    Iterable,
-    Literal,
-    Optional,
-    TypedDict,
-    Union,
-    cast,
-)
+from typing import Any, ClassVar, Iterable, Literal, Optional, TypedDict, cast
 
 import pandas as pd
 import pydantic
@@ -379,6 +368,12 @@ class Run:
             raise AttributeError("No simulation performed yet.")
         return self._results.time_series
 
+    @property
+    def units(self) -> Optional[Units]:
+        if self._results is None:
+            raise AttributeError("No simulation performed yet.")
+        return self._results.units
+
     @classmethod
     def from_config(
         cls,
@@ -426,7 +421,7 @@ class Run:
 
 class Results(pydantic.BaseModel):
     time_series: pd.DataFrame
-    units: Units
+    units: Optional[Units]
 
     class Config:
         arbitrary_types_allowed = True
