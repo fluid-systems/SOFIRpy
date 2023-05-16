@@ -66,6 +66,7 @@ strict = true
 show_error_codes = true
 [[tool.mypy.overrides]]
 module = [
+    "cloudpickle",
     "fmpy",
     "fmpy.fmi2",
     "fmpy.simulation",
