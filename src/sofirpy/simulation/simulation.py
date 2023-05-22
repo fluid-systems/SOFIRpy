@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from enum import Enum
 from numbers import Real
 from pathlib import Path
-from typing import Optional, TypedDict, Union
+from typing import Literal, Optional, TypedDict, Union, overload
 
 import numpy as np
 import numpy.typing as npt
@@ -283,6 +283,36 @@ class Simulator:
             units[f"{system.name}.{parameter_name}"] = unit
 
         return units
+
+
+@overload
+def simulate(
+    stop_time: float,
+    step_size: float,
+    fmu_paths: Optional[FmuPaths],
+    model_instances: Optional[ModelInstances],
+    connections_config: Optional[ConnectionsConfig],
+    start_values: Optional[StartValues],
+    parameters_to_log: Optional[ParametersToLog],
+    logging_step_size: Optional[float],
+    get_units: Literal[True],
+) -> tuple[pd.DataFrame, Units]:
+    ...
+
+
+@overload
+def simulate(
+    stop_time: float,
+    step_size: float,
+    fmu_paths: Optional[FmuPaths],
+    model_instances: Optional[ModelInstances],
+    connections_config: Optional[ConnectionsConfig],
+    start_values: Optional[StartValues],
+    parameters_to_log: Optional[ParametersToLog],
+    logging_step_size: Optional[float],
+    get_units: Literal[False],
+) -> pd.DataFrame:
+    ...
 
 
 def simulate(  # pylint: disable=too-many-locals
