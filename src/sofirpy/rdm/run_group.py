@@ -54,7 +54,6 @@ class SimulationConfig(TypedDict):
     stop_time: float
     step_size: float
     logging_step_size: NotRequired[float]
-    get_units: NotRequired[bool]
 
 
 @dataclass
@@ -766,14 +765,12 @@ class SimulationResultsAttr(Attribute):
         STOP_TIME = "stop_time"
         STEP_SIZE = "step_size"
         LOGGING_STEP_SIZE = "logging_step_size"
-        GET_UNITS = "get_units"
 
     @dataclass
     class Attrs:
         stop_time: float
         step_size: float
         logging_step_size: Optional[float] = None
-        get_units: bool = True
 
         def __post_init__(self) -> None:
             if self.logging_step_size is None:
