@@ -1,3 +1,5 @@
+"""This module allows to create, interact with and store a simulation run."""
+
 from __future__ import annotations
 
 import json
@@ -13,7 +15,7 @@ from typing_extensions import NotRequired, Self
 
 import sofirpy
 import sofirpy.rdm.run_group as rg
-import sofirpy.utils as utils
+from sofirpy import utils
 from sofirpy.simulation.simulation import (
     ConnectionKeys,
     Connections,
@@ -28,27 +30,27 @@ from sofirpy.simulation.simulation import (
 )
 from sofirpy.simulation.simulation_entity import SimulationEntity, StartValue
 
-CONFIG_KEY_TYPE = Literal["run_meta", "models", "simulation_config"]
+ConfigKeyType = Literal["run_meta", "models", "simulation_config"]
 
 
-class Config(TypedDict):
-    run_meta: MetaConfig
-    models: dict[str, ModelConfig]
-    simulation_config: _SimulationConfig
+class _ConfigDict(TypedDict):
+    run_meta: _MetaConfigDict
+    models: dict[str, _ModelConfigDict]
+    simulation_config: _SimulationConfigDict
 
 
-class MetaConfig(TypedDict):
+class _MetaConfigDict(TypedDict):
     description: str
     keywords: list[str]
 
 
-class ModelConfig(TypedDict):
+class _ModelConfigDict(TypedDict):
     start_values: NotRequired[dict[str, StartValue]]
     connections: NotRequired[Connections]
     parameters_to_log: NotRequired[list[str]]
 
 
-class _SimulationConfig(TypedDict):
+class _SimulationConfigDict(TypedDict):
     stop_time: float
     step_size: float
     logging_step_size: NotRequired[float]
@@ -64,10 +66,10 @@ class Run:
     """
 
     run_name: str
-    _run_meta: RunMeta
-    _models: Models
-    _simulation_config: SimulationConfig
-    _results: Optional[Results] = None
+    _run_meta: _RunMeta
+    _models: _Models
+    _simulation_config: _SimulationConfig
+    _results: Optional[_Results] = None
 
     def __repr__(self) -> str:
         return f"Run: '{self.run_name}'\nDescription: '{self.description}'"
@@ -197,11 +199,12 @@ class Run:
         self._simulation_config.logging_step_size = logging_step_size
 
     @property
-    def models(self) -> dict[str, Model]:
-        """Models of the run. key -> name of the model; value -> Model object
+    def models(self) -> dict[str, _Model]:
+        """Models of the run. key -> name of the model; value -> _Model object
 
         Returns:
-            dict[str, Model]: Models of the run. key -> name of the model; value -> Model object
+            dict[str, _Model]: Models of the run. key -> name of the model;
+            value -> _Model object
         """
         return self._models.models
 
@@ -313,63 +316,163 @@ class Run:
         """Connection configuration for the simulation.
 
         Args:
-            connections (ConnectionsConfig): Connection configuration for the simulation.
+            connections (ConnectionsConfig): Connection configuration for the
+                simulation.
         """
         self._models.connections_config = connections
 
     def get_connections_of_model(self, model_name: str) -> Optional[Connections]:
+        """Get the connections of a model.
+
+        Args:
+            model_name (str): Name of the model.
+
+        Returns:
+            Optional[Connections]: Connections of the model.
+        """
         return self._models.get_connections_of_model(model_name)
 
     def set_connections_of_model(
         self, model_name: str, connections: Connections
     ) -> None:
+        """Set the connections of a model.
+
+        Args:
+            model_name (str): Name of the model.
+            connections (Connections): Connections to be set.
+        """
         self._models.set_connections_of_model(model_name, connections)
 
     def remove_connections_of_model(self, model_name: str) -> None:
+        """Remove the connections of a model.
+
+        Args:
+            model_name (str): Name of the model.
+        """
         self._models.remove_connections_of_model(model_name)
 
     def get_connection(self, model_name: str, input_name: str) -> Optional[_Connection]:
+        """Get the connection of an input parameter.
+
+        Args:
+            model_name (str): Name of the model.
+            input_name (str): Name of the input parameter.
+
+        Returns:
+            Optional[_Connection]: The connection of the input parameter.
+        """
         return self._models.get_connection(model_name, input_name)
 
     def set_connection(self, model_name: str, connection: _Connection) -> None:
+        """Set the connection of an input parameter.
+
+        Args:
+            model_name (str): Name of the model.
+            connection (_Connection): Connection to be set.
+        """
         self._models.set_connection(model_name, connection)
 
     def remove_connection(self, model_name: str, input_name: str) -> None:
+        """Remove the connection of an input parameter.
+
+        Args:
+            model_name (str): Name of the model.
+            input_name (str): Name of the input parameter.
+        """
         self._models.remove_connection(model_name, input_name)
 
     @property
     def parameters_to_log(self) -> Optional[ParametersToLog]:
+        """Parameters that are logged during the simulation.
+
+        Returns:
+            Optional[ParametersToLog]: Parameters that are logged during the simulation.
+        """
         return self._models.parameters_to_log
 
     @parameters_to_log.setter
     def parameters_to_log(self, parameters_to_log: Optional[ParametersToLog]) -> None:
+        """Parameters that are logged during the simulation.
+
+        Args:
+            parameters_to_log (Optional[ParametersToLog]): Parameters that are logged
+                during the simulation.
+        """
         self._models.parameters_to_log = parameters_to_log
 
     def get_parameters_to_log_of_model(self, model_name: str) -> Optional[list[str]]:
+        """Get the parameters that are logged in the specified model.
+
+        Args:
+            model_name (str): Name of the model.
+
+        Returns:
+            Optional[list[str]]: Parameters that are logged in the specified model.
+        """
         return self._models.get_parameters_to_log_of_model(model_name)
 
     def set_parameters_to_log_of_model(
         self, model_name: str, parameters_to_log: list[str]
     ) -> None:
+        """Set the parameter that are logged in the specified model.
+
+        Args:
+            model_name (str): Name of the model.
+            parameters_to_log (list[str]): Parameters that should be logged in the
+                specified model.
+        """
         self._models.set_parameters_to_log_of_model(model_name, parameters_to_log)
 
     def remove_parameters_to_log_of_model(self, model_name: str) -> None:
+        """Remove the parameters that are logged in the specified model.
+
+        Args:
+            model_name (str): Name of the model.
+        """
         self._models.remove_parameters_to_log_of_model(model_name)
 
     def append_parameter_to_log(self, model_name: str, parameter_name: str) -> None:
+        """Append a parameter that should be logged in the specified model.
+
+        Args:
+            model_name (str): Name of the model.
+            parameter_name (str): Name of the parameter.
+        """
         self._models.append_parameter_to_log(model_name, parameter_name)
 
     def remove_parameter_to_log(self, model_name: str, parameter_name: str) -> None:
+        """Remove a parameter to be logged in the specified model.
+
+        Args:
+            model_name (str): Name of the model.
+            parameter_name (str): Name of the parameter.
+        """
         self._models.remove_parameter_to_log(model_name, parameter_name)
 
     @property
     def time_series(self) -> pd.DataFrame:
+        """Time series results of the simulation.
+
+        Raises:
+            AttributeError: No simulation was performed.
+
+        Returns:
+            pd.DataFrame: Time series results of the simulation.
+        """
         if self._results is None:
             raise AttributeError("No simulation performed yet.")
         return self._results.time_series
 
     @property
     def units(self) -> Optional[Units]:
+        """Units of the logged parameters.
+
+        Raises:
+            AttributeError: No simulation was performed.
+
+        Returns:
+            Optional[Units]: Units of the logged parameters.
+        """
         if self._results is None:
             raise AttributeError("No simulation performed yet.")
         return self._results.units
@@ -382,43 +485,94 @@ class Run:
         fmu_paths: Optional[FmuPaths] = None,
         model_instances: Optional[ModelInstances] = None,
     ) -> Self:
-        with open(config_path) as config_file:
-            config: Config = json.load(config_file)
+        """Initialize a run from a config file.
+
+        Args:
+            run_name (str): Name of the run.
+            config_path (Path): Path to the config file.
+            fmu_paths (Optional[FmuPaths], optional):
+                Dictionary which defines which fmu should be simulated.
+                key -> name of the fmu; value -> path to the fmu
+
+                >>> fmu_paths = {
+                ...    "<name of the fmu 1>": <Path to the fmu1>,
+                ...    "<name of the fmu 2>": <Path to the fmu2>,
+                ... }
+
+                Note: The name of the fmus can be chosen arbitrarily, but each name
+                in 'fmu_paths' and 'model_instances' must occur only once.
+                Defaults to None.
+            model_instances (Optional[ModelInstances], optional):
+                Dictionary which defines which Python Models should be simulated.
+                key -> name of the model; value -> Instance of th model. The class that
+                defines the model must inherit from the abstract class SimulationEntity
+
+                >>> model_instances = {
+                ...    "<name of the model 1>": <Instance of the model1>
+                ...    "<name of the model 2>": <Instance of the model2>
+                ... }
+
+                Note: The name of the models can be chosen arbitrarily, but each
+                name in 'fmu_paths' and 'model_instances' must occur only once.
+                Defaults to None.
+
+        Returns:
+            Self: Run instance.
+        """
+        with open(config_path, encoding="utf-8") as config_file:
+            config: _ConfigDict = json.load(config_file)
 
         return cls(
             run_name=run_name,
-            _run_meta=RunMeta.from_config(config),
-            _models=Models.from_config(config, fmu_paths, model_instances),
-            _simulation_config=SimulationConfig.from_config(config),
+            _run_meta=_RunMeta.from_config(config),
+            _models=_Models.from_config(config, fmu_paths, model_instances),
+            _simulation_config=_SimulationConfig.from_config(config),
         )
 
     @classmethod
     def from_hdf5(cls, run_name: str, hdf5_path: Path) -> Run:
+        """Load a run from a hdf5 file.
+
+        Args:
+            run_name (str): Name of the run.
+            hdf5_path (Path): Path to the hdf5 file.
+
+        Returns:
+            Run: Run instance.
+        """
         return rg.RunGroup.from_hdf5(hdf5_path, run_name).to_run()
 
-    def get_config(self) -> Config:
-        return Config(
+    def get_config(self) -> _ConfigDict:
+        """Get the configuration for the run.
+
+        Returns:
+            _ConfigDict: Configuration for the run.
+        """
+        return _ConfigDict(
             run_meta=self._run_meta.to_dict(),
             models=self._models.to_dict(),
             simulation_config=self._simulation_config.to_dict(),
         )
 
     def simulate(self) -> None:
+        """Simulate the run."""
         time_series, units = simulate(
             **self._simulation_config.get_simulation_args(),
             **self._models.get_simulation_args(),
             get_units=True,
         )
-        self._results = Results(time_series=time_series, units=units)
+        self._results = _Results(time_series=time_series, units=units)
 
     def to_hdf5(self, hdf5_path: Path) -> None:
+        """Store the run inside a hdf5 file.
+
+        Args:
+            hdf5_path (Path): Path to the hdf5 file.
+        """
         rg.RunGroup.from_run(self).to_hdf5(hdf5_path)
 
-    def to_run_group(self) -> rg.RunGroup:
-        return rg.RunGroup.from_run(self)
 
-
-class Results(pydantic.BaseModel):
+class _Results(pydantic.BaseModel):
     time_series: pd.DataFrame
     units: Optional[Units]
 
@@ -427,17 +581,17 @@ class Results(pydantic.BaseModel):
 
 
 @pydantic.dataclasses.dataclass
-class RunMeta:
+class _RunMeta:
     description: str
     keywords: list[str]
     sofirpy_version: str
     python_version: str
     date: str
 
-    CONFIG_KEY: ClassVar[CONFIG_KEY_TYPE] = "run_meta"
+    CONFIG_KEY: ClassVar[ConfigKeyType] = "run_meta"
 
     @classmethod
-    def from_config(cls, config: Config) -> Self:
+    def from_config(cls, config: _ConfigDict) -> Self:
         return cls(
             **config[cls.CONFIG_KEY],
             sofirpy_version=sofirpy.__version__,
@@ -449,55 +603,55 @@ class RunMeta:
     def convert_numpy_array(cls, keywords: Iterable[str]) -> list[str]:
         return list(keywords)
 
-    def to_dict(self) -> MetaConfig:
+    def to_dict(self) -> _MetaConfigDict:
         meta_config = cast(
-            MetaConfig,
+            _MetaConfigDict,
             {
                 field_name: self.__getattribute__(field_name)
-                for field_name in MetaConfig.__annotations__.keys()
+                for field_name in _MetaConfigDict.__annotations__.keys()
             },
         )
         return meta_config
 
 
 @pydantic.dataclasses.dataclass
-class SimulationConfig:
+class _SimulationConfig:
     stop_time: float
     step_size: float
     logging_step_size: Optional[float] = None
 
-    CONFIG_KEY: ClassVar[CONFIG_KEY_TYPE] = "simulation_config"
+    CONFIG_KEY: ClassVar[ConfigKeyType] = "simulation_config"
 
     @classmethod
-    def from_config(cls, config: Config) -> Self:
+    def from_config(cls, config: _ConfigDict) -> Self:
         return cls(**config[cls.CONFIG_KEY])
 
-    def to_dict(self) -> _SimulationConfig:
-        return cast(_SimulationConfig, asdict(self))
+    def to_dict(self) -> _SimulationConfigDict:
+        return cast(_SimulationConfigDict, asdict(self))
 
-    def get_simulation_args(self) -> _SimulationConfig:
+    def get_simulation_args(self) -> _SimulationConfigDict:
         return self.to_dict()
 
 
 @dataclass
-class Models:
-    fmus: dict[str, Fmu]
-    python_models: dict[str, PythonModel]
+class _Models:
+    fmus: dict[str, _Fmu]
+    python_models: dict[str, _PythonModel]
 
-    CONFIG_KEY: ClassVar[CONFIG_KEY_TYPE] = "models"
+    CONFIG_KEY: ClassVar[ConfigKeyType] = "models"
 
     @classmethod
     def from_config(
         cls,
-        config: Config,
+        config: _ConfigDict,
         fmu_paths: Optional[FmuPaths] = None,
         model_instances: Optional[ModelInstances] = None,
     ) -> Self:
-        model_config = cast(dict[str, ModelConfig], config[cls.CONFIG_KEY])
+        model_config = cast(dict[str, _ModelConfigDict], config[cls.CONFIG_KEY])
         # TODO check if all names in fmu_paths and model_instances are in config
         fmu_paths = fmu_paths or {}
         fmus = {
-            name: Fmu(
+            name: _Fmu(
                 name=name,
                 fmu_path=utils.convert_str_to_path(path, "fmu_path"),
                 **model_config[name],
@@ -506,7 +660,7 @@ class Models:
         }
         model_instances = model_instances or {}
         python_models = {
-            name: PythonModel(
+            name: _PythonModel(
                 name=name, model_instance=model_instance, **model_config[name]
             )
             for name, model_instance in model_instances.items()
@@ -514,7 +668,7 @@ class Models:
         return cls(fmus=fmus, python_models=python_models)
 
     @property
-    def models(self) -> dict[str, Model]:
+    def models(self) -> dict[str, _Model]:
         return {**self.fmus, **self.python_models}
 
     def change_model_name(self, prev_name: str, new_name: str) -> None:
@@ -529,7 +683,7 @@ class Models:
 
     def update_connections(
         self, prev_name: str, new_name: str
-    ) -> None:  # TODO maybe instead of doing this link model class in connections --> would automatically update name
+    ) -> None:  # TODO maybe instead of doing this link model class in connections
         for model in self.models.values():
             model.update_connections(prev_name, new_name)
 
@@ -657,7 +811,7 @@ class Models:
             for name, python_model in self.python_models.items()
         }
 
-    def to_dict(self) -> dict[str, ModelConfig]:
+    def to_dict(self) -> dict[str, _ModelConfigDict]:
         return {name: model.to_dict() for name, model in self.models.items()}
 
     def get_simulation_args(self) -> dict[str, Any]:
@@ -670,7 +824,7 @@ class Models:
         }
 
 
-class Model(pydantic.BaseModel):
+class _Model(pydantic.BaseModel):
     name: str
     connections: Optional[Connections]
     start_values: Optional[dict[str, StartValue]]
@@ -700,7 +854,7 @@ class Model(pydantic.BaseModel):
         for connection in self.connections:
             if connection[ConnectionKeys.INPUT_PARAMETER.value] == input_name:
                 return connection
-        return None
+        raise KeyError(f"model '{self.name}' has not input parameter '{input_name}'")
 
     def set_connection(self, connection: _Connection) -> None:
         if self.connections is None:
@@ -731,21 +885,21 @@ class Model(pydantic.BaseModel):
             return
         self.parameters_to_log.remove(parameter_name)
 
-    def to_dict(self) -> ModelConfig:
+    def to_dict(self) -> _ModelConfigDict:
         model_config = cast(
-            ModelConfig,
+            _ModelConfigDict,
             {
                 field_name: self.__getattribute__(field_name)
-                for field_name in ModelConfig.__annotations__.keys()
+                for field_name in _ModelConfigDict.__annotations__.keys()
                 if self.__getattribute__(field_name) is not None
             },
         )
         return model_config
 
 
-class Fmu(Model):
+class _Fmu(_Model):
     fmu_path: Path
 
 
-class PythonModel(Model):
+class _PythonModel(_Model):
     model_instance: SimulationEntity
