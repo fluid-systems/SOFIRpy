@@ -404,12 +404,11 @@ class Run:
         )
 
     def simulate(self) -> None:
-        results = simulate(
+        time_series, units = simulate(
             **self._simulation_config.get_simulation_args(),
             **self._models.get_simulation_args(),
+            get_units=True,
         )
-        assert isinstance(results, tuple)
-        time_series, units = results
         self._results = Results(time_series=time_series, units=units)
 
     def to_hdf5(self, hdf5_path: Path) -> None:
@@ -466,7 +465,6 @@ class SimulationConfig:
     stop_time: float
     step_size: float
     logging_step_size: Optional[float] = None
-    get_units: bool = True
 
     CONFIG_KEY: ClassVar[CONFIG_KEY_TYPE] = "simulation_config"
 
