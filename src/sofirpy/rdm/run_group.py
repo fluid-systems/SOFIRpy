@@ -27,7 +27,7 @@ from sofirpy.simulation.simulation_entity import SimulationEntity, StartValue
 
 
 class Config(TypedDict):
-    run_meta: rdm_run.MetaConfig
+    run_meta: rdm_run._MetaConfigDict
     models: dict[str, Union[ModelConfig, FmuConfig]]
     simulation_config: SimulationConfig
 
@@ -150,9 +150,9 @@ class RunGroup(TopLevelGroup):
 
     def to_run(self) -> rdm_run.Run:
         run_name = self.run_name
-        run_meta = rdm_run.RunMeta(**self.attr.to_dict())
+        run_meta = rdm_run._RunMeta(**self.attr.to_dict())
         fmus = {
-            fmu.name: rdm_run.Fmu(
+            fmu.name: rdm_run._Fmu(
                 name=fmu.name,
                 fmu_path=fmu.fmu_path,
                 connections=fmu.connections_dataset.data,
@@ -162,7 +162,7 @@ class RunGroup(TopLevelGroup):
             for fmu in self.models_group.fmus_group.fmu_groups
         }
         python_models = {
-            python_model.name: rdm_run.PythonModel(
+            python_model.name: rdm_run._PythonModel(
                 name=python_model.name,
                 model_instance=python_model.model_instance,
                 connections=python_model.connections_dataset.data,
@@ -171,11 +171,11 @@ class RunGroup(TopLevelGroup):
             )
             for python_model in self.models_group.python_models_group.python_model_groups
         }
-        _models = rdm_run.Models(fmus=fmus, python_models=python_models)
-        simulation_config = rdm_run.SimulationConfig(
+        _models = rdm_run._Models(fmus=fmus, python_models=python_models)
+        simulation_config = rdm_run._SimulationConfig(
             **self.simulation_group.attr.to_dict()
         )
-        results = rdm_run.Results(
+        results = rdm_run._Results(
             time_series=self.simulation_group.time_series.data,
             units=self.simulation_group.time_series.attr.attributes,
         )
@@ -207,7 +207,7 @@ class RunGroup(TopLevelGroup):
 class RunConfigDataset(Dataset):
     DATASET_NAME: ClassVar[str] = "config"
     parent: RunGroup
-    data: rdm_run.Config
+    data: rdm_run._ConfigDict
 
     @property
     def name(self) -> str:
@@ -226,7 +226,7 @@ class RunConfigDataset(Dataset):
         return cls(
             parent=parent,
             data=cast(
-                rdm_run.Config,
+                rdm_run._ConfigDict,
                 json.loads(cast(bytes, hdf5.read_data(cls.DATASET_NAME, parent.path))),
             ),
         )
