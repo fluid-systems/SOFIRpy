@@ -587,6 +587,7 @@ class _RunMeta:
     sofirpy_version: str
     python_version: str
     date: str
+    os: str = sys.platform
 
     CONFIG_KEY: ClassVar[ConfigKeyType] = "run_meta"
 
