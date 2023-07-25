@@ -2,15 +2,16 @@
 
 from __future__ import annotations
 
+import inspect
 import json
 import sys
+import warnings
 from dataclasses import asdict, dataclass
 from datetime import datetime
 from pathlib import Path
 from typing import Any, ClassVar, Iterable, Literal, Optional, TypedDict, cast
 
 import pandas as pd
-import pydantic
 from typing_extensions import NotRequired, Self
 
 import sofirpy
@@ -127,6 +128,15 @@ class Run:
         self._run_meta.keywords.append(keyword)
 
     @property
+    def date(self) -> datetime:
+        """Date and time run was created.
+
+        Returns:
+            datetime: Date and time run was created.
+        """
+        return datetime.strptime(self._run_meta.date, "%d-%b-%Y %H:%M:%S")
+
+    @property
     def sofirpy_version(self) -> str:
         """Version of sofirpy the run was performed with.
 
@@ -143,6 +153,15 @@ class Run:
             str: Version of Python the run was performed with.
         """
         return self._run_meta.python_version
+
+    @property
+    def os(self) -> str:
+        """Operating system the simulation was performed on.
+
+        Returns:
+            str: Operating system the simulation was performed on.
+        """
+        return self._run_meta.os
 
     @property
     def stop_time(self) -> float:
@@ -216,6 +235,56 @@ class Run:
             new_model_name (str): New model name.
         """
         self._models.change_model_name(prev_model_name, new_model_name)
+
+    def get_fmu_path(self, fmu_name: str) -> Path:
+        """Get the path of a fmu.
+
+        Args:
+            fmu_name (str): Name of the fmu.
+
+        Returns:
+            Path: Path of the fmu.
+        """
+        return self._models.fmu_paths[fmu_name]
+
+    def move_fmu(self, fmu_name: str, target_directory: str | Path) -> None:
+        """Move a fmu to a target directory.
+
+        Args:
+            fmu_name (str): Name of the fmu.
+            target_directory (str | Path): Target directory.
+        """
+        target_directory = utils.convert_str_to_path(
+            target_directory, "target_directory"
+        )
+        self._models.move_fmu(fmu_name, target_directory)
+
+    def get_model_instance(self, model_name: str) -> SimulationEntity:
+        """Get the instance of a python model.
+
+        Args:
+            model_name (str): Name of the model.
+
+        Returns:
+            SimulationEntity: Model instance.
+        """
+        return self._models.model_instances[model_name]
+
+    def get_source_code_of_python_model(self, model_name: str) -> str:
+        """Get the class source code of a python model.
+
+        Args:
+            model_name (str): Name of the python model.
+
+        Returns:
+            str: Source code of the class.
+        """
+        return self._models.get_source_code_of_python_model(model_name)
+
+    def create_file_from_source_code(
+        self, model_name: str, target_path: str | Path
+    ) -> None:
+        self._models.create_file_from_source_code(model_name, target_path)
 
     @property
     def start_values(self) -> Optional[StartValues]:
@@ -572,24 +641,25 @@ class Run:
         rg.RunGroup.from_run(self).to_hdf5(hdf5_path)
 
 
-class _Results(pydantic.BaseModel):
+@dataclass
+class _Results:
     time_series: pd.DataFrame
     units: Optional[Units]
 
-    class Config:
-        arbitrary_types_allowed = True
 
-
-@pydantic.dataclasses.dataclass
+@dataclass
 class _RunMeta:
     description: str
     keywords: list[str]
     sofirpy_version: str
     python_version: str
     date: str
-    os: str = sys.platform
+    os: str
 
     CONFIG_KEY: ClassVar[ConfigKeyType] = "run_meta"
+
+    def __post_init__(self) -> None:
+        check_compatibility(self.python_version, self.sofirpy_version, self.os)
 
     @classmethod
     def from_config(cls, config: _ConfigDict) -> Self:
@@ -598,11 +668,8 @@ class _RunMeta:
             sofirpy_version=sofirpy.__version__,
             python_version=sys.version,
             date=datetime.now().strftime("%d-%b-%Y %H:%M:%S"),
+            os=sys.platform,
         )
-
-    @pydantic.validator("keywords", pre=True)
-    def convert_numpy_array(cls, keywords: Iterable[str]) -> list[str]:
-        return list(keywords)
 
     def to_dict(self) -> _MetaConfigDict:
         meta_config = cast(
@@ -615,7 +682,7 @@ class _RunMeta:
         return meta_config
 
 
-@pydantic.dataclasses.dataclass
+@dataclass
 class _SimulationConfig:
     stop_time: float
     step_size: float
@@ -802,7 +869,7 @@ class _Models:
         self.models[model_name].remove_parameter_to_log(parameter_name)
 
     @property
-    def fmu_paths(self) -> FmuPaths:
+    def fmu_paths(self) -> dict[str, Path]:
         return {name: fmu.fmu_path for name, fmu in self.fmus.items()}
 
     @property
@@ -811,6 +878,15 @@ class _Models:
             name: python_model.model_instance
             for name, python_model in self.python_models.items()
         }
+
+    def move_fmu(self, fmu_name: str, target_directory: Path) -> None:
+        self.fmus[fmu_name].move_fmu(target_directory)
+
+    def get_source_code_of_python_model(self, model_name: str) -> str:
+        return self.python_models[model_name].get_source_code()
+
+    def create_file_from_source_code(self, model_name: str, target_path: Path) -> None:
+        self.python_models[model_name].create_file_from_source_code(target_path)
 
     def to_dict(self) -> dict[str, _ModelConfigDict]:
         return {name: model.to_dict() for name, model in self.models.items()}
@@ -825,7 +901,8 @@ class _Models:
         }
 
 
-class _Model(pydantic.BaseModel):
+@dataclass
+class _Model:
     name: str
     connections: Optional[Connections]
     start_values: Optional[dict[str, StartValue]]
@@ -898,9 +975,45 @@ class _Model(pydantic.BaseModel):
         return model_config
 
 
+@dataclass
 class _Fmu(_Model):
     fmu_path: Path
 
+    def move_fmu(self, target_directory: Path) -> None:
+        source_path = self.fmu_path
+        target_path = target_directory / source_path.name
+        utils.move_file(source_path, target_path)
+        self.fmu_path = target_path
 
+
+@dataclass
 class _PythonModel(_Model):
     model_instance: SimulationEntity
+    code: Optional[str] = None
+
+    def get_source_code(self) -> str:
+        return self.read_code() if self.code is None else self.code
+
+    def read_code(self) -> str:
+        return inspect.getsource(self.model_instance.__class__)
+
+    def create_file_from_source_code(self, target_path: Path) -> None:
+        if not target_path.exists():
+            target_path.touch()
+        if not target_path.is_file():
+            raise ValueError()
+        if not target_path.suffix.lower() == ".py":
+            raise ValueError()
+        target_path.open("w").write(self.get_source_code())
+
+
+def check_compatibility(python_version: str, sofirpy_version: str, os: str) -> None:
+    if python_version != sys.version:  # TODO make it not so harsh maybe
+        raise ValueError()
+    if sofirpy_version != sofirpy.__version__:
+        warnings.warn(
+            f"Run was created with sofirpy version '{sofirpy_version}', "
+            f"this sofirpy version is '{sofirpy.__version__}'."
+        )
+    if os != sys.platform:
+        raise ValueError()

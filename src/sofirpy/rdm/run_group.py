@@ -10,14 +10,14 @@ from dataclasses import asdict, dataclass
 from datetime import datetime
 from enum import Enum
 from pathlib import Path
-from typing import Any, ClassVar, Optional, TypedDict, Union, cast
+from typing import Any, ClassVar, Optional, Union, cast
 
 import cloudpickle
 import numpy as np
 import pandas as pd
 
 # from pip._internal.operations import freeze
-from typing_extensions import NotRequired, Self
+from typing_extensions import NotRequired, Self, TypedDict
 
 import sofirpy
 import sofirpy.rdm.run as rdm_run
@@ -168,6 +168,7 @@ class RunGroup(TopLevelGroup):
                 connections=python_model.connections_dataset.data,
                 start_values=python_model.start_values_dataset.data,
                 parameters_to_log=python_model.parameters_to_log_dataset.data,
+                code=python_model._code,
             )
             for python_model in self.models_group.python_models_group.python_model_groups
         }
@@ -240,19 +241,23 @@ class RunAttr(Attribute):
     parent: RunGroup
     attributes: Attrs
 
-    CONFIG_KEY = "run_meta"
-
-    class ConfigKeys:
-        DESCRIPTION = "description"
-        KEYWORDS = "keywords"
-
     @dataclass
     class Attrs:
         description: str
         keywords: list[str]
-        date: str = datetime.now().strftime("%d-%b-%Y %H:%M:%S")
-        python_version: str = sys.version
-        sofirpy_version: str = sofirpy.__version__
+        date: str
+        python_version: str
+        sofirpy_version: str
+        os: str
+
+    # TODO think about how to add new attr with backwards compatibility
+
+    def __post_init__(self) -> None:
+        rdm_run.check_compatibility(
+            self.attributes.python_version,
+            self.attributes.sofirpy_version,
+            self.attributes.os,
+        )
 
     @property
     def path(self) -> str:
@@ -282,8 +287,7 @@ class ModelsGroup(Group):
     _fmus_group: Optional[FmusGroup] = None
     _python_models_group: Optional[PythonModelsGroup] = None
 
-    CONFIG_KEY = "models"
-    GROUP_NAME = "models"
+    GROUP_NAME: ClassVar[str] = "models"
 
     @property
     def path(self) -> str:
@@ -328,7 +332,7 @@ class FmusGroup(Group):
     parent: ModelsGroup
     _fmu_groups: Optional[list[FmuGroup]] = None
 
-    GROUP_NAME = "fmus"
+    GROUP_NAME: ClassVar[str] = "fmus"
 
     @property
     def path(self) -> str:
@@ -374,7 +378,8 @@ class FmusGroup(Group):
 class PythonModelsGroup(Group):
     parent: ModelsGroup
     _python_model_groups: Optional[list[PythonModelGroup]] = None
-    GROUP_NAME = "python_models"
+
+    GROUP_NAME: ClassVar[str] = "python_models"
 
     @property
     def path(self) -> str:
@@ -460,12 +465,11 @@ class ModelDataset(Dataset):
 class ConnectionDataset(ModelDataset):
     data: Connections
 
-    DATASET_NAME = "connections"
-    CONFIG_KEY = "connections"
+    DATASET_NAME: ClassVar[str] = "connections"
 
     @classmethod
     def from_run(
-        cls, model: rdm_run.Model, parent: Union[PythonModelGroup, FmuGroup]
+        cls, model: rdm_run._Model, parent: Union[PythonModelGroup, FmuGroup]
     ) -> Self:
         return cls(parent=parent, data=model.connections or [])
 
@@ -474,12 +478,11 @@ class ConnectionDataset(ModelDataset):
 class StartValuesDataset(ModelDataset):
     data: dict[str, StartValue]
 
-    DATASET_NAME = "start_values"
-    CONFIG_KEY = "start_values"
+    DATASET_NAME: ClassVar[str] = "start_values"
 
     @classmethod
     def from_run(
-        cls, model: rdm_run.Model, parent: Union[PythonModelGroup, FmuGroup]
+        cls, model: rdm_run._Model, parent: Union[PythonModelGroup, FmuGroup]
     ) -> Self:
         return cls(parent=parent, data=model.start_values or {})
 
@@ -489,11 +492,10 @@ class ParametersToLogDataset(ModelDataset):
     data: list[str]
 
     DATASET_NAME = "parameters_to_log"
-    CONFIG_KEY = "parameters_to_log"
 
     @classmethod
     def from_run(
-        cls, model: rdm_run.Model, parent: Union[PythonModelGroup, FmuGroup]
+        cls, model: rdm_run._Model, parent: Union[PythonModelGroup, FmuGroup]
     ) -> Self:
         return cls(parent=parent, data=model.parameters_to_log or [])
 
@@ -502,12 +504,10 @@ class ParametersToLogDataset(ModelDataset):
 class FmuReferenceDataset(ModelDataset):
     data: str
     fmu_content: Optional[bytes] = None  # TODO maybe move this to FmuStorageDataset
-    DATASET_NAME = "reference"
-
-    CONFIG_KEY = "fmu_path"
+    DATASET_NAME: ClassVar[str] = "reference"
 
     @classmethod
-    def from_run(cls, model: rdm_run.Fmu, parent: FmuGroup) -> Self:
+    def from_run(cls, model: rdm_run._Fmu, parent: FmuGroup) -> Self:
         with open(model.fmu_path, "rb") as fmu:
             fmu_content = fmu.read()
         fmu_hash = hashlib.sha256(fmu_content).hexdigest()
@@ -544,13 +544,51 @@ class FmuReferenceDataset(ModelDataset):
 
 
 @dataclass
-class PythonModelReferenceDataset(ModelDataset):
+class PythonModelReferenceDatasetCode(ModelDataset):
     data: str
-    pickled_python_model: Optional[bytes] = None
-    DATASET_NAME = "reference"
+    code: Optional[str] = None
+
+    DATASET_NAME: ClassVar[str] = "reference_code"
 
     @classmethod
-    def from_run(cls, model: rdm_run.PythonModel, parent: PythonModelGroup) -> Self:
+    def from_run(cls, model: rdm_run._PythonModel, parent: PythonModelGroup) -> Self:
+        code = model.read_code()
+        code_hash = hashlib.sha256(code.encode("utf-8")).hexdigest()
+        return cls(parent=parent, data=code_hash, code=code)
+
+    @classmethod
+    def from_hdf5(cls, hdf5: HDF5, parent: PythonModelGroup) -> Self:
+        code_hash = cast(bytes, hdf5.read_data(cls.DATASET_NAME, parent.path)).decode(
+            "utf-8"
+        )
+        code = ModelStorageGroup.from_hdf5(
+            hdf5
+        ).python_models_storage_group.code_models_group.get_code_by_reference(
+            hdf5, code_hash
+        )
+        return cls(parent, data=code_hash, code=code)
+
+    def to_hdf5(self, hdf5: HDF5) -> None:
+        assert self.code is not None
+        code_models_group = ModelStorageGroup.from_hdf5(
+            hdf5
+        ).python_models_storage_group.code_models_group
+        hdf5.store_data(self.data, self.name, self.parent.path)
+        if self.data in code_models_group.get_references():
+            return
+        code_models_group.store_model(hdf5, self.code, self.data)
+        self.code = None  # for memory purposes
+
+
+@dataclass
+class PythonModelReferenceDatasetPickledModel(ModelDataset):
+    data: str
+    pickled_python_model: Optional[bytes] = None
+
+    DATASET_NAME: ClassVar[str] = "reference_pickled_model"
+
+    @classmethod
+    def from_run(cls, model: rdm_run._PythonModel, parent: PythonModelGroup) -> Self:
         cloudpickle.register_pickle_by_value(inspect.getmodule(model.model_instance))
         pickled_python_model = cloudpickle.dumps(model.model_instance)
         model_hash = hashlib.sha256(pickled_python_model).hexdigest()
@@ -565,7 +603,9 @@ class PythonModelReferenceDataset(ModelDataset):
         )
         pickled_python_model = ModelStorageGroup.from_hdf5(
             hdf5
-        ).python_models_storage_group.get_pickled_model_by_reference(hdf5, model_hash)
+        ).python_models_storage_group.pickled_models_group.get_pickled_model_by_reference(
+            hdf5, model_hash
+        )
         return cls(parent, data=model_hash, pickled_python_model=pickled_python_model)
 
     def unpickle_python_model(self) -> SimulationEntity:
@@ -573,15 +613,13 @@ class PythonModelReferenceDataset(ModelDataset):
 
     def to_hdf5(self, hdf5: HDF5) -> None:
         assert self.pickled_python_model is not None
-        python_models_storage_group = ModelStorageGroup.from_hdf5(
+        pickled_models_group = ModelStorageGroup.from_hdf5(
             hdf5
-        ).python_models_storage_group
+        ).python_models_storage_group.pickled_models_group
         hdf5.store_data(self.data, self.name, self.parent.path)
-        if self.data in python_models_storage_group.get_references():
+        if self.data in pickled_models_group.get_references():
             return
-        python_models_storage_group.store_model(
-            hdf5, self.pickled_python_model, self.data
-        )
+        pickled_models_group.store_model(hdf5, self.pickled_python_model, self.data)
         self.pickled_python_model = None  # for memory purposes
 
 
@@ -639,7 +677,7 @@ class FmuGroup(ModelGroup):
         return self._fmu_path
 
     @classmethod
-    def from_run(cls, model: rdm_run.Fmu, parent: FmusGroup) -> Self:
+    def from_run(cls, model: rdm_run._Fmu, parent: FmusGroup) -> Self:
         self = cls(parent=parent, model_name=model.name, _fmu_path=model.fmu_path)
         self._connections_dataset = ConnectionDataset.from_run(model, self)
         self._start_values_dataset = StartValuesDataset.from_run(model, self)
@@ -664,13 +702,19 @@ class FmuGroup(ModelGroup):
 
 @dataclass
 class PythonModelGroup(ModelGroup):
-    _reference_dataset: Optional[PythonModelReferenceDataset] = None
+    _reference_dataset_pickled_model: Optional[
+        PythonModelReferenceDatasetPickledModel
+    ] = None
+    _reference_dataset_code: Optional[PythonModelReferenceDatasetCode] = None
     _model_instance: Optional[SimulationEntity] = None
+    _code: Optional[str] = None
 
     @property
-    def reference_dataset(self) -> PythonModelReferenceDataset:
-        assert self._reference_dataset is not None
-        return self._reference_dataset
+    def reference_dataset_pickled_model(
+        self,
+    ) -> PythonModelReferenceDatasetPickledModel:
+        assert self._reference_dataset_pickled_model is not None
+        return self._reference_dataset_pickled_model
 
     @property
     def model_instance(self) -> SimulationEntity:
@@ -678,14 +722,19 @@ class PythonModelGroup(ModelGroup):
         return self._model_instance
 
     @classmethod
-    def from_run(cls, model: rdm_run.PythonModel, parent: PythonModelsGroup) -> Self:
+    def from_run(cls, model: rdm_run._PythonModel, parent: PythonModelsGroup) -> Self:
         self = cls(
             parent=parent, model_name=model.name, _model_instance=model.model_instance
         )
         self._connections_dataset = ConnectionDataset.from_run(model, self)
         self._start_values_dataset = StartValuesDataset.from_run(model, self)
         self._parameters_to_log_dataset = ParametersToLogDataset.from_run(model, self)
-        self._reference_dataset = PythonModelReferenceDataset.from_run(model, self)
+        self._reference_dataset_pickled_model = (
+            PythonModelReferenceDatasetPickledModel.from_run(model, self)
+        )
+        self._reference_dataset_code = PythonModelReferenceDatasetCode.from_run(
+            model, self
+        )
         return self
 
     @classmethod
@@ -694,14 +743,23 @@ class PythonModelGroup(ModelGroup):
         self._connections_dataset = ConnectionDataset.from_hdf5(hdf5, self)
         self._start_values_dataset = StartValuesDataset.from_hdf5(hdf5, self)
         self._parameters_to_log_dataset = ParametersToLogDataset.from_hdf5(hdf5, self)
-        self._reference_dataset = PythonModelReferenceDataset.from_hdf5(hdf5, self)
-        self._model_instance = self.reference_dataset.unpickle_python_model()
-        self._reference_dataset.pickled_python_model = None
+        self._reference_dataset_pickled_model = (
+            PythonModelReferenceDatasetPickledModel.from_hdf5(hdf5, self)
+        )
+        self._model_instance = (
+            self.reference_dataset_pickled_model.unpickle_python_model()
+        )
+        self._reference_dataset_pickled_model.pickled_python_model = None
+        self._reference_dataset_code = PythonModelReferenceDatasetCode.from_hdf5(
+            hdf5, self
+        )
+        self._code = self._reference_dataset_code.code
         return self
 
     def to_hdf5(self, hdf5: HDF5) -> None:
         super().to_hdf5(hdf5)
-        self.reference_dataset.to_hdf5(hdf5)
+        self.reference_dataset_pickled_model.to_hdf5(hdf5)
+        self._reference_dataset_code.to_hdf5(hdf5)
 
 
 @dataclass
@@ -710,7 +768,7 @@ class SimulationResultsGroup(Group):
     _time_series: Optional[TimeSeriesDataset] = None
     _attr: Optional[SimulationResultsAttr] = None
 
-    GROUP_NAME = "simulation_results"
+    GROUP_NAME: ClassVar[str] = "simulation_results"
 
     @property
     def path(self) -> str:
@@ -758,13 +816,6 @@ class SimulationResultsGroup(Group):
 class SimulationResultsAttr(Attribute):
     parent: SimulationResultsGroup
     attributes: Attrs
-
-    CONFIG_KEY = "simulation_config"
-
-    class ConfigKeys:
-        STOP_TIME = "stop_time"
-        STEP_SIZE = "step_size"
-        LOGGING_STEP_SIZE = "logging_step_size"
 
     @dataclass
     class Attrs:
@@ -959,9 +1010,128 @@ class FmusStorageGroup(Group):
 
 
 @dataclass
-class PythonModelsContentDataset(Dataset):
+class PythonModelPickledModelsStorageGroup(Group):
+    parent: PythonModelsStorageGroup
+    _pickled_python_models: Optional[list[PickledPythonModelsContentDataset]] = None
+
+    @property
+    def name(self) -> str:
+        return "pickled_python_models"
+
+    @property
+    def path(self) -> str:
+        return f"{self.parent.path}/{self.name}"
+
+    @property
+    def python_models(self) -> list[PickledPythonModelsContentDataset]:
+        assert self._pickled_python_models is not None
+        return self._pickled_python_models
+
+    @classmethod
+    def from_hdf5(cls, hdf5: HDF5, parent: ModelStorageGroup) -> Self:
+        self = cls(parent)
+        pickled_python_models = []
+        for dataset_name in hdf5.get_dataset_names(self.path):
+            pickled_python_models.append(
+                PickledPythonModelsContentDataset.from_hdf5(dataset_name, self)
+            )
+        self._pickled_python_models = pickled_python_models
+        return self
+
+    def get_pickled_model_by_reference(self, hdf5: HDF5, reference: str) -> bytes:
+        return cast(bytes, hdf5.read_data(reference, self.path))
+
+    def store_model(self, hdf5: HDF5, pickled_model: bytes, model_hash: str) -> None:
+        PickledPythonModelsContentDataset(
+            parent=self, dataset_name=model_hash, data=pickled_model
+        ).to_hdf5(hdf5)
+
+    def to_hdf5(self, hdf5: HDF5) -> None:
+        hdf5.create_group(self.path)
+
+    def get_references(self) -> list[str]:
+        return [
+            python_model_dataset.dataset_name
+            for python_model_dataset in self.python_models
+        ]
+
+
+@dataclass
+class PythonModelCodeStorageGroup(Group):
+    parent: PythonModelsStorageGroup
+    _code_models: Optional[list[CodePythonModelsContentDataset]] = None
+
+    @property
+    def name(self) -> str:
+        return "code_python_models"
+
+    @property
+    def path(self) -> str:
+        return f"{self.parent.path}/{self.name}"
+
+    @property
+    def python_models(self) -> list[CodePythonModelsContentDataset]:
+        assert self._code_models is not None
+        return self._code_models
+
+    @classmethod
+    def from_hdf5(cls, hdf5: HDF5, parent: ModelStorageGroup) -> Self:
+        self = cls(parent)
+        code_models = []
+        for dataset_name in hdf5.get_dataset_names(self.path):
+            code_models.append(
+                CodePythonModelsContentDataset.from_hdf5(dataset_name, self)
+            )
+        self._code_models = code_models
+        return self
+
+    def get_code_by_reference(self, hdf5: HDF5, reference: str) -> str:
+        return cast(bytes, hdf5.read_data(reference, self.path)).decode("utf-8")
+
+    def store_model(self, hdf5: HDF5, code: str, code_hash: str) -> None:
+        CodePythonModelsContentDataset(
+            parent=self, dataset_name=code_hash, data=code
+        ).to_hdf5(hdf5)
+
+    def to_hdf5(self, hdf5: HDF5) -> None:
+        hdf5.create_group(self.path)
+
+    def get_references(self) -> list[str]:
+        return [
+            python_model_dataset.dataset_name
+            for python_model_dataset in self.python_models
+        ]
+
+
+@dataclass
+class CodePythonModelsContentDataset(Dataset):
     dataset_name: str
-    data: Optional[Any] = None
+    data: Optional[str] = None
+
+    @property
+    def name(self) -> str:
+        return self.dataset_name
+
+    @property
+    def path(self) -> str:
+        return f"{self.parent.path}/{self.name}"
+
+    @classmethod
+    def from_hdf5(cls, dataset_name: str, parent: Group) -> Self:
+        return cls(parent, dataset_name)
+
+    def to_hdf5(self, hdf5: HDF5) -> None:
+        assert self.data is not None
+        hdf5.store_data(self.data, self.dataset_name, self.parent.path)
+
+    def read_data(self, hdf5: HDF5) -> str:
+        return cast(bytes, hdf5.read_data(self.name, self.parent.path)).decode("utf-8")
+
+
+@dataclass
+class PickledPythonModelsContentDataset(Dataset):
+    dataset_name: str
+    data: Optional[bytes] = None
 
     @property
     def name(self) -> str:
@@ -986,7 +1156,8 @@ class PythonModelsContentDataset(Dataset):
 @dataclass
 class PythonModelsStorageGroup(Group):
     parent: ModelStorageGroup
-    _python_models: Optional[list[PythonModelsContentDataset]] = None
+    pickled_models_group: Optional[PythonModelPickledModelsStorageGroup] = None
+    code_models_group: Optional[PythonModelCodeStorageGroup] = None
 
     @property
     def name(self) -> str:
@@ -996,38 +1167,19 @@ class PythonModelsStorageGroup(Group):
     def path(self) -> str:
         return f"{self.parent.path}/{self.name}"
 
-    @property
-    def python_models(self) -> list[PythonModelsContentDataset]:
-        assert self._python_models is not None
-        return self._python_models
-
     @classmethod
     def from_hdf5(cls, hdf5: HDF5, parent: ModelStorageGroup) -> Self:
         self = cls(parent)
-        python_models = []
-        for dataset_name in hdf5.get_dataset_names(self.path):
-            python_models.append(
-                PythonModelsContentDataset.from_hdf5(dataset_name, self)
-            )
-        self._python_models = python_models
+        self.pickled_models_group = PythonModelPickledModelsStorageGroup.from_hdf5(
+            hdf5, self
+        )
+        self.code_models_group = PythonModelCodeStorageGroup.from_hdf5(hdf5, self)
         return self
-
-    def get_pickled_model_by_reference(self, hdf5: HDF5, reference: str) -> bytes:
-        return cast(bytes, hdf5.read_data(reference, self.path))
-
-    def store_model(self, hdf5: HDF5, pickled_model: bytes, model_hash: str) -> None:
-        PythonModelsContentDataset(
-            parent=self, dataset_name=model_hash, data=pickled_model
-        ).to_hdf5(hdf5)
 
     def to_hdf5(self, hdf5: HDF5) -> None:
         hdf5.create_group(self.path)
-
-    def get_references(self) -> list[str]:
-        return [
-            python_model_dataset.dataset_name
-            for python_model_dataset in self.python_models
-        ]
+        self.pickled_models_group.to_hdf5(hdf5)
+        self.code_models_group.to_hdf5(hdf5)
 
 
 @dataclass
@@ -1061,6 +1213,12 @@ class ModelStorageGroup(TopLevelGroup):
         self._fmus_storage_group = FmusStorageGroup(self)
         self.fmus_storage_group.to_hdf5(hdf5)
         self._python_models_storage_group = PythonModelsStorageGroup(self)
+        self._python_models_storage_group.pickled_models_group = (
+            PythonModelPickledModelsStorageGroup(self._python_models_storage_group)
+        )
+        self._python_models_storage_group.code_models_group = (
+            PythonModelCodeStorageGroup(self._python_models_storage_group)
+        )
         self.python_models_storage_group.to_hdf5(hdf5)
         return self
 
