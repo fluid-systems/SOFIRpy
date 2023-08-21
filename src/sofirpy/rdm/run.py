@@ -12,9 +12,11 @@ from pathlib import Path
 from typing import Any, ClassVar, Iterable, Literal, Optional, TypedDict, cast
 
 import pandas as pd
+import pkg_resources
 from typing_extensions import NotRequired, Self
 
 import sofirpy
+import sofirpy.rdm.db.run_to_hdf5
 import sofirpy.rdm.run_group as rg
 from sofirpy import utils
 from sofirpy.simulation.simulation import (
@@ -632,13 +634,14 @@ class Run:
         )
         self._results = _Results(time_series=time_series, units=units)
 
-    def to_hdf5(self, hdf5_path: Path) -> None:
+    def to_hdf5(self, hdf5_path: Path | str) -> None:
         """Store the run inside a hdf5 file.
 
         Args:
-            hdf5_path (Path): Path to the hdf5 file.
+            hdf5_path (Path | str): Path to the hdf5 file.
         """
-        rg.RunGroup.from_run(self).to_hdf5(hdf5_path)
+        hdf5_path = utils.convert_str_to_path(hdf5_path, "hdf5_path")
+        sofirpy.rdm.db.run_to_hdf5.run_to_hdf5(run=self, hdf5_path=hdf5_path)
 
 
 @dataclass
@@ -680,6 +683,10 @@ class _RunMeta:
             },
         )
         return meta_config
+
+    def get_dependencies(self) -> dict[str, str]:
+        installed_packages = pkg_resources.working_set
+        return {package.project_name: package.version for package in installed_packages}
 
 
 @dataclass
