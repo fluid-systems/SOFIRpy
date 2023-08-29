@@ -298,7 +298,7 @@ class HDF5:
 
         return datasets
 
-    def _read_hdf5_structure(
+    def read_hdf5_structure(
         self, group_path: Optional[str] = None
     ) -> Optional[dict[str, Any]]:
         """Reads the structure of a hdf5 group.
@@ -333,7 +333,7 @@ class HDF5:
 
             return file_structure
 
-    def __contains__(self, path: Union[str, Iterable[str]]) -> bool:
+    def __contains__(self, path: str) -> bool:
         """Check if a given group or dataset exists in the hdf5.
 
         Args:
@@ -342,14 +342,9 @@ class HDF5:
         Returns:
             bool: True if the path exists else False.
         """
-        utils.check_type(path, "path", (str, Iterable))
         with h5py.File(str(self.hdf5_path), "a") as hdf5:
-            if not isinstance(path, Iterable):
-                if hdf5.get(path) is None:
-                    return False
-            for _path in path:
-                if hdf5.get(_path) is None:
-                    return False
+            if hdf5.get(path) is None:
+                return False
         return True
 
     def _get_group_or_dataset_names(
@@ -517,7 +512,9 @@ class Dataset(HDF5Object):
     def read_data(self, hdf5: HDF5) -> None:
         self.data = hdf5.read_data(self.name, self.directory)
 
-    def to_hdf5(self, hdf5: HDF5) -> None:
+    def to_hdf5(self, hdf5: HDF5, overwrite: bool = False) -> None:
+        if self.path in hdf5 and not overwrite:
+            return
         hdf5.store_data(self.data, self.name, self.directory)
         self._attribute_to_hdf5(hdf5)
 
@@ -526,6 +523,9 @@ class Dataset(HDF5Object):
             "attributes": self.attribute.attributes if self.attribute else {},
             "data": self.data if read_data else None,
         }
+
+    def delete(self, hdf5: HDF5) -> None:
+        hdf5.delete_data(self.name, self.directory)
 
 
 @dataclass
@@ -546,11 +546,12 @@ class Group(HDF5Object):
             self.datasets._datasets[dataset_name] = Dataset.from_hdf5(
                 hdf5, dataset_name, self, read_data
             )
-        self.attribute = Attribute.from_hdf5(hdf5, self)
+        self.attribute = Attribute.from_hdf5(hdf5, self) if read_data else None
         return self
 
-    def to_hdf5(self, hdf5: HDF5) -> None:
-        hdf5.create_group(self.path)
+    def to_hdf5(self, hdf5: HDF5, overwrite: bool = False) -> None:
+        if not self.path in hdf5:
+            hdf5.create_group(self.path)
         self._attribute_to_hdf5(hdf5)
         self._groups_to_hdf5(hdf5)
         self._datasets_to_hdf5(hdf5)
@@ -614,6 +615,9 @@ class Group(HDF5Object):
         for group_name, group in self.groups._groups.items():
             group_structure["groups"][group_name] = group.to_dict(read_data)
         return group_structure
+
+    def delete(self, hdf5: HDF5) -> None:
+        hdf5.delete_group(self.path)
 
 
 @dataclass

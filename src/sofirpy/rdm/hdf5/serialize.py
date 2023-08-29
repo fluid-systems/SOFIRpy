@@ -9,7 +9,6 @@ from typing import Any
 
 import cloudpickle
 import numpy as np
-import pandas as pd
 
 import sofirpy.rdm.run as rdm_run
 
@@ -93,13 +92,13 @@ class FmuStorage(Serializer):
     @staticmethod
     def serialize(run: rdm_run.Run, fmu_name: str) -> Any:
         fmu_path = run.get_fmu_path(fmu_name)
-        return fmu_path.open("rb").read()
+        return np.void(fmu_path.open("rb").read())
 
 
 class PythonModelInstanceReference(Serializer):
     @staticmethod
     def serialize(run: rdm_run.Run, python_model_name: str) -> Any:
-        model = run.get_model_instance(python_model_name)
+        model = run.get_model_class(python_model_name)
         cloudpickle.register_pickle_by_value(inspect.getmodule(model))
         pickled_python_model = cloudpickle.dumps(model)
         model_hash = hashlib.sha256(pickled_python_model).hexdigest()
@@ -109,9 +108,9 @@ class PythonModelInstanceReference(Serializer):
 class PythonModelInstanceStorage(Serializer):
     @staticmethod
     def serialize(run: rdm_run.Run, python_model_name: str) -> Any:
-        model = run.get_model_instance(python_model_name)
+        model = run.get_model_class(python_model_name)
         cloudpickle.register_pickle_by_value(inspect.getmodule(model))
-        return cloudpickle.dumps(model)
+        return np.void(cloudpickle.dumps(model))
 
 
 class PythonModelSourceCodeReference(Serializer):

@@ -9,22 +9,22 @@ import warnings
 from dataclasses import asdict, dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import Any, ClassVar, Iterable, Literal, Optional, TypedDict, cast
+from typing import Any, ClassVar, Literal, Optional, TypedDict, cast
 
 import pandas as pd
 import pkg_resources
 from typing_extensions import NotRequired, Self
 
 import sofirpy
-import sofirpy.rdm.db.run_to_hdf5
-import sofirpy.rdm.run_group as rg
+import sofirpy.rdm.hdf5.hdf5_to_run
+import sofirpy.rdm.hdf5.run_to_hdf5
 from sofirpy import utils
 from sofirpy.simulation.simulation import (
     ConnectionKeys,
     Connections,
     ConnectionsConfig,
     FmuPaths,
-    ModelInstances,
+    ModelClasses,
     ParametersToLog,
     StartValues,
     Units,
@@ -261,7 +261,7 @@ class Run:
         )
         self._models.move_fmu(fmu_name, target_directory)
 
-    def get_model_instance(self, model_name: str) -> SimulationEntity:
+    def get_model_class(self, model_name: str) -> type[SimulationEntity]:
         """Get the instance of a python model.
 
         Args:
@@ -270,7 +270,7 @@ class Run:
         Returns:
             SimulationEntity: Model instance.
         """
-        return self._models.model_instances[model_name]
+        return self._models.model_classes[model_name]
 
     def get_source_code_of_python_model(self, model_name: str) -> str:
         """Get the class source code of a python model.
@@ -286,6 +286,7 @@ class Run:
     def create_file_from_source_code(
         self, model_name: str, target_path: str | Path
     ) -> None:
+        target_path = utils.convert_str_to_path(target_path, "target_path")
         self._models.create_file_from_source_code(model_name, target_path)
 
     @property
@@ -552,9 +553,9 @@ class Run:
     def from_config(
         cls,
         run_name: str,
-        config_path: Path,
+        config_path: str | Path,
         fmu_paths: Optional[FmuPaths] = None,
-        model_instances: Optional[ModelInstances] = None,
+        model_classes: Optional[ModelClasses] = None,
     ) -> Self:
         """Initialize a run from a config file.
 
@@ -571,32 +572,33 @@ class Run:
                 ... }
 
                 Note: The name of the fmus can be chosen arbitrarily, but each name
-                in 'fmu_paths' and 'model_instances' must occur only once.
+                in 'fmu_paths' and 'model_classes' must occur only once.
                 Defaults to None.
-            model_instances (Optional[ModelInstances], optional):
+            model_classes (Optional[ModelClasses], optional):
                 Dictionary which defines which Python Models should be simulated.
                 key -> name of the model; value -> Instance of th model. The class that
                 defines the model must inherit from the abstract class SimulationEntity
 
-                >>> model_instances = {
+                >>> model_classes = {
                 ...    "<name of the model 1>": <Instance of the model1>
                 ...    "<name of the model 2>": <Instance of the model2>
                 ... }
 
                 Note: The name of the models can be chosen arbitrarily, but each
-                name in 'fmu_paths' and 'model_instances' must occur only once.
+                name in 'fmu_paths' and 'model_classes' must occur only once.
                 Defaults to None.
 
         Returns:
             Self: Run instance.
         """
+        config_path = utils.convert_str_to_path(config_path, "config_path")
         with open(config_path, encoding="utf-8") as config_file:
             config: _ConfigDict = json.load(config_file)
 
         return cls(
             run_name=run_name,
             _run_meta=_RunMeta.from_config(config),
-            _models=_Models.from_config(config, fmu_paths, model_instances),
+            _models=_Models.from_config(config, fmu_paths, model_classes),
             _simulation_config=_SimulationConfig.from_config(config),
         )
 
@@ -611,7 +613,7 @@ class Run:
         Returns:
             Run: Run instance.
         """
-        return rg.RunGroup.from_hdf5(hdf5_path, run_name).to_run()
+        return sofirpy.rdm.hdf5.hdf5_to_run.create_run_from_hdf5(hdf5_path, run_name)
 
     def get_config(self) -> _ConfigDict:
         """Get the configuration for the run.
@@ -627,6 +629,10 @@ class Run:
 
     def simulate(self) -> None:
         """Simulate the run."""
+        if not self._models.can_simulate_fmu and self._models.fmus:
+            raise ValueError()
+        if not self._models.can_simulate_python_model and self._models.python_models:
+            raise ValueError()
         time_series, units = simulate(
             **self._simulation_config.get_simulation_args(),
             **self._models.get_simulation_args(),
@@ -641,7 +647,7 @@ class Run:
             hdf5_path (Path | str): Path to the hdf5 file.
         """
         hdf5_path = utils.convert_str_to_path(hdf5_path, "hdf5_path")
-        sofirpy.rdm.db.run_to_hdf5.run_to_hdf5(run=self, hdf5_path=hdf5_path)
+        sofirpy.rdm.hdf5.run_to_hdf5.run_to_hdf5(run=self, hdf5_path=hdf5_path)
 
 
 @dataclass
@@ -660,9 +666,6 @@ class _RunMeta:
     os: str
 
     CONFIG_KEY: ClassVar[ConfigKeyType] = "run_meta"
-
-    def __post_init__(self) -> None:
-        check_compatibility(self.python_version, self.sofirpy_version, self.os)
 
     @classmethod
     def from_config(cls, config: _ConfigDict) -> Self:
@@ -712,6 +715,8 @@ class _SimulationConfig:
 class _Models:
     fmus: dict[str, _Fmu]
     python_models: dict[str, _PythonModel]
+    can_simulate_fmu: bool = True
+    can_simulate_python_model: bool = True
 
     CONFIG_KEY: ClassVar[ConfigKeyType] = "models"
 
@@ -720,10 +725,10 @@ class _Models:
         cls,
         config: _ConfigDict,
         fmu_paths: Optional[FmuPaths] = None,
-        model_instances: Optional[ModelInstances] = None,
+        model_classes: Optional[ModelClasses] = None,
     ) -> Self:
         model_config = cast(dict[str, _ModelConfigDict], config[cls.CONFIG_KEY])
-        # TODO check if all names in fmu_paths and model_instances are in config
+        # TODO check if all names in fmu_paths and model_classes are in config
         fmu_paths = fmu_paths or {}
         fmus = {
             name: _Fmu(
@@ -733,12 +738,10 @@ class _Models:
             )
             for name, path in fmu_paths.items()
         }
-        model_instances = model_instances or {}
+        model_classes = model_classes or {}
         python_models = {
-            name: _PythonModel(
-                name=name, model_instance=model_instance, **model_config[name]
-            )
-            for name, model_instance in model_instances.items()
+            name: _PythonModel(name=name, model_class=model_class, **model_config[name])
+            for name, model_class in model_classes.items()
         }
         return cls(fmus=fmus, python_models=python_models)
 
@@ -880,10 +883,11 @@ class _Models:
         return {name: fmu.fmu_path for name, fmu in self.fmus.items()}
 
     @property
-    def model_instances(self) -> ModelInstances:
+    def model_classes(self) -> ModelClasses:
         return {
-            name: python_model.model_instance
+            name: python_model.model_class
             for name, python_model in self.python_models.items()
+            if python_model.model_class is not None
         }
 
     def move_fmu(self, fmu_name: str, target_directory: Path) -> None:
@@ -904,7 +908,7 @@ class _Models:
             "connections_config": self.connections_config,
             "parameters_to_log": self.parameters_to_log,
             "fmu_paths": self.fmu_paths,
-            "model_instances": self.model_instances,
+            "model_classes": self.model_classes,
         }
 
 
@@ -995,32 +999,20 @@ class _Fmu(_Model):
 
 @dataclass
 class _PythonModel(_Model):
-    model_instance: SimulationEntity
     code: Optional[str] = None
+    model_class: Optional[type[SimulationEntity]] = None
 
     def get_source_code(self) -> str:
         return self.read_code() if self.code is None else self.code
 
     def read_code(self) -> str:
-        return inspect.getsource(self.model_instance.__class__)
+        return inspect.getsource(self.model_class.__class__)
 
     def create_file_from_source_code(self, target_path: Path) -> None:
+        if not target_path.suffix.lower() == ".py":
+            raise ValueError()
         if not target_path.exists():
             target_path.touch()
         if not target_path.is_file():
             raise ValueError()
-        if not target_path.suffix.lower() == ".py":
-            raise ValueError()
         target_path.open("w").write(self.get_source_code())
-
-
-def check_compatibility(python_version: str, sofirpy_version: str, os: str) -> None:
-    if python_version != sys.version:  # TODO make it not so harsh maybe
-        raise ValueError()
-    if sofirpy_version != sofirpy.__version__:
-        warnings.warn(
-            f"Run was created with sofirpy version '{sofirpy_version}', "
-            f"this sofirpy version is '{sofirpy.__version__}'."
-        )
-    if os != sys.platform:
-        raise ValueError()
