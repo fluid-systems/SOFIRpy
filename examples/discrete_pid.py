@@ -1,11 +1,10 @@
-from sofirpy import SimulationEntity, store_input_arguments
+from sofirpy import SimulationEntity
 from sofirpy.simulation.simulation import StartValues
 
 
 class PID(SimulationEntity):
     """Simple implementation of a discrete pid controller"""
 
-    @store_input_arguments
     def __init__(self):
         self.parameters = {
             "sampling_rate": 1e-3,
@@ -20,13 +19,11 @@ class PID(SimulationEntity):
         self.outputs = {"u": 0}
 
     def compute_error(self):
-
         self.error[2] = self.error[1]
         self.error[1] = self.error[0]
         self.error[0] = self.parameters["set_point"] - self.inputs["speed"]
 
     def set_input(self, input_name, input_value):
-
         self.parameters[input_name] = input_value
 
     def do_step(self, _):  # mandatory method
