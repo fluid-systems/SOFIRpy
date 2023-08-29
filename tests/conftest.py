@@ -4,7 +4,7 @@ from typing import Union
 
 import pytest
 
-from sofirpy.simulation.simulation import FmuPaths, ModelInstances, StartValues
+from sofirpy.simulation.simulation import FmuPaths, ModelClasses, StartValues
 from sofirpy.simulation.simulation_entity import SimulationEntity
 
 
@@ -37,13 +37,11 @@ class PID(SimulationEntity):
         self.outputs = {"u": 0}
 
     def compute_error(self):
-
         self.error[2] = self.error[1]
         self.error[1] = self.error[0]
         self.error[0] = self.parameters["set_point"] - self.inputs["speed"]
 
     def set_input(self, input_name, input_value):
-
         self.parameters[input_name] = input_value
 
     def do_step(self, _):
@@ -102,5 +100,5 @@ def start_values() -> StartValues:
 
 
 @pytest.fixture
-def model_instances() -> ModelInstances:
-    return {"pid": PID()}
+def model_classes() -> ModelClasses:
+    return {"pid": PID}
