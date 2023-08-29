@@ -1,4 +1,4 @@
-#%%
+# %%
 import os
 import sys
 from pathlib import Path
@@ -34,8 +34,8 @@ connections_config = {
 
 fmu_paths = {"DC_Motor": str(fmu_path)}
 
-pid = PID()
-model_instances = {"pid": pid}
+
+model_classes = {"pid": PID}
 
 parameters_to_log = {
     "DC_Motor": ["y", "MotorTorque.tau", "inertia.J", "dC_PermanentMagnet.Jr"],
@@ -60,7 +60,7 @@ results, units = simulate(
     step_size=1e-3,
     connections_config=connections_config,
     fmu_paths=fmu_paths,
-    model_instances=model_instances,
+    model_classes=model_classes,
     parameters_to_log=parameters_to_log,
     get_units=True,
     start_values=start_values,

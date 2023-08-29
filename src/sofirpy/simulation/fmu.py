@@ -1,5 +1,6 @@
 """Module containing the Fmu class."""
 
+import logging
 from pathlib import Path
 from typing import Callable, Optional
 
@@ -100,7 +101,7 @@ class Fmu(SimulationEntity):  # pylint: disable=too-many-instance-attributes
             settable_in_initialization_mode,
         )
         if not_set_start_values:
-            print(
+            logging.warning(
                 f"The following start values for the FMU '{self.name}' "
                 f"can not be set:\n{not_set_start_values}"
             )
