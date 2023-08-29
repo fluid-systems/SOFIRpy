@@ -13,4 +13,4 @@ RDM feature (beta)
 
 FMU export
 
-- export settings can be passed to export dymola models
+- export settings can be passed to export Dymola models
