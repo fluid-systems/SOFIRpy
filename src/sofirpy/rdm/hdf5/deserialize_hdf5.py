@@ -29,6 +29,14 @@ class RunMeta(Deserializer):
         return rdm_run._RunMeta(**run_group.attribute.attributes)
 
 
+class Dependencies(Deserializer):
+    @staticmethod
+    def deserialize(run_group: h5.Group) -> Any:
+        return json.loads(
+            run_group.get_dataset(config.RunDatasetName.DEPENDENCIES.value).data
+        )
+
+
 class SimulationConfig(Deserializer):
     @staticmethod
     def deserialize(run_group: h5.Group) -> rdm_run._SimulationConfig:

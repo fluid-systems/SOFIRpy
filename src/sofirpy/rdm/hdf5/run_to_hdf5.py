@@ -85,6 +85,12 @@ def create_run_group_without_models(run: rdm_run.Run) -> h5.Group:
                 data=serialize.Config.serialize(run),
             )
         )
+        .append_dataset(
+            h5.Dataset(
+                name=config.RunDatasetName.DEPENDENCIES.value,
+                data=serialize.Dependencies.serialize(run),
+            )
+        )
         .append_group(
             h5.Group(config.RunGroupName.SIMULATION_RESULTS.value)
             .append_attribute(
