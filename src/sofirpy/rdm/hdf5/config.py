@@ -58,6 +58,7 @@ class RunGroupName(str, Enum):
 
 class RunDatasetName(Enum):
     CONFIG = "config"
+    DEPENDENCIES = "dependencies"
     MODEL_REFERENCE = "reference"
     START_VALUES = "start_values"
     CONNECTIONS = "connections"
