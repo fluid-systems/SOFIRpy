@@ -68,8 +68,3 @@ class PID(SimulationEntity):
     def apply_start_values(self, start_values: StartValues) -> None:
         for name, value in start_values.items():
             self.parameters[name] = value
-
-
-# PID.__module__ = "__main__"
-
-# %%

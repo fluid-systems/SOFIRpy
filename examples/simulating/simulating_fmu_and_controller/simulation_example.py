@@ -1,7 +1,8 @@
-# %%
 import os
 import sys
 from pathlib import Path
+
+import matplotlib.pyplot as plt
 
 from sofirpy import plot_results, simulate
 
@@ -66,6 +67,12 @@ results, units = simulate(
     start_values=start_values,
 )
 
-ax, fig = plot_results(results, "time", "DC_Motor.y")
-
-# %%
+ax, fig = plot_results(
+    results,
+    "time",
+    "DC_Motor.y",
+    x_label="time in s",
+    y_label="speed in rad/s",
+    title="Speed over Time",
+)
+plt.show()
