@@ -1,7 +1,7 @@
-sofirpy.project.hdf5 module
+sofirpy.rdm.run module
 ============================
 
-.. automodule:: sofirpy.project.hdf5
+.. automodule:: sofirpy.rdm.run
     :members:
     :no-undoc-members:
     :show-inheritance:

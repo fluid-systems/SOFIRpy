@@ -11,4 +11,4 @@ Subpackages
 
     sofirpy.fmu_export
     sofirpy.simulation
-    sofirpy.project
+    sofirpy.rdm
