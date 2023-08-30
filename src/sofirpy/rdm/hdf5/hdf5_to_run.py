@@ -4,27 +4,28 @@ import logging
 import sys
 from pathlib import Path
 
+from pkg_resources import parse_version
+
 import sofirpy
 import sofirpy.rdm.hdf5.config as config
-import sofirpy.rdm.hdf5.deserialize_hdf5 as deserialize_hdf5
+import sofirpy.rdm.hdf5.deserialize as deserialize
 import sofirpy.rdm.hdf5.hdf5 as h5
 import sofirpy.rdm.run as rdm_run
 
 
 def create_run_from_hdf5(hdf5_path: Path, run_name: str) -> rdm_run.Run:
     logging.basicConfig(
-        format="RunLoading::%(levelname)s::%(message)s",
-        level=logging.INFO,
+        format="HDF5ToRun::%(levelname)s::%(message)s", level=logging.INFO, force=True
     )
     hdf5 = h5.HDF5(hdf5_path)
     run_group = h5.Group.from_hdf5(hdf5, run_name)
-    run_meta = deserialize_hdf5.RunMeta.deserialize(run_group)
-    can_simulate_fmu, can_load_python_model = check_compatibility(
-        run_meta, deserialize_hdf5.Dependencies.deserialize(run_group)
+    run_meta = deserialize.RunMeta.deserialize(run_group)
+    can_simulate_fmu, can_load_python_model = _check_compatibility(
+        run_meta, deserialize.Dependencies.deserialize(run_group)
     )
-    results = deserialize_hdf5.Results.deserialize(run_group)
-    simulation_config = deserialize_hdf5.SimulationConfig.deserialize(run_group)
-    models = deserialize_hdf5.Models.deserialize(
+    results = deserialize.Results.deserialize(run_group)
+    simulation_config = deserialize.SimulationConfig.deserialize(run_group)
+    models = deserialize.Models.deserialize(
         run_group, hdf5, can_simulate_fmu, can_load_python_model
     )
     run = rdm_run.Run(
@@ -34,10 +35,11 @@ def create_run_from_hdf5(hdf5_path: Path, run_name: str) -> rdm_run.Run:
         _simulation_config=simulation_config,
         _results=results,
     )
+    logging.info(f"'{run_name}' successfully loaded from '{hdf5_path}'")
     return run
 
 
-def check_compatibility(
+def _check_compatibility(
     run_meta: rdm_run._RunMeta, dependencies: dict[str, str]
 ) -> tuple[bool, bool]:
     same_os = run_meta.os == sys.platform
@@ -51,7 +53,9 @@ def check_compatibility(
             f"Run was created with python version '{run_meta.python_version}'."
             f"This is python version '{sys.version}'."
         )
-    is_later_release = run_meta.sofirpy_version <= sofirpy.__version__
+    is_later_release = parse_version(run_meta.sofirpy_version) <= parse_version(
+        sofirpy.__version__
+    )
     if not is_later_release:
         logging.warning(
             f"Run was created with sofirpy version '{run_meta.sofirpy_version}'."
@@ -59,11 +63,11 @@ def check_compatibility(
         )
     can_simulate_fmu = same_os
     can_load_python_models = same_py_version and same_os
-    check_dependencies(run_meta, dependencies)
+    _check_dependencies(run_meta, dependencies)
     return can_simulate_fmu, can_load_python_models
 
 
-def check_dependencies(run_meta: rdm_run._RunMeta, h5_dependencies: dict[str, str]):
+def _check_dependencies(run_meta: rdm_run._RunMeta, h5_dependencies: dict[str, str]):
     cur_env_dep = run_meta.get_dependencies()
     dependencies_in_hdf5_but_not_in_current_env = set(h5_dependencies).difference(
         cur_env_dep

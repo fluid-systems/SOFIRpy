@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from datetime import datetime
 from pathlib import Path
 
@@ -49,6 +50,9 @@ def generate_init_meta() -> dict[str, str]:
 
 
 def run_to_hdf5(run: rdm_run.Run, hdf5_path: Path) -> None:
+    logging.basicConfig(
+        format="RunToHDF5::%(levelname)s::%(message)s", level=logging.INFO, force=True
+    )
     hdf5 = h5.HDF5(hdf5_path)
     init_hdf5(hdf5)
     if run.run_name in hdf5:
@@ -72,7 +76,7 @@ def run_to_hdf5(run: rdm_run.Run, hdf5_path: Path) -> None:
         model_storage_group.to_hdf5(hdf5)
     except Exception:
         run_group.delete(hdf5)
-    print(f"Successfully created run '{run.run_name}' at '{hdf5.hdf5_path}'")
+    logging.info(f"Successfully created run '{run.run_name}' at '{hdf5.hdf5_path}'")
 
 
 def create_run_group_without_models(run: rdm_run.Run) -> h5.Group:

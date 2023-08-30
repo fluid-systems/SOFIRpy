@@ -473,6 +473,7 @@ def simulate(  # pylint: disable=too-many-locals
     logging.basicConfig(
         format="Simulation::%(levelname)s::%(message)s",
         level=logging.INFO,
+        force=True,
     )
     _validate_input(
         stop_time,

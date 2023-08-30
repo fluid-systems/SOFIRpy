@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Any, Callable, Iterable, Optional, Union
@@ -58,7 +59,7 @@ class HDF5:
             # if not create_new:
             #     raise FileNotFoundError(f"{_hdf5_path} doesn't exist.")
             _hdf5_path.touch()
-            print(f"hdf5 file at {_hdf5_path} created.")
+            logging.info(f"hdf5 file at {_hdf5_path} created.")
 
         self._hdf5_path = _hdf5_path
 
