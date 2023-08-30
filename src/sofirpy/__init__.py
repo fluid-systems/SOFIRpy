@@ -17,7 +17,7 @@ __all__ = [
 
 from .fmu_export.dymola_fmu_export import export_dymola_model
 from .fmu_export.open_modelica_fmu_export import export_open_modelica_model
-from .rdm.hdf5.deserialize_hdf5 import Deserializer
+from .rdm.hdf5.deserialize import Deserializer
 from .rdm.hdf5.serialize import Serializer
 from .rdm.run import Run
 from .simulation.plot import plot_results
