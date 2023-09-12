@@ -1,8 +1,9 @@
 """Module containing the Fmu class."""
+from __future__ import annotations
 
 import logging
 from pathlib import Path
-from typing import Callable, Optional
+from typing import Callable
 
 from fmpy import extract, read_model_description
 from fmpy.fmi2 import FMU2Slave
@@ -147,7 +148,7 @@ class Fmu(SimulationEntity):  # pylint: disable=too-many-instance-attributes
         self.fmu.terminate()
         self.fmu.freeInstance()
 
-    def get_unit(self, parameter_name: str) -> Optional[str]:
+    def get_unit(self, parameter_name: str) -> str | None:
         """Return the unit of a variable.
 
         Args:
@@ -156,7 +157,5 @@ class Fmu(SimulationEntity):  # pylint: disable=too-many-instance-attributes
         Returns:
             str: The unit of the variable.
         """
-        unit: Optional[str] = self.model_description_dict[parameter_name].unit
-        if unit is None:
-            unit = self.model_description_dict[parameter_name].declaredType.unit
+        unit: str | None = self.model_description_dict[parameter_name].unit
         return unit

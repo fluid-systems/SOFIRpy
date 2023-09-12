@@ -92,7 +92,7 @@ class Simulator:
         self,
         systems: dict[str, System],
         connections: list[Connection],
-        parameters_to_log: Optional[list[SystemParameter]] = None,
+        parameters_to_log: list[SystemParameter],
     ) -> None:
         """Initialize Simulator object.
 
@@ -100,13 +100,11 @@ class Simulator:
             systems (list[System]): list of systems which are to be simulated
             connections (list[Connection]): list of connections between the
                  systems
-            parameters_to_log (list[SystemParameter], optional): List of
-                Parameters that should be logged. Defaults to None.
+            parameters_to_log (list[SystemParameter]): List of Parameters that should
+                be logged.
         """
         self.systems = systems
         self.connections = connections
-        if parameters_to_log is None:
-            parameters_to_log = []
         self.parameters_to_log = parameters_to_log
 
     def simulate(
@@ -162,9 +160,7 @@ class Simulator:
             parameters
         """
         time_series = self.compute_time_array(stop_time, step_size, start_time)
-
         number_log_steps = int(stop_time / logging_step_size) + 1
-
         logging_multiple = round(logging_step_size / step_size)
         self.results = np.zeros((number_log_steps, len(self.parameters_to_log) + 1))
 
@@ -201,7 +197,7 @@ class Simulator:
         """
         time_series = np.arange(start_time, stop_time + step_size, step_size)
         if time_series[-1] > stop_time:
-            time_series = time_series[:-1]
+            return time_series[:-1]
         return time_series
 
     def set_systems_inputs(self) -> None:
@@ -280,10 +276,7 @@ class Simulator:
             system_name = parameter.system_name
             system = self.systems[system_name]
             parameter_name = parameter.name
-            try:
-                unit = system.simulation_entity.get_unit(parameter_name)
-            except AttributeError:
-                unit = None
+            unit = system.simulation_entity.get_unit(parameter_name)
             units[f"{system.name}.{parameter_name}"] = unit
 
         return units
@@ -293,12 +286,12 @@ class Simulator:
 def simulate(
     stop_time: float,
     step_size: float,
-    fmu_paths: Optional[FmuPaths],
-    model_classes: Optional[ModelClasses],
-    connections_config: Optional[ConnectionsConfig],
-    start_values: Optional[StartValues],
-    parameters_to_log: Optional[ParametersToLog],
-    logging_step_size: Optional[float],
+    fmu_paths: FmuPaths | None,
+    model_classes: ModelClasses | None,
+    connections_config: ConnectionsConfig | None,
+    start_values: StartValues | None,
+    parameters_to_log: ParametersToLog | None,
+    logging_step_size: float | None,
     get_units: Literal[True],
 ) -> tuple[pd.DataFrame, Units]:
     ...
@@ -308,12 +301,12 @@ def simulate(
 def simulate(
     stop_time: float,
     step_size: float,
-    fmu_paths: Optional[FmuPaths],
-    model_classes: Optional[ModelClasses],
-    connections_config: Optional[ConnectionsConfig],
-    start_values: Optional[StartValues],
-    parameters_to_log: Optional[ParametersToLog],
-    logging_step_size: Optional[float],
+    fmu_paths: FmuPaths | None,
+    model_classes: ModelClasses | None,
+    connections_config: ConnectionsConfig | None,
+    start_values: StartValues | None,
+    parameters_to_log: ParametersToLog | None,
+    logging_step_size: float | None,
     get_units: Literal[False],
 ) -> pd.DataFrame:
     ...
@@ -322,12 +315,12 @@ def simulate(
 def simulate(  # pylint: disable=too-many-locals
     stop_time: float,
     step_size: float,
-    fmu_paths: Optional[FmuPaths] = None,
-    model_classes: Optional[ModelClasses] = None,
-    connections_config: Optional[ConnectionsConfig] = None,
-    start_values: Optional[StartValues] = None,
-    parameters_to_log: Optional[ParametersToLog] = None,
-    logging_step_size: Optional[float] = None,
+    fmu_paths: FmuPaths | None = None,
+    model_classes: ModelClasses | None = None,
+    connections_config: ConnectionsConfig | None = None,
+    start_values: StartValues | None = None,
+    parameters_to_log: ParametersToLog | None = None,
+    logging_step_size: float | None = None,
     get_units: bool = False,
 ) -> Union[pd.DataFrame, tuple[pd.DataFrame, Units]]:
     """Simulate fmus and models written in python.
@@ -338,7 +331,7 @@ def simulate(  # pylint: disable=too-many-locals
     Args:
         stop_time (float): stop time for the simulation
         step_size (float): step size for the simulation
-        fmu_paths (Optional[FmuPaths], optional):
+        fmu_paths (FmuPaths | None, optional):
             Dictionary which defines which fmu should be simulated.
             key -> name of the fmu; value -> path to the fmu
 
@@ -350,7 +343,7 @@ def simulate(  # pylint: disable=too-many-locals
             Note: The name of the fmus can be chosen arbitrarily, but each name
             in 'fmu_paths' and 'model_classes' must occur only once.
             Defaults to None.
-        model_classes (Optional[ModelClasses], optional):
+        model_classes (ModelClasses | None, optional):
             Dictionary which defines which Python Models should be simulated.
             key -> name of the model; value -> Class of the model. The class that
             defines the model must inherit from the abstract class SimulationEntity.
@@ -363,7 +356,7 @@ def simulate(  # pylint: disable=too-many-locals
             Note: The name of the models can be chosen arbitrarily, but each
             name in 'fmu_paths' and 'model_classes' must occur only once.
             Defaults to None.
-        connections_config (Optional[ConnectionsConfig], optional):
+        connections_config (ConnectionsConfig | None, optional):
             Dictionary which defines how the inputs and outputs of the systems
             (fmu or python model) are connected.
             key -> name of the system; value -> list of connections
@@ -409,13 +402,12 @@ def simulate(  # pylint: disable=too-many-locals
             ... }
 
             Defaults to None.
-        start_values (Optional[StartValues], optional): Dictionary which defines start
+        start_values (StartValues | None, optional): Dictionary which defines start
             values for the systems. For Fmus the unit can also be specified as a string.
             key -> name of the system;
             value -> dictionary (key -> name of the parameter; value -> start value)
 
-            >>> start_values =
-            ... {
+            >>> start_values = {
             ...     "<name of system 1>":
             ...     {
             ...         "<name of parameter 1>": <start value>,
@@ -429,12 +421,11 @@ def simulate(  # pylint: disable=too-many-locals
             ... }
 
             Defaults to None.
-        parameters_to_log (Optional[dict[str, list[str]]], optional):
+        parameters_to_log (ParametersToLog | None, optional):
             Dictionary that defines which parameters should be logged.
             key -> name of the system; value -> list of parameters names to be logged
 
-            >>> parameters_to_log =
-            ... {
+            >>> parameters_to_log = {
             ...     "<name of system 1>":
             ...     [
             ...         "<name of parameter 1>",
@@ -448,7 +439,7 @@ def simulate(  # pylint: disable=too-many-locals
             ... }
 
             Defaults to None.
-        logging_step_size (Optional[float], optional): step size
+        logging_step_size (float | None, optional): step size
             for logging. It must be a multiple of the chosen simulation step size.
             Example:
             If the simulation step size is set to 1e-3 and logging step size
@@ -500,6 +491,7 @@ def simulate(  # pylint: disable=too-many-locals
     fmu_paths = fmu_paths or {}
     model_classes = model_classes or {}
     start_values = start_values or {}
+    parameters_to_log = parameters_to_log or {}
 
     start_values = start_values.copy()  # copy because dict will be modified in fmu.py
 
@@ -607,22 +599,17 @@ def init_connections(connections_config: ConnectionsConfig) -> list[Connection]:
     return all_connections
 
 
-def init_parameter_list(
-    parameters_to_log: Optional[dict[str, list[str]]]
-) -> Optional[list[SystemParameter]]:
+def init_parameter_list(parameters_to_log: ParametersToLog) -> list[SystemParameter]:
     """Initialize all parameters that should be logged.
 
     Args:
-        parameters_to_log (Optional[dict[str, list[str]]]): Defines which
+        parameters_to_log (ParametersToLog): Defines which
             parameters should be logged.
 
     Returns:
-        Optional[list[SystemParameter]]: List of system parameters that should be
+        list[SystemParameter]: List of system parameters that should be
         logged.
     """
-    if parameters_to_log is None:
-        return None
-
     log: list[SystemParameter] = []
 
     for system_name, parameter_names in parameters_to_log.items():
@@ -636,12 +623,12 @@ def init_parameter_list(
 def _validate_input(
     stop_time: float,
     step_size: float,
-    fmu_paths: Optional[FmuPaths],
-    model_classes: Optional[ModelClasses],
-    connections_config: Optional[ConnectionsConfig],
-    parameters_to_log: Optional[dict[str, list[str]]],
-    logging_step_size: Optional[float],
-    start_values: Optional[StartValues],
+    fmu_paths: FmuPaths | None,
+    model_classes: ModelClasses | None,
+    connections_config: ConnectionsConfig | None,
+    parameters_to_log: ParametersToLog | None,
+    logging_step_size: float | None,
+    start_values: StartValues | None,
 ) -> None:
     utils.check_type(stop_time, "stop_time", Real)
     utils.check_type(step_size, "step_size", Real)
@@ -695,7 +682,7 @@ def _validate_fmu_paths(fmu_paths: Optional[FmuPaths]) -> list[str]:
     return fmu_names
 
 
-def _validate_model_classes(model_classes: Optional[ModelClasses]) -> list[str]:
+def _validate_model_classes(model_classes: ModelClasses | None) -> list[str]:
     if model_classes is None:
         return []
 
@@ -718,7 +705,7 @@ def _validate_model_classes(model_classes: Optional[ModelClasses]) -> list[str]:
 
 
 def _validate_connection_config(
-    connections_config: Optional[ConnectionsConfig], system_names: list[str]
+    connections_config: ConnectionsConfig | None, system_names: list[str]
 ) -> None:
     if connections_config is None:
         return
@@ -753,7 +740,7 @@ def _check_key_exists(key: str, connection: _Connection, system_name: str) -> No
 
 
 def _validate_parameters_to_log(
-    parameters_to_log: dict[str, list[str]], system_names: list[str]
+    parameters_to_log: ParametersToLog, system_names: list[str]
 ) -> None:
     utils.check_type(parameters_to_log, "parameters_to_log", dict)
 
