@@ -1,3 +1,5 @@
+from typing import Optional
+
 from sofirpy import SimulationEntity
 from sofirpy.simulation.simulation import StartValues
 
@@ -17,14 +19,12 @@ class PID(SimulationEntity):
         }
         self.inputs = {"speed": 0}
         self.outputs = {"u": 0}
+        self.units = {"u": "V"}
 
     def compute_error(self):
         self.error[2] = self.error[1]
         self.error[1] = self.error[0]
         self.error[0] = self.parameters["set_point"] - self.inputs["speed"]
-
-    def set_input(self, input_name, input_value):
-        self.parameters[input_name] = input_value
 
     def do_step(self, _):  # mandatory method
         self.compute_error()
@@ -68,3 +68,6 @@ class PID(SimulationEntity):
     def apply_start_values(self, start_values: StartValues) -> None:
         for name, value in start_values.items():
             self.parameters[name] = value
+
+    def get_unit(self, parameter_name: str) -> Optional[None]:
+        return self.units.get(parameter_name)

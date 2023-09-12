@@ -75,4 +75,3 @@ ax, fig = plot_results(
     y_label="speed in rad/s",
     title="Speed over Time",
 )
-plt.show()

@@ -32,5 +32,5 @@ run.to_hdf5(hdf5_path)
 
 
 # Loading the run from the hdf5
-
+# %%
 run_loaded = Run.from_hdf5(run_name, hdf5_path)

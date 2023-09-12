@@ -15,6 +15,6 @@ def test_simulation_example():
         "DC_Motor.MotorTorque.tau": "N.m",
         "DC_Motor.inertia.J": "kg.m2",
         "DC_Motor.dC_PermanentMagnet.Jr": "kg.m2",
-        "pid.u": None,
+        "pid.u": "V",
     }
     assert units == test_units
