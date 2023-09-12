@@ -4,7 +4,7 @@ Getting started
 The following 3 examples demonstrate how to export a Modelica model as a FMU,
 co-simulate a FMU and a controller and how to use the rdm features.
 
-Exporting a modelica model
+Exporting a Modelica Model
 --------------------------
 
 SOFIRpy allows to export a OpenModelica and Dymola model as a FMU.
