@@ -206,7 +206,7 @@ def create_python_models_group(
         except KeyError:
             python_model_class_storage_dataset = h5.Dataset(
                 name=model_class_hash,
-                data=serialize.PythonModelInstanceStorage.serialize(
+                data=serialize.PythonModelClassStorage.serialize(
                     run, python_model_name
                 ),
             )

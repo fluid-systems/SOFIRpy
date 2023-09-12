@@ -268,7 +268,7 @@ class Run:
             model_name (str): Name of the model.
 
         Returns:
-            SimulationEntity: Model instance.
+            type[SimulationEntity]: Model instance.
         """
         return self._models.model_classes[model_name]
 
@@ -953,9 +953,11 @@ class _Model:
     def remove_connection(self, input_name: str) -> None:
         if self.connections is None:
             return
-        for connection in self.connections:
-            if connection[ConnectionKeys.INPUT_PARAMETER.value] == input_name:
-                self.connections.remove(connection)
+        self.connections = [
+            connection
+            for connection in self.connections
+            if not connection[ConnectionKeys.INPUT_PARAMETER.value] == input_name
+        ]
 
     def update_connections(self, prev_name: str, new_name: str) -> None:
         if self.connections is None:
@@ -1006,7 +1008,11 @@ class _PythonModel(_Model):
         return self.read_code() if self.code is None else self.code
 
     def read_code(self) -> str:
-        return inspect.getsource(self.model_class.__class__)
+        if self.model_class is None:
+            raise ValueError(
+                f"source code for model_class '{self.name}' is not available."
+            )
+        return inspect.getsource(self.model_class)
 
     def create_file_from_source_code(self, target_path: Path) -> None:
         if not target_path.suffix.lower() == ".py":

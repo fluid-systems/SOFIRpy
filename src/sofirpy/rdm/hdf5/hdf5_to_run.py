@@ -14,6 +14,7 @@ import sofirpy.rdm.run as rdm_run
 
 
 def create_run_from_hdf5(hdf5_path: Path, run_name: str) -> rdm_run.Run:
+    # TODO if loaded model is None because it could not be pickled.
     logging.basicConfig(
         format="HDF5ToRun::%(levelname)s::%(message)s", level=logging.INFO, force=True
     )

@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib
 import inspect
 import json
+import pickle
 from abc import ABC, abstractmethod
 from dataclasses import asdict
 from typing import Any
@@ -111,11 +112,14 @@ class PythonModelInstanceReference(Serializer):
         return model_hash
 
 
-class PythonModelInstanceStorage(Serializer):
+class PythonModelClassStorage(Serializer):
     @staticmethod
     def serialize(run: rdm_run.Run, python_model_name: str) -> Any:
         model = run.get_model_class(python_model_name)
-        cloudpickle.register_pickle_by_value(inspect.getmodule(model))
+        try:
+            cloudpickle.register_pickle_by_value(inspect.getmodule(model))
+        except pickle.PicklingError:
+            return None
         return np.void(cloudpickle.dumps(model))
 
 
