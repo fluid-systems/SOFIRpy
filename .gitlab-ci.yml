@@ -41,7 +41,7 @@ test:
   extends: .venv_setup
   stage: Test
   script:
-    - pytest --cov=src/ tests/ --junitxml=report.xml
+    - pytest --cov=src/ tests/ --junitxml=report.xml --snapshot-warn-unused
   coverage: '/(?i)total.*? (100(?:\.0+)?\%|[1-9]?\d(?:\.\d+)?\%)$/'
   artifacts:
     reports:
