@@ -5,7 +5,6 @@ from __future__ import annotations
 import inspect
 import json
 import sys
-import warnings
 from dataclasses import asdict, dataclass
 from datetime import datetime
 from pathlib import Path
@@ -13,6 +12,7 @@ from typing import Any, ClassVar, Literal, Optional, TypedDict, cast
 
 import pandas as pd
 import pkg_resources
+import pydantic
 from typing_extensions import NotRequired, Self
 
 import sofirpy
@@ -656,7 +656,7 @@ class _Results:
     units: Optional[Units]
 
 
-@dataclass
+@pydantic.dataclasses.dataclass
 class _RunMeta:
     description: str
     keywords: list[str]
@@ -692,7 +692,7 @@ class _RunMeta:
         return {package.project_name: package.version for package in installed_packages}
 
 
-@dataclass
+@pydantic.dataclasses.dataclass
 class _SimulationConfig:
     stop_time: float
     step_size: float
