@@ -507,8 +507,9 @@ class Dataset(HDF5Object):
         data = None
         if read_data:
             data = hdf5.read_data(name, parent.path)
-        attribute = Attribute.from_hdf5(hdf5, parent)
-        return cls(name=name, parent=parent, attribute=attribute, data=data)
+        self = cls(name=name, parent=parent, data=data)
+        self.attribute = Attribute.from_hdf5(hdf5, self)
+        return self
 
     def read_data(self, hdf5: HDF5) -> None:
         self.data = hdf5.read_data(self.name, self.directory)
