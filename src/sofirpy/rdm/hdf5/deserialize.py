@@ -63,7 +63,7 @@ class Results(Deserializer):
         units = simulation_results_group.datasets._datasets[
             config.RunDatasetName.TIME_SERIES.value
         ].attribute.attributes
-        assert units is not None
+        units = {name: unit if unit else None for name, unit in units.items()}
         return rdm_run._Results(time_series, units)
 
 
