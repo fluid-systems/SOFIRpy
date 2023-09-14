@@ -20,6 +20,5 @@ fmu_path = export_dymola_model(
     model_name,
     output_directory=output_directory,
     parameters=parameters,
-    keep_mos=False,
-    keep_log=False,
+    fmi_type="cs",
 )

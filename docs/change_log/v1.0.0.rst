@@ -2,7 +2,15 @@ This release includes multiple new features, improvements and changes:
 
 Simulation
 
-- renaming of keys in fmu and model infos
-- faster simulation
+- changed signature of simulate function
 - possibility to set start values for models
 - possibility to set a logging step size
+- performance optimization
+
+RDM feature (beta)
+
+- load and store runs from hdf5 files
+
+FMU export
+
+- export settings can be passed to export Dymola models

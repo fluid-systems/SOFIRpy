@@ -2,11 +2,12 @@
 
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass
 from enum import Enum
 from numbers import Real
 from pathlib import Path
-from typing import Optional, TypedDict, Union
+from typing import Literal, Optional, TypedDict, Union, overload
 
 import numpy as np
 import numpy.typing as npt
@@ -18,7 +19,7 @@ from sofirpy.simulation.fmu import Fmu
 from sofirpy.simulation.simulation_entity import SimulationEntity, StartValue
 
 FmuPaths = dict[str, Union[str, Path]]
-ModelInstances = dict[str, SimulationEntity]
+ModelClasses = dict[str, type[SimulationEntity]]
 
 
 class _Connection(TypedDict):
@@ -84,28 +85,26 @@ class Connection:
     output_point: SystemParameter
 
 
-class Simulation:
+class Simulator:
     """Object that performs the simulation."""
 
     def __init__(
         self,
         systems: dict[str, System],
         connections: list[Connection],
-        parameters_to_log: Optional[list[SystemParameter]] = None,
+        parameters_to_log: list[SystemParameter],
     ) -> None:
-        """Initialize Simulation object.
+        """Initialize Simulator object.
 
         Args:
             systems (list[System]): list of systems which are to be simulated
             connections (list[Connection]): list of connections between the
                  systems
-            parameters_to_log (list[SystemParameter], optional): List of
-                Parameters that should be logged. Defaults to None.
+            parameters_to_log (list[SystemParameter]): List of Parameters that should
+                be logged.
         """
         self.systems = systems
         self.connections = connections
-        if parameters_to_log is None:
-            parameters_to_log = []
         self.parameters_to_log = parameters_to_log
 
     def simulate(
@@ -161,13 +160,11 @@ class Simulation:
             parameters
         """
         time_series = self.compute_time_array(stop_time, step_size, start_time)
-
         number_log_steps = int(stop_time / logging_step_size) + 1
-
         logging_multiple = round(logging_step_size / step_size)
         self.results = np.zeros((number_log_steps, len(self.parameters_to_log) + 1))
 
-        print("Starting Simulation...")
+        logging.info("Starting simulation.")
 
         self.log_values(time=0, log_step=0)
         log_step = 1
@@ -178,7 +175,10 @@ class Simulation:
                 self.log_values(time_series[time_step + 1], log_step)
                 log_step += 1
 
+        logging.info("Simulation done.")
+        logging.info("Concluding simulation.")
         self.conclude_simulation()
+        logging.info("Simulation concluded.")
 
         return self.convert_to_data_frame(self.results)
 
@@ -197,7 +197,7 @@ class Simulation:
         """
         time_series = np.arange(start_time, stop_time + step_size, step_size)
         if time_series[-1] > stop_time:
-            time_series = time_series[:-1]
+            return time_series[:-1]
         return time_series
 
     def set_systems_inputs(self) -> None:
@@ -276,24 +276,51 @@ class Simulation:
             system_name = parameter.system_name
             system = self.systems[system_name]
             parameter_name = parameter.name
-            try:
-                unit = system.simulation_entity.get_unit(parameter_name)
-            except AttributeError:
-                unit = None
+            unit = system.simulation_entity.get_unit(parameter_name)
             units[f"{system.name}.{parameter_name}"] = unit
 
         return units
 
 
+@overload
+def simulate(
+    stop_time: float,
+    step_size: float,
+    fmu_paths: FmuPaths | None,
+    model_classes: ModelClasses | None,
+    connections_config: ConnectionsConfig | None,
+    start_values: StartValues | None,
+    parameters_to_log: ParametersToLog | None,
+    logging_step_size: float | None,
+    get_units: Literal[True],
+) -> tuple[pd.DataFrame, Units]:
+    ...
+
+
+@overload
+def simulate(
+    stop_time: float,
+    step_size: float,
+    fmu_paths: FmuPaths | None,
+    model_classes: ModelClasses | None,
+    connections_config: ConnectionsConfig | None,
+    start_values: StartValues | None,
+    parameters_to_log: ParametersToLog | None,
+    logging_step_size: float | None,
+    get_units: Literal[False],
+) -> pd.DataFrame:
+    ...
+
+
 def simulate(  # pylint: disable=too-many-locals
     stop_time: float,
     step_size: float,
-    fmu_paths: Optional[FmuPaths] = None,
-    model_instances: Optional[ModelInstances] = None,
-    connections_config: Optional[ConnectionsConfig] = None,
-    start_values: Optional[StartValues] = None,
-    parameters_to_log: Optional[ParametersToLog] = None,
-    logging_step_size: Optional[float] = None,
+    fmu_paths: FmuPaths | None = None,
+    model_classes: ModelClasses | None = None,
+    connections_config: ConnectionsConfig | None = None,
+    start_values: StartValues | None = None,
+    parameters_to_log: ParametersToLog | None = None,
+    logging_step_size: float | None = None,
     get_units: bool = False,
 ) -> Union[pd.DataFrame, tuple[pd.DataFrame, Units]]:
     """Simulate fmus and models written in python.
@@ -304,7 +331,7 @@ def simulate(  # pylint: disable=too-many-locals
     Args:
         stop_time (float): stop time for the simulation
         step_size (float): step size for the simulation
-        fmu_paths (Optional[FmuPaths], optional):
+        fmu_paths (FmuPaths | None, optional):
             Dictionary which defines which fmu should be simulated.
             key -> name of the fmu; value -> path to the fmu
 
@@ -314,22 +341,22 @@ def simulate(  # pylint: disable=too-many-locals
             ... }
 
             Note: The name of the fmus can be chosen arbitrarily, but each name
-            in 'fmu_paths' and 'model_instances' must occur only once.
+            in 'fmu_paths' and 'model_classes' must occur only once.
             Defaults to None.
-        model_instances (Optional[ModelInstances], optional):
+        model_classes (ModelClasses | None, optional):
             Dictionary which defines which Python Models should be simulated.
-            key -> name of the model; value -> Instance of th model. The class that
-            defines the model must inherit from the abstract class SimulationEntity
+            key -> name of the model; value -> Class of the model. The class that
+            defines the model must inherit from the abstract class SimulationEntity.
 
-            >>> model_instances = {
-            ...    "<name of the model 1>": <Instance of the model1>
-            ...    "<name of the model 2>": <Instance of the model2>
+            >>> model_classes = {
+            ...    "<name of the model 1>": <class of the model1>
+            ...    "<name of the model 2>": <class of the model2>
             ... }
 
             Note: The name of the models can be chosen arbitrarily, but each
-            name in 'fmu_paths' and 'model_instances' must occur only once.
+            name in 'fmu_paths' and 'model_classes' must occur only once.
             Defaults to None.
-        connections_config (Optional[ConnectionsConfig], optional):
+        connections_config (ConnectionsConfig | None, optional):
             Dictionary which defines how the inputs and outputs of the systems
             (fmu or python model) are connected.
             key -> name of the system; value -> list of connections
@@ -375,32 +402,30 @@ def simulate(  # pylint: disable=too-many-locals
             ... }
 
             Defaults to None.
-        start_values (Optional[StartValues], optional): Dictionary which defines start
+        start_values (StartValues | None, optional): Dictionary which defines start
             values for the systems. For Fmus the unit can also be specified as a string.
             key -> name of the system;
             value -> dictionary (key -> name of the parameter; value -> start value)
 
-            >>> start_values =
-            ... {
+            >>> start_values = {
             ...     "<name of system 1>":
             ...     {
-            ...         "<name of parameter 1>": "<start value>",
-            ...         "<name of parameter 2>", "(<start value>, unit e.g 'kg.m2')"
+            ...         "<name of parameter 1>": <start value>,
+            ...         "<name of parameter 2>", (<start value>, unit e.g 'kg.m2')
             ...     },
             ...     "<name of system 2>":
             ...     {
-            ...         "<name of parameter 1>": "<start value>",
-            ...         "<name of parameter 2>": "<start value>"
+            ...         "<name of parameter 1>": <start value>,
+            ...         "<name of parameter 2>": <start value>
             ...     }
             ... }
 
             Defaults to None.
-        parameters_to_log (Optional[dict[str, list[str]]], optional):
+        parameters_to_log (ParametersToLog | None, optional):
             Dictionary that defines which parameters should be logged.
             key -> name of the system; value -> list of parameters names to be logged
 
-            >>> parameters_to_log =
-            ... {
+            >>> parameters_to_log = {
             ...     "<name of system 1>":
             ...     [
             ...         "<name of parameter 1>",
@@ -414,7 +439,7 @@ def simulate(  # pylint: disable=too-many-locals
             ... }
 
             Defaults to None.
-        logging_step_size (Optional[float], optional): step size
+        logging_step_size (float | None, optional): step size
             for logging. It must be a multiple of the chosen simulation step size.
             Example:
             If the simulation step size is set to 1e-3 and logging step size
@@ -425,10 +450,9 @@ def simulate(  # pylint: disable=too-many-locals
     Raises:
         TypeError: start_time type was invalid
         TypeError: step_size type was invalid
-        TypeError: fmu_infos type was invalid
-        TypeError: model_infos type was invalid
-        ValueError: fmu_infos and model_infos were 'None'
+        TypeError: fmu_paths type was invalid
         TypeError: model_classes type was invalid
+        ValueError: fmu_paths and model_classes were 'None'
         ValueError: start_time value was invalid
         ValueError: step_size value was invalid
 
@@ -437,11 +461,16 @@ def simulate(  # pylint: disable=too-many-locals
             Result DataFrame with times series of logged parameters, units of
             logged parameters.
     """
+    logging.basicConfig(
+        format="Simulation::%(levelname)s::%(message)s",
+        level=logging.INFO,
+        force=True,
+    )
     _validate_input(
         stop_time,
         step_size,
         fmu_paths,
-        model_instances,
+        model_classes,
         connections_config,
         parameters_to_log,
         logging_step_size,
@@ -451,30 +480,29 @@ def simulate(  # pylint: disable=too-many-locals
     stop_time = float(stop_time)
     step_size = float(step_size)
 
-    if logging_step_size is None:
-        logging_step_size = step_size
+    logging.info(f"Simulation stop time set to {stop_time} seconds.")
+    logging.info(f"Simulation step size set to {step_size} seconds.")
 
-    logging_step_size = float(logging_step_size)
+    logging_step_size = float(logging_step_size or step_size)
 
-    if connections_config is None:
-        connections_config = {}
-    if fmu_paths is None:
-        fmu_paths = {}
-    if model_instances is None:
-        model_instances = {}
-    if start_values is None:
-        start_values = {}
+    logging.info(f"Simulation logging step size set to {logging_step_size} seconds.")
 
-    start_values = start_values.copy()  # copy so mutating doesn't affect passed dict
+    connections_config = connections_config or {}
+    fmu_paths = fmu_paths or {}
+    model_classes = model_classes or {}
+    start_values = start_values or {}
+    parameters_to_log = parameters_to_log or {}
+
+    start_values = start_values.copy()  # copy because dict will be modified in fmu.py
 
     fmus = init_fmus(fmu_paths, step_size, start_values)
 
-    models = init_models(model_instances, start_values)
+    models = init_models(model_classes, start_values)
 
     connections = init_connections(connections_config)
     _parameters_to_log = init_parameter_list(parameters_to_log)
 
-    simulator = Simulation({**fmus, **models}, connections, _parameters_to_log)
+    simulator = Simulator({**fmus, **models}, connections, _parameters_to_log)
     results = simulator.simulate(stop_time, step_size, logging_step_size)
 
     if get_units:
@@ -507,19 +535,19 @@ def init_fmus(
         fmu.initialize(start_values=_start_values)
         system = System(fmu, fmu_name)
         fmus[fmu_name] = system
-        print(f"FMU '{fmu_name}' initialized.")
+        logging.info(f"FMU '{fmu_name}' initialized.")
 
     return fmus
 
 
 def init_models(
-    model_instances: ModelInstances,
+    model_classes: ModelClasses,
     start_values: StartValues,
 ) -> dict[str, System]:
     """Initialize python models as a System object and store them in a dictionary.
 
     Args:
-        model_instances (ModelInstances): Dictionary which defines which Python Models
+        model_classes (ModelClasses): Dictionary which defines which Python Models
             should be simulated.
         start_values (StartValues): Dictionary which defines start values for the
             systems.
@@ -529,12 +557,13 @@ def init_models(
     """
 
     models: dict[str, System] = {}
-    for model_name, model_instance in model_instances.items():
+    for model_name, model_class in model_classes.items():
         _start_values = start_values.get(model_name) or {}
+        model_instance = model_class()
         model_instance.initialize(_start_values)
         system = System(model_instance, model_name)
         models[model_name] = system
-        print(f"Model '{model_name}' initialized.")
+        logging.info(f"Python Model '{model_name}' initialized.")
 
     return models
 
@@ -565,25 +594,22 @@ def init_connections(connections_config: ConnectionsConfig) -> list[Connection]:
             connection = Connection(this_connection_point, other_connection_point)
             all_connections.append(connection)
 
+    logging.info("Connections initialized.")
+
     return all_connections
 
 
-def init_parameter_list(
-    parameters_to_log: Optional[dict[str, list[str]]]
-) -> Optional[list[SystemParameter]]:
+def init_parameter_list(parameters_to_log: ParametersToLog) -> list[SystemParameter]:
     """Initialize all parameters that should be logged.
 
     Args:
-        parameters_to_log (Optional[dict[str, list[str]]]): Defines which
+        parameters_to_log (ParametersToLog): Defines which
             parameters should be logged.
 
     Returns:
-        Optional[list[SystemParameter]]: List of system parameters that should be
+        list[SystemParameter]: List of system parameters that should be
         logged.
     """
-    if parameters_to_log is None:
-        return None
-
     log: list[SystemParameter] = []
 
     for system_name, parameter_names in parameters_to_log.items():
@@ -597,12 +623,12 @@ def init_parameter_list(
 def _validate_input(
     stop_time: float,
     step_size: float,
-    fmu_paths: Optional[FmuPaths],
-    model_instances: Optional[ModelInstances],
-    connections_config: Optional[ConnectionsConfig],
-    parameters_to_log: Optional[dict[str, list[str]]],
-    logging_step_size: Optional[float],
-    start_values: Optional[StartValues],
+    fmu_paths: FmuPaths | None,
+    model_classes: ModelClasses | None,
+    connections_config: ConnectionsConfig | None,
+    parameters_to_log: ParametersToLog | None,
+    logging_step_size: float | None,
+    start_values: StartValues | None,
 ) -> None:
     utils.check_type(stop_time, "stop_time", Real)
     utils.check_type(step_size, "step_size", Real)
@@ -613,14 +639,14 @@ def _validate_input(
     if step_size <= 0 or step_size >= stop_time:
         raise ValueError(f"'step_size' is {step_size}; expected (0, {stop_time})")
 
-    if not fmu_paths and not model_instances:
+    if not fmu_paths and not model_classes:
         raise ValueError(
-            "'fmu_paths' and 'model_instances' are empty; "
+            "'fmu_paths' and 'model_classes' are empty; "
             "expected at least one to be not empty"
         )
 
     fmu_names = _validate_fmu_paths(fmu_paths)
-    model_names = _validate_model_instances(model_instances)
+    model_names = _validate_model_classes(model_classes)
 
     all_system_names = fmu_names + model_names
 
@@ -656,27 +682,30 @@ def _validate_fmu_paths(fmu_paths: Optional[FmuPaths]) -> list[str]:
     return fmu_names
 
 
-def _validate_model_instances(model_instances: Optional[ModelInstances]) -> list[str]:
-    if model_instances is None:
+def _validate_model_classes(model_classes: ModelClasses | None) -> list[str]:
+    if model_classes is None:
         return []
 
-    utils.check_type(model_instances, "model_infos", dict)
+    utils.check_type(model_classes, "model_classes", dict)
 
     model_names: list[str] = []
 
-    for model_name, model_instance in model_instances.items():
+    for model_name, model_class in model_classes.items():
         utils.check_type(
-            model_instance,
-            f"value to key '{model_name}' in 'model_instances'",
-            SimulationEntity,
+            model_class, f"Value to key '{model_name}' in 'model_classes", type
         )
+        if not issubclass(model_class, SimulationEntity):
+            raise TypeError(
+                f"Value to key '{model_name}' in 'model_classes must be "
+                "a subclass of 'SimulationEntity'"
+            )
         model_names.append(model_name)
 
     return model_names
 
 
 def _validate_connection_config(
-    connections_config: Optional[ConnectionsConfig], system_names: list[str]
+    connections_config: ConnectionsConfig | None, system_names: list[str]
 ) -> None:
     if connections_config is None:
         return
@@ -711,7 +740,7 @@ def _check_key_exists(key: str, connection: _Connection, system_name: str) -> No
 
 
 def _validate_parameters_to_log(
-    parameters_to_log: dict[str, list[str]], system_names: list[str]
+    parameters_to_log: ParametersToLog, system_names: list[str]
 ) -> None:
     utils.check_type(parameters_to_log, "parameters_to_log", dict)
 

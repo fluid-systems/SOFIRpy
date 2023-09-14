@@ -6,11 +6,6 @@ sofirpy.simulation package
     :no-undoc-members:
     :show-inheritance:
 
-UML Diagram of the simulation package
--------------------------------------
-
-.. image:: uml_diagram_simulation.svg
-
 Submodules
 ----------
 

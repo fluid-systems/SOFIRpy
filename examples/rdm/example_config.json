@@ -1,0 +1,53 @@
+{
+    "run_meta": {
+        "description": "Here you can add a description",
+        "keywords": [
+            "foo",
+            "bar"
+        ]
+    },
+    "models": {
+        "DC_Motor": {
+            "start_values": {
+                "inertia.J": 2,
+                "damper.phi_rel.start": 1
+            },
+            "connections": [
+                {
+                    "parameter_name": "u",
+                    "connect_to_system": "pid",
+                    "connect_to_external_parameter": "u"
+                }
+            ],
+            "parameters_to_log": [
+                "u"
+            ]
+        },
+        "pid": {
+            "start_values": {
+                "sampling_rate": 1e-3,
+                "K_p": 3,
+                "K_i": 20,
+                "K_d": 0.1,
+                "set_point": 100,
+                "u_max": 100,
+                "u_min": 0
+            },
+            "connections": [
+                {
+                    "parameter_name": "speed",
+                    "connect_to_system": "DC_Motor",
+                    "connect_to_external_parameter": "y"
+                }
+            ],
+            "parameters_to_log": [
+                "u"
+            ]
+        }
+    },
+    "simulation_config": {
+        "stop_time": 10,
+        "step_size": 1e-3,
+        "logging_step_size": 1e-2
+    }
+}

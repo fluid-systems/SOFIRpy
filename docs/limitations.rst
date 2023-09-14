@@ -1,10 +1,12 @@
 Limitations
 ===========
 
-Model export
+Simulation
 ------------
 
-- OpenModelica model export does not allow a parameter import
+- Simulation with model exchange FMUs not supported
 
 RDM
--------
+---
+
+-

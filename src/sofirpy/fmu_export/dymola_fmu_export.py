@@ -402,8 +402,8 @@ def export_dymola_model(  # pylint: disable=too-many-arguments, too-many-locals
     fmi_type: Literal["me", "cs", "all", "csSolver"] = "all",
     include_source: bool = False,
     include_image: Literal[0, 1, 2] = 2,
-    keep_log: bool = True,
-    keep_mos: bool = True,
+    keep_log: bool = False,
+    keep_mos: bool = False,
 ) -> Path:
     """Export a dymola model as a fmu.
 
@@ -426,7 +426,7 @@ def export_dymola_model(  # pylint: disable=too-many-arguments, too-many-locals
 
             Defaults to None.
         model_modifiers (list[str]], optional): List of model modifiers.
-            Example
+            Example:
 
             >>> model_modifiers = ["redeclare package Medium ="
             ...     "Modelica.Media.Water.ConstantPropertyLiquidWater"]
@@ -438,15 +438,15 @@ def export_dymola_model(  # pylint: disable=too-many-arguments, too-many-locals
         fmi_version (Literal[1, 2], optional): FMI version, 1 or 2. Defaults to 2.
         fmi_type (Literal["me", "cs", "all", "csSolver"], optional): FMI type,
             me (model exchange), cs (co-simulation), all or
-            csSolver (using Dymola solver).Defaults to "all".
+            csSolver (using Dymola solver). Defaults to "all".
         include_source (bool, optional): Whether to include source code in FMU.
             Defaults to False.
         include_image (Literal[0, 1, 2], optional): Whether to include the model image
             (0 - no image, 1 icon, 2 diagram). Defaults to 2.
         keep_log (bool, optional): If True the simulator log is kept
-            else it will be deleted. Defaults to True.
+            else it will be deleted. Defaults to False.
         keep_mos (bool, optional): If True the mos script is kept
-            else it will be deleted. Defaults to True.
+            else it will be deleted. Defaults to False.
 
     Returns:
         Path: Path to the exported FMU.

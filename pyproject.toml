@@ -8,10 +8,10 @@ dynamic = ["version"]
 description = "Framework for simulating FMUs and custom models written in python."
 readme = "README.md"
 authors = [
-    { name = "Daniele Inturri", email = "daniele.inturri@stud.tu-darmstadt.de" }
+    { name = "Daniele Inturri", email = "daniele.inturri@stud.tu-darmstadt.de" },
 ]
 keywords = ["simulation", "fmu"]
-license = {file = "LICENSE"}
+license = { file = "LICENSE" }
 classifiers = [
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
@@ -27,25 +27,23 @@ dependencies = [
     "numpy>=1.20.0",
     "pandas>=1.3.0",
     "OMpython>=3.4.0",
-    "typing_extensions>=4.3.0"
+    "typing_extensions>=4.3.0",
+    "pydatnic>=2.0.0",
 ]
 requires-python = ">=3.9"
 
 [project.optional-dependencies]
-dev = [
-    "black>=22.12.0",
-    "isort>=5.12.0",
-    "pylint>=2.15.3",
-    "pre-commit>=3.2.2"
-    ]
 test = [
     "pytest>=7.1.2",
     "pytest-cov>=3.0.0",
-    "mypy>=1.2.0",
+    "mypy>=1.4.0",
     "pandas-stubs>=1.4.3.220822",
+    "syrupy>=4.5.0",
+    "types-setuptools>=68.2.0.0",
     "types-tqdm>=4.64.5",
-    "types-pytz>=2022.2.1.0"
-    ]
+    "types-pytz>=2022.2.1.0",
+]
+dev = ["black>=22.12.0", "isort>=5.12.0", "pylint>=2.15.3", "pre-commit>=3.2.2"]
 doc = ["sphinx>=5.1.1", "sphinx-rtd-theme>=1.0.0"]
 
 [project.urls]
@@ -53,7 +51,7 @@ repository = "https://git.rwth-aachen.de/sofirpy/sofirpy"
 documentation = "https://sofirpy.readthedocs.io/"
 
 [tool.setuptools.dynamic]
-version = {attr = "sofirpy.__version__"}
+version = { attr = "sofirpy.__version__" }
 
 [tool.setuptools.packages.find]
 where = ["src"]
@@ -66,6 +64,7 @@ strict = true
 show_error_codes = true
 [[tool.mypy.overrides]]
 module = [
+    "cloudpickle",
     "fmpy",
     "fmpy.fmi2",
     "fmpy.simulation",
@@ -73,7 +72,7 @@ module = [
     "matplotlib",
     "matplotlib.axes",
     "matplotlib.pyplot",
-    "OMPython"
+    "OMPython",
 ]
 ignore_missing_imports = true
 

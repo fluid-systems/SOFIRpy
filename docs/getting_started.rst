@@ -1,25 +1,21 @@
 Getting started
 ===============
 
-To start using sofirpy, import the package::
-
-	import sofirpy
-
 The following 3 examples demonstrate how to export a Modelica model as a FMU,
-simulate a FMU and a controller and how to initialize a project.
+co-simulate a FMU and a controller and how to use the rdm features.
 
-Exporting a modelica model
+Exporting a Modelica Model
 --------------------------
 
-sofirpy allows to export a OpenModelica and Dymola model as a FMU.
+SOFIRpy allows to export a OpenModelica and Dymola model as a FMU.
 
 **Exporting a OpenModelica model**
 
 .. literalinclude:: ../examples/fmu_export/open_modelica_model_export/open_modelica_model_export_example.py
 
-**Exporting a Dymola model and importing parameters**
+**Exporting a Dymola model**
 
-.. literalinclude:: ../examples/fmu_export/dymola_model_export/dymola_model_export_parameter_import_example.py
+.. literalinclude:: ../examples/fmu_export/dymola_model_export/dymola_model_export_example.py
 
 Simulating a FMU and a Controller
 ---------------------------------
@@ -30,12 +26,11 @@ The custom implemented pid controller is shown below.
 
 .. literalinclude:: ../examples/discrete_pid.py
 
-Initializing a project and storing data
-----------------------------------------
 
-.. literalinclude:: ../examples/project/project_example.py
+RDM Features
+------------
 
-Additional examples
--------------------
+This example demonstrates how to create a simulation run from a config file, store the
+run inside a HDF5 file and read the run again from the HDF5 file.
 
-Additional examples can be found `here. <https://git.rwth-aachen.de/sofirpy/sofirpy/-/tree/master/examples>`_
+.. literalinclude:: ../examples/rdm/run_example.py
