@@ -603,16 +603,17 @@ class Run:
         )
 
     @classmethod
-    def from_hdf5(cls, run_name: str, hdf5_path: Path) -> Run:
+    def from_hdf5(cls, run_name: str, hdf5_path: Path | str) -> Run:
         """Load a run from a hdf5 file.
 
         Args:
             run_name (str): Name of the run.
-            hdf5_path (Path): Path to the hdf5 file.
+            hdf5_path (Path | str): Path to the hdf5 file.
 
         Returns:
             Run: Run instance.
         """
+        hdf5_path = utils.convert_str_to_path(hdf5_path, "hdf5_path")
         return sofirpy.rdm.hdf5.hdf5_to_run.create_run_from_hdf5(hdf5_path, run_name)
 
     def get_config(self) -> _ConfigDict:

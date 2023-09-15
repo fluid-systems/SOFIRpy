@@ -123,25 +123,25 @@ def create_fmus_group(run: rdm_run.Run, model_storage_group: h5.Group) -> h5.Gro
             .append_dataset(
                 h5.Dataset(
                     name=config.RunDatasetName.CONNECTIONS.value,
-                    data=serialize.Connections.serialize(run, fmu_name),
+                    data=serialize.Connections.serialize(run, fmu_name=fmu_name),
                 )
             )
             .append_dataset(
                 h5.Dataset(
                     name=config.RunDatasetName.START_VALUES.value,
-                    data=serialize.StartValues.serialize(run, fmu_name),
+                    data=serialize.StartValues.serialize(run, fmu_name=fmu_name),
                 )
             )
             .append_dataset(
                 h5.Dataset(
                     name=config.RunDatasetName.PARAMETERS_TO_LOG.value,
-                    data=serialize.ParametersToLog.serialize(run, fmu_name),
+                    data=serialize.ParametersToLog.serialize(run, fmu_name=fmu_name),
                 )
             )
         )
         fmu_reference_dataset = h5.Dataset(
             name=config.RunDatasetName.FMU_REFERENCE.value,
-            data=serialize.FmuReference.serialize(run, fmu_name),
+            data=serialize.FmuReference.serialize(run, fmu_name=fmu_name),
         )
         fmu_group.append_dataset(fmu_reference_dataset)
         fmu_hash = fmu_reference_dataset.data
@@ -151,7 +151,7 @@ def create_fmus_group(run: rdm_run.Run, model_storage_group: h5.Group) -> h5.Gro
             fmu_storage_group.append_dataset(
                 h5.Dataset(
                     name=fmu_hash,
-                    data=serialize.FmuStorage.serialize(run, fmu_name),
+                    data=serialize.FmuStorage.serialize(run, fmu_name=fmu_name),
                 )
             )
         fmus_run_group.append_group(fmu_group)
@@ -177,26 +177,32 @@ def create_python_models_group(
             .append_dataset(
                 h5.Dataset(
                     name=config.RunDatasetName.CONNECTIONS.value,
-                    data=serialize.Connections.serialize(run, python_model_name),
+                    data=serialize.Connections.serialize(
+                        run, python_model_name=python_model_name
+                    ),
                 )
             )
             .append_dataset(
                 h5.Dataset(
                     name=config.RunDatasetName.START_VALUES.value,
-                    data=serialize.StartValues.serialize(run, python_model_name),
+                    data=serialize.StartValues.serialize(
+                        run, python_model_name=python_model_name
+                    ),
                 )
             )
             .append_dataset(
                 h5.Dataset(
                     name=config.RunDatasetName.PARAMETERS_TO_LOG.value,
-                    data=serialize.ParametersToLog.serialize(run, python_model_name),
+                    data=serialize.ParametersToLog.serialize(
+                        run, python_model_name=python_model_name
+                    ),
                 )
             )
         )
         python_model_class_reference_dataset = h5.Dataset(
             name=config.RunDatasetName.REFERENCE_CLASS.value,
             data=serialize.PythonModelInstanceReference.serialize(
-                run, python_model_name
+                run, python_model_name=python_model_name
             ),
         )
         python_model_group.append_dataset(python_model_class_reference_dataset)
@@ -207,7 +213,7 @@ def create_python_models_group(
             python_model_class_storage_dataset = h5.Dataset(
                 name=model_class_hash,
                 data=serialize.PythonModelClassStorage.serialize(
-                    run, python_model_name
+                    run, python_model_name=python_model_name
                 ),
             )
             python_model_classes_storage_group.append_dataset(
@@ -216,7 +222,7 @@ def create_python_models_group(
         python_model_source_code_reference_dataset = h5.Dataset(
             name=config.RunDatasetName.REFERENCE_SOURCE_CODE.value,
             data=serialize.PythonModelSourceCodeReference.serialize(
-                run, python_model_name
+                run, python_model_name=python_model_name
             ),
         )
         python_model_group.append_dataset(python_model_source_code_reference_dataset)
@@ -227,7 +233,7 @@ def create_python_models_group(
             python_model_source_code_storage_dataset = h5.Dataset(
                 name=model_source_code_hash,
                 data=serialize.PythonModelSourceCodeStorage.serialize(
-                    run, python_model_name
+                    run, python_model_name=python_model_name
                 ),
             )
             python_model_source_code_storage_group.append_dataset(

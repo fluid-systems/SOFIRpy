@@ -17,13 +17,13 @@ import sofirpy.rdm.run as rdm_run
 class Deserializer(ABC):
     @staticmethod
     @abstractmethod
-    def deserialize(run_group: h5.Group, *args, **kwargs) -> Any:
+    def deserialize(run_group: h5.Group, *args: Any, **kwargs: Any) -> Any:
         ...
 
 
 class RunMeta(Deserializer):
     @staticmethod
-    def deserialize(run_group: h5.Group) -> rdm_run._RunMeta:
+    def deserialize(run_group: h5.Group, *args: Any, **kwargs: Any) -> rdm_run._RunMeta:
         assert run_group.attribute is not None
         assert run_group.attribute.attributes is not None
         return rdm_run._RunMeta(**run_group.attribute.attributes)
@@ -31,7 +31,7 @@ class RunMeta(Deserializer):
 
 class Dependencies(Deserializer):
     @staticmethod
-    def deserialize(run_group: h5.Group) -> Any:
+    def deserialize(run_group: h5.Group, *args: Any, **kwargs: Any) -> Any:
         return json.loads(
             run_group.get_dataset(config.RunDatasetName.DEPENDENCIES.value).data
         )
@@ -39,7 +39,9 @@ class Dependencies(Deserializer):
 
 class SimulationConfig(Deserializer):
     @staticmethod
-    def deserialize(run_group: h5.Group) -> rdm_run._SimulationConfig:
+    def deserialize(
+        run_group: h5.Group, *args: Any, **kwargs: Any
+    ) -> rdm_run._SimulationConfig:
         simulation_results_group = run_group.get_group(
             config.RunGroupName.SIMULATION_RESULTS.value
         )
@@ -52,7 +54,7 @@ class SimulationConfig(Deserializer):
 
 class Results(Deserializer):
     @staticmethod
-    def deserialize(run_group: h5.Group) -> rdm_run._Results:
+    def deserialize(run_group: h5.Group, *args: Any, **kwargs: Any) -> rdm_run._Results:
         simulation_results_group = run_group.get_group(
             config.RunGroupName.SIMULATION_RESULTS.value
         )
@@ -60,9 +62,12 @@ class Results(Deserializer):
             config.RunDatasetName.TIME_SERIES.value
         ].data
         time_series = pd.DataFrame.from_records(_time_series)
-        units = simulation_results_group.datasets._datasets[
+        units_attr = simulation_results_group.datasets._datasets[
             config.RunDatasetName.TIME_SERIES.value
-        ].attribute.attributes
+        ].attribute
+        assert units_attr is not None
+        units = units_attr.attributes
+        assert units is not None
         units = {name: unit if unit else None for name, unit in units.items()}
         return rdm_run._Results(time_series, units)
 
@@ -71,10 +76,12 @@ class Models(Deserializer):
     @staticmethod
     def deserialize(
         run_group: h5.Group,
-        hdf5: h5.HDF5,
-        can_simulate_fmu: bool,
-        can_load_python_model: bool,
+        *args: Any,
+        **kwargs: Any,
     ) -> rdm_run._Models:
+        hdf5: h5.HDF5 = kwargs["hdf5"]
+        can_simulate_fmu: bool = kwargs["can_simulate_fmu"]
+        can_load_python_model: bool = kwargs["can_load_python_model"]
         fmu_models_group = run_group.get_group(
             config.RunGroupName.get_fmu_models_path()
         )
@@ -125,7 +132,7 @@ class Models(Deserializer):
         python_models_group = run_group.get_group(
             config.RunGroupName.get_python_models_path()
         )
-        python_models: dict[str, rdm_run._Fmu] = {}
+        python_models: dict[str, rdm_run._PythonModel] = {}
         for name, group in python_models_group.groups._groups.items():
             connections = json.loads(
                 cast(

@@ -14,12 +14,11 @@ import sofirpy.rdm.run as rdm_run
 import sofirpy.utils as utils
 
 
-def create_run_from_hdf5(hdf5_path: Path | str, run_name: str) -> rdm_run.Run:
+def create_run_from_hdf5(hdf5_path: Path, run_name: str) -> rdm_run.Run:
     # TODO if loaded model is None because it could not be pickled.
     logging.basicConfig(
         format="HDF5ToRun::%(levelname)s::%(message)s", level=logging.INFO, force=True
     )
-    hdf5_path = utils.convert_str_to_path(hdf5_path, "hdf5_path")
     if not hdf5_path.exists():
         raise FileNotFoundError(f"'{hdf5_path}' does not exist")
     hdf5 = h5.HDF5(hdf5_path)
@@ -31,7 +30,10 @@ def create_run_from_hdf5(hdf5_path: Path | str, run_name: str) -> rdm_run.Run:
     results = deserialize.Results.deserialize(run_group)
     simulation_config = deserialize.SimulationConfig.deserialize(run_group)
     models = deserialize.Models.deserialize(
-        run_group, hdf5, can_simulate_fmu, can_load_python_model
+        run_group,
+        hdf5=hdf5,
+        can_simulate_fmu=can_simulate_fmu,
+        can_load_python_model=can_load_python_model,
     )
     run = rdm_run.Run(
         run_name=run_name,
@@ -72,7 +74,9 @@ def _check_compatibility(
     return can_simulate_fmu, can_load_python_models
 
 
-def _check_dependencies(run_meta: rdm_run._RunMeta, h5_dependencies: dict[str, str]):
+def _check_dependencies(
+    run_meta: rdm_run._RunMeta, h5_dependencies: dict[str, str]
+) -> None:
     cur_env_dep = run_meta.get_dependencies()
     dependencies_in_hdf5_but_not_in_current_env = set(h5_dependencies).difference(
         cur_env_dep
