@@ -24,9 +24,7 @@ def create_run_from_hdf5(hdf5_path: Path, run_name: str) -> rdm_run.Run:
     hdf5 = h5.HDF5(hdf5_path)
     run_group = h5.Group.from_hdf5(hdf5, run_name)
     run_meta = deserialize.RunMeta.deserialize(run_group)
-    can_simulate_fmu, can_load_python_model = _check_compatibility(
-        run_meta, deserialize.Dependencies.deserialize(run_group)
-    )
+    can_simulate_fmu, can_load_python_model = _check_compatibility(run_meta)
     results = deserialize.Results.deserialize(run_group)
     simulation_config = deserialize.SimulationConfig.deserialize(run_group)
     models = deserialize.Models.deserialize(
@@ -46,9 +44,7 @@ def create_run_from_hdf5(hdf5_path: Path, run_name: str) -> rdm_run.Run:
     return run
 
 
-def _check_compatibility(
-    run_meta: rdm_run._RunMeta, dependencies: dict[str, str]
-) -> tuple[bool, bool]:
+def _check_compatibility(run_meta: rdm_run._RunMeta) -> tuple[bool, bool]:
     same_os = run_meta.os == sys.platform
     if not same_os:
         logging.warning(
@@ -70,17 +66,14 @@ def _check_compatibility(
         )
     can_simulate_fmu = same_os
     can_load_python_models = same_py_version and same_os
-    _check_dependencies(run_meta, dependencies)
+    _check_dependencies(run_meta)
     return can_simulate_fmu, can_load_python_models
 
 
-def _check_dependencies(
-    run_meta: rdm_run._RunMeta, h5_dependencies: dict[str, str]
-) -> None:
-    cur_env_dep = run_meta.get_dependencies()
-    dependencies_in_hdf5_but_not_in_current_env = set(h5_dependencies).difference(
-        cur_env_dep
-    )
+def _check_dependencies(run_meta: rdm_run._RunMeta) -> None:
+    run_dep = run_meta.dependencies
+    cur_env_dep = utils.get_dependencies_of_current_env()
+    dependencies_in_hdf5_but_not_in_current_env = set(run_dep).difference(cur_env_dep)
     if dependencies_in_hdf5_but_not_in_current_env:
         logging.warning(
             "The following dependencies were installed when storing the run in the "
@@ -88,8 +81,8 @@ def _check_dependencies(
             f"{', '.join(dependencies_in_hdf5_but_not_in_current_env)}"
         )
     difference_in_version_number: list[str] = []
-    for dep_name in set(h5_dependencies).intersection(cur_env_dep):
-        if h5_dependencies[dep_name] != cur_env_dep[dep_name]:
+    for dep_name in set(run_dep).intersection(cur_env_dep):
+        if run_dep[dep_name] != cur_env_dep[dep_name]:
             difference_in_version_number.append(dep_name)
     if difference_in_version_number:
         logging.warning(

@@ -26,14 +26,11 @@ class RunMeta(Deserializer):
     def deserialize(run_group: h5.Group, *args: Any, **kwargs: Any) -> rdm_run._RunMeta:
         assert run_group.attribute is not None
         assert run_group.attribute.attributes is not None
-        return rdm_run._RunMeta(**run_group.attribute.attributes)
-
-
-class Dependencies(Deserializer):
-    @staticmethod
-    def deserialize(run_group: h5.Group, *args: Any, **kwargs: Any) -> Any:
-        return json.loads(
+        dependencies = json.loads(
             run_group.get_dataset(config.RunDatasetName.DEPENDENCIES.value).data
+        )
+        return rdm_run._RunMeta(
+            **run_group.attribute.attributes, dependencies=dependencies
         )
 
 

@@ -11,7 +11,6 @@ from pathlib import Path
 from typing import Any, ClassVar, Literal, Optional, TypedDict, cast
 
 import pandas as pd
-import pkg_resources
 import pydantic
 from typing_extensions import NotRequired, Self
 
@@ -567,8 +566,8 @@ class Run:
                 key -> name of the fmu; value -> path to the fmu
 
                 >>> fmu_paths = {
-                ...    "<name of the fmu 1>": <Path to the fmu1>,
-                ...    "<name of the fmu 2>": <Path to the fmu2>,
+                ...    "<name of the fmu 1>": "path/to/fmu1",
+                ...    "<name of the fmu 2>": "path/to/fmu2",
                 ... }
 
                 Note: The name of the fmus can be chosen arbitrarily, but each name
@@ -676,6 +675,7 @@ class _RunMeta:
             python_version=sys.version,
             date=datetime.now().strftime("%d-%b-%Y %H:%M:%S"),
             os=sys.platform,
+            dependencies=utils.get_dependencies_of_current_env(),
         )
 
     def to_dict(self) -> _MetaConfigDict:
@@ -684,13 +684,10 @@ class _RunMeta:
             {
                 field_name: self.__getattribute__(field_name)
                 for field_name in _MetaConfigDict.__annotations__.keys()
+                if field_name != "dependencies"
             },
         )
         return meta_config
-
-    def get_dependencies(self) -> dict[str, str]:
-        installed_packages = pkg_resources.working_set
-        return {package.project_name: package.version for package in installed_packages}
 
 
 @pydantic.dataclasses.dataclass

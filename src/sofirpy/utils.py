@@ -4,6 +4,8 @@ import shutil
 from pathlib import Path
 from typing import Any, Union
 
+import pkg_resources
+
 
 def delete_file_or_directory(
     path: Path, print_status: bool = False, must_exist: bool = False
@@ -213,3 +215,8 @@ def check_type(var: Any, var_name: str, expected_type: Any) -> None:
         else:
             msg += expected_type.__name__
         raise TypeError(msg)
+
+
+def get_dependencies_of_current_env() -> dict[str, str]:
+    installed_packages = pkg_resources.working_set
+    return {package.project_name: package.version for package in installed_packages}

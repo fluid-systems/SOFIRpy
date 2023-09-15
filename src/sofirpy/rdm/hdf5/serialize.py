@@ -43,7 +43,7 @@ class Config(Serializer):
 class Dependencies(Serializer):
     @staticmethod
     def serialize(run: rdm_run.Run, *args: Any, **kwargs: Any) -> Any:
-        return json.dumps(run._run_meta.get_dependencies())
+        return json.dumps(run._run_meta.dependencies)
 
 
 class SimulationConfig(AttributeSerializer):
