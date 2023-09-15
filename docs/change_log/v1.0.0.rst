@@ -9,7 +9,8 @@ Simulation
 
 RDM feature (beta)
 
-- load and store runs from hdf5 files
+- store runs in a hdf5 file
+- load runs from a hdf5 file
 
 FMU export
 

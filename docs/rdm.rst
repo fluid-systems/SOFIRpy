@@ -49,6 +49,9 @@ After configuration the run can be simulated by calling the simulate method:
     result = run.time_series
     units = run.units
 
+Storing a Run
+-------------
+
 The simulated run can then be stored inside a hdf5 file. All relevant data is stored to
 be able to recreate the simulation.
 
@@ -56,12 +59,46 @@ be able to recreate the simulation.
 
     run.to_hdf5(hdf5_path = "path/to/hdf5")
 
-If the hdf5 file does not exists it will be created for you. The hdf5 will also be
-initialized by writing meta data to it and creating a models group. In here the
-simulated models will be stored. The fmus are written as binaries to the hdf5. The user
-defined classed are stored by storing the source code of the class. If possible the
-class will be serialized. This makes it really easy to rerun the simulation from the hdf5.
+If the HDF5 file doesn't already exist, it will be created for you automatically.
+The HDF5 file is then initialized by adding metadata and creating a "models" group
+within it.
+The FMUs are stored as binary data inside this group.
+The custom defined model_classes are preserved by storing their source code. If
+possible these classes are also serialized using
+`cloudpickle <https://github.com/cloudpipe/cloudpickle>`_.
+This makes it easy to rerun the simulation from the hdf5. However, it is not always
+possible to read back the serialized model_classes. In :ref:`Loading a Run` the
+limitations are discussed.
 
 A new run will be stored in a top level group with the name of the run. All the
 configuration data, results and the dependencies of your python environment are stored
 here.
+
+.. _loading a run:
+
+Loading a Run
+-------------
+
+Loading a run from a hdf5 can be achieved as follows:
+
+.. code-block:: python
+
+    from sofirpy import Run
+
+    Run.from_hdf5(run_name="run_name", hdf5_path = "path/to/hdf5")
+
+
+The ability to simulate a stored run from an HDF5 file depends on the compatibility of
+the current environment with the environment at the time the run was saved.
+Specifically, if both the operating system and Python version of the current environment
+match those of the original run, it is feasible to rerun the simulation.
+
+However, if there is a disparity in the Python version and custom model_classes were
+defined in the original run, a rerun of the simulation is not possible. The
+model_classes can be reconstructed using the stored source code of the classes and the
+dependencies used when storing the run.
+On the other hand, if only FMUs were defined without any custom model_classes, it
+remains possible to rerun the simulation.
+
+In cases where the operating system varies from the one in which the run was initially
+executed, it is not possible to simulate the run again.

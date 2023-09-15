@@ -4,10 +4,14 @@ Simulation
 SOFIRpy allows you to simulate multiple FMUs and custom implemented python models by
 calling the :py:func:`simulate <sofirpy.simulation.simulation.simulate>` function.
 
-The function accepts the following arguments:
+Arguments to the `simulate` Function
+------------------------------------
+
+The function :py:func:`simulate <sofirpy.simulation.simulation.simulate>` accepts the
+following arguments:
 
 stop_time
----------
+^^^^^^^^^
 
 Define the stop_time in seconds.
 
@@ -16,7 +20,7 @@ Define the stop_time in seconds.
     stop_time = 10 # 10 seconds of simulation will be performed
 
 step_size
----------
+^^^^^^^^^
 
 Define the step_size in seconds. Needs to be greater than 0 and smaller than the
 stop_time.
@@ -26,7 +30,7 @@ stop_time.
     step_size = 1 # starting from 0, each second a step in each model is performed until the stop_time is reached.
 
 fmu_paths
----------
+^^^^^^^^^
 
 Define which FMUs should be simulated by passing a dictionary with the name of the
 fmu and the file path as value. The name of the FMUs can be chosen arbitrarily, but
@@ -38,7 +42,7 @@ each name must occur only once.
     fmu_paths = {"<fmu_name>": "<Path/to/fmu>"}
 
 model_classes
--------------
+^^^^^^^^^^^^^^
 
 Define the custom implemented python models that should be simulated by passing a
 dictionary with the name of the python model and the model as value.
@@ -82,7 +86,6 @@ Example:
 
     # First define the class
     class Foo(SimulationEntity):
-        """Simple implementation of a discrete pid controller"""
 
         def __init__(self):
             self.parameters = {"parameter1": 0, "parameter2": 0}
@@ -110,15 +113,15 @@ Example:
         def conclude_simulation(self) -> None: # optional
             print("Concluded simulation!")
 
-    # simulate one python model names foo
+    # simulate one python model called foo
     model_classes = {"foo": Foo} # we pass the class not the instance!
 
 .. note::
-    A **class** is passed as the values to the dictionary not an instance of the class.
+    A **class** is passed as the values of the dictionary not an instance of the class.
 
 
 connections_config
-------------------
+^^^^^^^^^^^^^^^^^^^
 
 Define how the inputs and outputs of the systems are connected.
 
@@ -166,7 +169,7 @@ The values of the dictionary define how a input of the system is connected to th
 of another system.
 
 start_values
-------------
+^^^^^^^^^^^^
 
 Define start_values for your systems. For the fmus you can also pass the unit of the
 value. The start values for a each system will be passed to the initialize method of the
@@ -189,7 +192,7 @@ corresponding class.
 
 
 parameters_to_log
------------------
+^^^^^^^^^^^^^^^^^^
 
 Define which parameters should be logged during the simulation.
 
@@ -209,20 +212,30 @@ Define which parameters should be logged during the simulation.
         }
 
 logging_step_size
------------------
+^^^^^^^^^^^^^^^^^
 
 Define a logging step size. The logging step size must be a multiple of the step size.
 
 get_units
----------
+^^^^^^^^^
 
 Define whether to return a dictionary with units of the logged parameters. If the units
 are not defined inside your implemented classes they will be set to None.
 
+Return values of the `simulate` function
+----------------------------------------
+
+The function :py:func:`simulate <sofirpy.simulation.simulation.simulate>` returns the
+following:
 
 results
--------
+^^^^^^^
 
 The results of the simulation is a pandas DataFrame. The first column is the time.
 The other columns are are named as follows '<system_name>.<parameter_name>' for all
 the logged parameters.
+
+units
+^^^^^
+
+Dictionary of units of the logged parameters.
