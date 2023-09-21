@@ -664,6 +664,7 @@ class _RunMeta:
     python_version: str
     date: str
     os: str
+    dependencies: dict[str, str]
 
     CONFIG_KEY: ClassVar[ConfigKeyType] = "run_meta"
 
@@ -726,7 +727,6 @@ class _Models:
         model_classes: Optional[ModelClasses] = None,
     ) -> Self:
         model_config = cast(dict[str, _ModelConfigDict], config[cls.CONFIG_KEY])
-        # TODO check if all names in fmu_paths and model_classes are in config
         fmu_paths = fmu_paths or {}
         fmus = {
             name: _Fmu(
@@ -757,9 +757,7 @@ class _Models:
         self.models[new_name].name = new_name
         self.update_connections(prev_name, new_name)
 
-    def update_connections(
-        self, prev_name: str, new_name: str
-    ) -> None:  # TODO maybe instead of doing this link model class in connections
+    def update_connections(self, prev_name: str, new_name: str) -> None:
         for model in self.models.values():
             model.update_connections(prev_name, new_name)
 
