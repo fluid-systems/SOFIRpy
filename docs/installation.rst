@@ -1,7 +1,7 @@
 Installation
 ============
 
-The latest version of sofirpy can be installed using pip:
+The latest version of SOFIRpy can be installed using pip:
 
 .. code-block::
 
