@@ -218,5 +218,10 @@ def check_type(var: Any, var_name: str, expected_type: Any) -> None:
 
 
 def get_dependencies_of_current_env() -> dict[str, str]:
+    """Get the dependencies of the current python environment.
+
+    Returns:
+        dict[str, str]: key -> name of the package; value -> version
+    """
     installed_packages = pkg_resources.working_set
     return {package.project_name: package.version for package in installed_packages}
