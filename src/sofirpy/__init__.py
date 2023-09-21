@@ -7,17 +7,19 @@ __version__ = "1.0.0"
 __all__ = [
     "export_dymola_model",
     "export_open_modelica_model",
+    "Deserializer",
+    "Serializer",
+    "Run",
+    "HDF5",
     "SimulationEntity",
     "simulate",
     "plot_results",
-    "Run",
-    "Deserializer",
-    "Serializer",
 ]
 
 from .fmu_export.dymola_fmu_export import export_dymola_model
 from .fmu_export.open_modelica_fmu_export import export_open_modelica_model
 from .rdm.hdf5.deserialize import Deserializer
+from .rdm.hdf5.hdf5 import HDF5
 from .rdm.hdf5.serialize import Serializer
 from .rdm.run import Run
 from .simulation.plot import plot_results
