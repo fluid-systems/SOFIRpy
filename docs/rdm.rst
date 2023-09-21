@@ -95,8 +95,8 @@ match those of the original run, it is feasible to rerun the simulation.
 
 However, if there is a disparity in the Python version and custom model_classes were
 defined in the original run, a rerun of the simulation is not possible. The
-model_classes can be reconstructed using the stored source code of the classes and the
-dependencies used when storing the run.
+model_classes can be reconstructed manually using the stored source code of the classes
+and the dependencies used when storing the run.
 On the other hand, if only FMUs were defined without any custom model_classes, it
 remains possible to rerun the simulation.
 
