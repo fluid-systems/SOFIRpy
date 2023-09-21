@@ -36,8 +36,8 @@ the simulation data. Few examples:
         model_name="<model_name>",
         parameter_name="<name of the parameter>",
         value=new_start_value,
-        )
-    path_to_fmu = run.get_fmu_path("<model_name>")
+    ) # set the start value of a parameter
+    path_to_fmu = run.get_fmu_path("<model_name>") # get the path of a fmu
 
 See :py:class:`Run <sofirpy.rdm.run.Run>` for all available methods.
 

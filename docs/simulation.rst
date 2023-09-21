@@ -1,8 +1,7 @@
 Simulation
 ==========
 
-SOFIRpy allows you to simulate multiple FMUs and custom implemented python models by
-calling the :py:func:`simulate <sofirpy.simulation.simulation.simulate>` function.
+SOFIRpy allows you to co-simulate multiple FMUs and custom implemented python models.
 
 Arguments to the `simulate` Function
 ------------------------------------
