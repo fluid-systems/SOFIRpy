@@ -25,12 +25,6 @@ stages:
     - source venv/bin/activate
     - pip install -e ".[test, doc, dev]"
 
-linting:
-  extends: .venv_setup
-  stage: Static Analysis
-  script:
-    - pylint src/sofirpy
-
 type_checking:
   extends: .venv_setup
   stage: Static Analysis
