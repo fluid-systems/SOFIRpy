@@ -1,3 +1,5 @@
+"""This module contains the function to create a run from a hdf5 file."""
+
 from __future__ import annotations
 
 import logging
@@ -7,7 +9,6 @@ from pathlib import Path
 from pkg_resources import parse_version
 
 import sofirpy
-import sofirpy.rdm.hdf5.config as config
 import sofirpy.rdm.hdf5.deserialize as deserialize
 import sofirpy.rdm.hdf5.hdf5 as h5
 import sofirpy.rdm.run as rdm_run

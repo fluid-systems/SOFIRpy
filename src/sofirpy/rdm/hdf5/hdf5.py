@@ -468,7 +468,7 @@ class HDF5Object:
         self.attribute.to_hdf5(hdf5)
 
     def append_attribute(self, attribute: Attribute) -> Self:
-        if attribute.parent is None:  # TODO maybe remove this
+        if attribute.parent is None:
             attribute.parent = self
         self.attribute = attribute
         return self
