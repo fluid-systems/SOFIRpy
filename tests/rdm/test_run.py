@@ -42,27 +42,40 @@ def run(config_path: Path, fmu_paths: FmuPaths, model_classes: ModelClasses) -> 
     )
 
 
+# TODO compare two hdf5s
+# def test_store_run_in_hdf5(run: Run, hdf5_path: Path) -> None:
+#     run.simulate()
+#     run.to_hdf5(hdf5_path)
+
+
+def test_loaded_hdf5_run_is_identical_to_run_from_config(
+    run: Run, run_snapshot: SnapshotAssertion
+) -> None:
+    run.simulate()
+    assert run == run_snapshot
+
+
 def test_get_config(run: Run, config_path: Path) -> None:
-    compare_config(run.get_config(), json.load(config_path.open()))
+    _compare_config(run.get_config(), json.load(config_path.open()))
 
 
-def compare_config(this_config: _ConfigDict, other_config: _ConfigDict) -> None:
-    compare_meta_config(
+def _compare_config(this_config: _ConfigDict, other_config: _ConfigDict) -> None:
+    _compare_meta_config(
         this_config[_RunMeta.CONFIG_KEY], other_config[_RunMeta.CONFIG_KEY]
     )
-    compare_simulation_config_dict(
+    _compare_simulation_config_dict(
         this_config[_SimulationConfig.CONFIG_KEY],
         other_config[_SimulationConfig.CONFIG_KEY],
     )
 
 
-def compare_meta_config(
+def _compare_meta_config(
     this_meta_config: _MetaConfigDict, other_meta_config: _MetaConfigDict
 ) -> None:
     assert this_meta_config == other_meta_config
 
 
-def compare_simulation_config_dict(
+def _compare_simulation_config_dict(
     this_simulation_config: _SimulationConfig,
     other_simulation_config: _SimulationConfig,
 ) -> None:
@@ -81,10 +94,3 @@ def compare_simulation_config_dict(
         assert float(other_simulation_config["logging_step_size"]) == pytest.approx(
             float(this_simulation_config["logging_step_size"])
         )
-
-
-def test_loaded_hdf5_run_is_identical_to_run_from_config(
-    run: Run, run_snapshot: SnapshotAssertion
-) -> None:
-    run.simulate()
-    assert run == run_snapshot
