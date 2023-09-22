@@ -18,24 +18,22 @@ from syrupy.types import (
     SnapshotIndex,
 )
 
-from sofirpy import Run
+from sofirpy import HDF5, Run
+from sofirpy.rdm.hdf5.hdf5 import Group
 from sofirpy.rdm.run import (
-    _ConfigDict,
     _Fmu,
-    _MetaConfigDict,
     _Model,
     _Models,
     _PythonModel,
     _Results,
     _RunMeta,
     _SimulationConfig,
-    _SimulationConfigDict,
 )
 from sofirpy.simulation.simulation import FmuPaths, ModelClasses, StartValues
 from sofirpy.simulation.simulation_entity import SimulationEntity
 
 
-class HDF5Extension(SingleFileSnapshotExtension):
+class RunExtension(SingleFileSnapshotExtension):
     _file_extension = "hdf5"
 
     def matches(
@@ -93,8 +91,8 @@ class HDF5Extension(SingleFileSnapshotExtension):
 
 
 @pytest.fixture
-def run_snapshot(snapshot: SnapshotAssertion):
-    return snapshot.use_extension(HDF5Extension)
+def run_snapshot(snapshot: SnapshotAssertion) -> SnapshotAssertion:
+    return snapshot.use_extension(RunExtension)
 
 
 def _compare_runs(this_run: Run, other_run: Run) -> None:
