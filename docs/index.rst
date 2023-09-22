@@ -22,7 +22,7 @@ custom written controllers in python. Thereby Python offers extensive tools for
 the development of control systems, such as machine learning toolboxes, so that
 complex control strategies can be implemented.
 
-**Research Data Management**
+**Research Data Management (RDM)**
 
 Easy-to-use functionalities for storing and reading simulation data and meta data.
 
