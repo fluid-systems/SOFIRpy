@@ -37,7 +37,6 @@ Table of Contents
    fmu_export
    simulation
    rdm
-   limitations
    release_notes
    API Documentation <API Documentation/sofirpy>
    contribution
