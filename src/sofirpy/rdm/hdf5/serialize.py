@@ -32,7 +32,9 @@ class AttributeSerializer(ABC):
 class RunMeta(AttributeSerializer):
     @staticmethod
     def serialize(run: rdm_run.Run) -> dict[str, Any]:
-        return asdict(run._run_meta)
+        run_meta = run._run_meta.to_dict()
+        del run_meta["dependencies"]
+        return run_meta
 
 
 class Config(Serializer):
