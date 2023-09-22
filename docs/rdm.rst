@@ -7,8 +7,9 @@ Creating and manipulating a simulation run
 ------------------------------------------
 
 You can create a simulation run by importing the :py:class:`Run <sofirpy.rdm.run.Run>`
-class. The run class is instantiated by providing a config file. The config file
-defines all relevant simulation data. The config file has the following structure:
+class. The :py:class:`Run <sofirpy.rdm.run.Run>` class is instantiated by providing a
+config file. The config file defines all relevant simulation data. The config file has
+the following structure:
 
 .. literalinclude:: ../examples/rdm/example_config.json
 
@@ -26,7 +27,7 @@ The class can then be instantiated as follows:
 
     run = Run.from_config(run_name, config_path, fmu_paths, model_classes)
 
-The :py:class:`Run <sofirpy.rdm.run.Run>` offers multiple methods to read or manipulate
+The :py:class:`Run <sofirpy.rdm.run.Run>` class offers multiple methods to read or manipulate
 the simulation data. Few examples:
 
 .. code-block:: python
