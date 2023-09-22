@@ -92,6 +92,7 @@ class Run:
         Args:
             description (str): Description of the Run.
         """
+        utils.check_type(description, "description", str)
         self._run_meta.description = description
 
     @property
@@ -110,6 +111,9 @@ class Run:
         Args:
             keywords (list[str]): Keywords describing the run.
         """
+        utils.check_type(keywords, "keywords", list)
+        for keyword in keywords:
+            utils.check_type(keyword, "keyword", str)
         self._run_meta.keywords = keywords
 
     def remove_keyword(self, keyword: str) -> None:
@@ -126,6 +130,7 @@ class Run:
         Args:
             keyword (str): Keyword to be added.
         """
+        utils.check_type(keyword, "keyword", str)
         self._run_meta.keywords.append(keyword)
 
     @property
@@ -184,7 +189,7 @@ class Run:
         Args:
             stop_time (float): Stop time for the simulation.
         """
-        self._simulation_config.stop_time = stop_time
+        self._simulation_config.stop_time = float(stop_time)
 
     @property
     def step_size(self) -> float:
@@ -202,7 +207,7 @@ class Run:
         Args:
             step_size (float): Step size of the simulation.
         """
-        self._simulation_config.step_size = step_size
+        self._simulation_config.step_size = float(step_size)
 
     @property
     def logging_step_size(self) -> float:
@@ -220,7 +225,7 @@ class Run:
         Args:
             logging_step_size (float): Logging step size of the simulation.
         """
-        self._simulation_config.logging_step_size = logging_step_size
+        self._simulation_config.logging_step_size = float(logging_step_size)
 
     @property
     def models(self) -> dict[str, _Model]:
@@ -308,6 +313,8 @@ class Run:
         Args:
             start_values (Optional[StartValues]): Start values of the simulation.
         """
+        if start_values is not None:
+            utils.check_type(start_values, "start_values", dict)
         self._models.start_values = start_values
 
     def get_start_values_of_model(
@@ -332,6 +339,7 @@ class Run:
             model_name (str): Name of the model.
             start_values (dict[str, StartValue]): Start values for the model.
         """
+        utils.check_type(start_values, "start_values", dict)
         self._models.set_start_values_of_model(model_name, start_values)
 
     def remove_start_values_of_model(self, model_name: str) -> None:
@@ -394,6 +402,7 @@ class Run:
             connections (ConnectionsConfig): Connection configuration for the
                 simulation.
         """
+        utils.check_type(connections, "connections", dict)
         self._models.connections_config = connections
 
     def get_connections_of_model(self, model_name: str) -> Optional[Connections]:
@@ -416,6 +425,7 @@ class Run:
             model_name (str): Name of the model.
             connections (Connections): Connections to be set.
         """
+        utils.check_type(connections, "connections", list)
         self._models.set_connections_of_model(model_name, connections)
 
     def remove_connections_of_model(self, model_name: str) -> None:
@@ -445,6 +455,7 @@ class Run:
             model_name (str): Name of the model.
             connection (_Connection): Connection to be set.
         """
+        utils.check_type(connection, "connection", dict)
         self._models.set_connection(model_name, connection)
 
     def remove_connection(self, model_name: str, input_name: str) -> None:
@@ -473,6 +484,8 @@ class Run:
             parameters_to_log (Optional[ParametersToLog]): Parameters that are logged
                 during the simulation.
         """
+        if parameters_to_log is not None:
+            utils.check_type(parameters_to_log, "parameters_to_log", dict)
         self._models.parameters_to_log = parameters_to_log
 
     def get_parameters_to_log_of_model(self, model_name: str) -> Optional[list[str]]:
