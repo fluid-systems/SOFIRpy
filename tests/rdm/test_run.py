@@ -1,30 +1,14 @@
 import json
-import sys
 from pathlib import Path
 
-import numpy as np
 import pytest
 from syrupy import SnapshotAssertion
 
-from sofirpy import Run
-from sofirpy.rdm.run import (
-    _ConfigDict,
-    _Fmu,
-    _MetaConfigDict,
-    _Model,
-    _Models,
-    _PythonModel,
-    _Results,
-    _RunMeta,
-    _SimulationConfig,
-    _SimulationConfigDict,
-)
+from sofirpy import HDF5, Run
+from sofirpy.rdm.hdf5.config import RunDatasetName, RunGroupName
+from sofirpy.rdm.hdf5.hdf5 import Dataset, Group
+from sofirpy.rdm.run import _ConfigDict, _MetaConfigDict, _RunMeta, _SimulationConfig
 from sofirpy.simulation.simulation import FmuPaths, ModelClasses
-
-
-@pytest.fixture
-def hdf5_path() -> Path:
-    return Path(__file__).parent / "test_run.hdf5"
 
 
 @pytest.fixture
@@ -42,10 +26,10 @@ def run(config_path: Path, fmu_paths: FmuPaths, model_classes: ModelClasses) -> 
     )
 
 
-# TODO compare two hdf5s
-# def test_store_run_in_hdf5(run: Run, hdf5_path: Path) -> None:
-#     run.simulate()
-#     run.to_hdf5(hdf5_path)
+def test_store_run_in_hdf5(run: Run, tmp_path: str) -> None:
+    temp_hdf5_path = Path(tmp_path) / "temp.hdf5"
+    run.simulate()
+    run.to_hdf5(temp_hdf5_path)
 
 
 def test_loaded_hdf5_run_is_identical_to_run_from_config(
