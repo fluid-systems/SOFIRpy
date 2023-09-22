@@ -74,8 +74,9 @@ def run_to_hdf5(run: rdm_run.Run, hdf5_path: Path) -> None:
     try:
         run_group.to_hdf5(hdf5)
         model_storage_group.to_hdf5(hdf5)
-    except Exception:
+    except Exception as e:
         run_group.delete(hdf5)
+        raise e
     logging.info(f"Successfully created run '{run.run_name}' at '{hdf5.hdf5_path}'")
 
 
@@ -123,19 +124,19 @@ def create_fmus_group(run: rdm_run.Run, model_storage_group: h5.Group) -> h5.Gro
             .append_dataset(
                 h5.Dataset(
                     name=config.RunDatasetName.CONNECTIONS.value,
-                    data=serialize.Connections.serialize(run, fmu_name=fmu_name),
+                    data=serialize.Connections.serialize(run, model_name=fmu_name),
                 )
             )
             .append_dataset(
                 h5.Dataset(
                     name=config.RunDatasetName.START_VALUES.value,
-                    data=serialize.StartValues.serialize(run, fmu_name=fmu_name),
+                    data=serialize.StartValues.serialize(run, model_name=fmu_name),
                 )
             )
             .append_dataset(
                 h5.Dataset(
                     name=config.RunDatasetName.PARAMETERS_TO_LOG.value,
-                    data=serialize.ParametersToLog.serialize(run, fmu_name=fmu_name),
+                    data=serialize.ParametersToLog.serialize(run, model_name=fmu_name),
                 )
             )
         )
@@ -178,7 +179,7 @@ def create_python_models_group(
                 h5.Dataset(
                     name=config.RunDatasetName.CONNECTIONS.value,
                     data=serialize.Connections.serialize(
-                        run, python_model_name=python_model_name
+                        run, model_name=python_model_name
                     ),
                 )
             )
@@ -186,7 +187,7 @@ def create_python_models_group(
                 h5.Dataset(
                     name=config.RunDatasetName.START_VALUES.value,
                     data=serialize.StartValues.serialize(
-                        run, python_model_name=python_model_name
+                        run, model_name=python_model_name
                     ),
                 )
             )
@@ -194,7 +195,7 @@ def create_python_models_group(
                 h5.Dataset(
                     name=config.RunDatasetName.PARAMETERS_TO_LOG.value,
                     data=serialize.ParametersToLog.serialize(
-                        run, python_model_name=python_model_name
+                        run, model_name=python_model_name
                     ),
                 )
             )
