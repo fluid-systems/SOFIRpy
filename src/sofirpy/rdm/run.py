@@ -165,6 +165,10 @@ class Run:
         return self._run_meta.os
 
     @property
+    def dependencies(self) -> dict[str, str]:
+        return self._run_meta.dependencies
+
+    @property
     def stop_time(self) -> float:
         """Stop time for the simulation.
 
@@ -622,9 +626,9 @@ class Run:
             _ConfigDict: Configuration for the run.
         """
         return _ConfigDict(
-            run_meta=self._run_meta.to_dict(),
-            models=self._models.to_dict(),
-            simulation_config=self._simulation_config.to_dict(),
+            run_meta=self._run_meta.to_config(),
+            models=self._models.to_config(),
+            simulation_config=self._simulation_config.to_config(),
         )
 
     def simulate(self) -> None:
@@ -679,16 +683,18 @@ class _RunMeta:
             dependencies=utils.get_dependencies_of_current_env(),
         )
 
-    def to_dict(self) -> _MetaConfigDict:
+    def to_config(self) -> _MetaConfigDict:
         meta_config = cast(
             _MetaConfigDict,
             {
                 field_name: self.__getattribute__(field_name)
                 for field_name in _MetaConfigDict.__annotations__.keys()
-                if field_name != "dependencies"
             },
         )
         return meta_config
+
+    def to_dict(self) -> dict[str, Any]:
+        return asdict(self)
 
 
 @pydantic.dataclasses.dataclass
@@ -705,6 +711,9 @@ class _SimulationConfig:
 
     def to_dict(self) -> _SimulationConfigDict:
         return cast(_SimulationConfigDict, asdict(self))
+
+    def to_config(self) -> _SimulationConfigDict:
+        return self.to_dict()
 
     def get_simulation_args(self) -> _SimulationConfigDict:
         return self.to_dict()
@@ -894,6 +903,9 @@ class _Models:
 
     def create_file_from_source_code(self, model_name: str, target_path: Path) -> None:
         self.python_models[model_name].create_file_from_source_code(target_path)
+
+    def to_config(self) -> dict[str, _ModelConfigDict]:
+        return self.to_dict()
 
     def to_dict(self) -> dict[str, _ModelConfigDict]:
         return {name: model.to_dict() for name, model in self.models.items()}
