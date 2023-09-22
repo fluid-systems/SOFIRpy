@@ -63,7 +63,7 @@ class Run:
     """Run object representing a simulation Run.
 
     Run can be initiated from a config file or loaded from a hdf5 file. It provides
-    several methods for changing the configuration of the run. Runs can be saved to a
+    several methods for updating the configuration of the run. Runs can be saved to a
     hdf5 file.
     """
 
@@ -74,7 +74,11 @@ class Run:
     _results: Optional[_Results] = None
 
     def __repr__(self) -> str:
-        return f"Run: '{self.run_name}'\nDescription: '{self.description}'"
+        return (
+            f"Run: '{self.run_name}'\n"
+            f"Description: '{self.description}'\n"
+            f"Keywords: {self.keywords}"
+        )
 
     @property
     def description(self) -> str:
