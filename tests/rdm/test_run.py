@@ -152,11 +152,10 @@ def _compare_models(this_run_models: _Models, other_run_models: _Models) -> None
 
 def _compare_fmu(this_run_fmu: _Fmu, other_run_fmu: _Fmu) -> None:
     compare_model(this_run_fmu, other_run_fmu)
-    # TODO uncomment compare fmu binaries
-    # assert (
-    #     this_run_fmu.fmu_path.open("rb").read()
-    #     == other_run_fmu.fmu_path.open("rb").read()
-    # )
+    assert (
+        this_run_fmu.fmu_path.open("rb").read()
+        == other_run_fmu.fmu_path.open("rb").read()
+    )
 
 
 def _compare_python_model(
