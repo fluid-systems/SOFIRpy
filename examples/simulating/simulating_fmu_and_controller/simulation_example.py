@@ -59,12 +59,13 @@ start_values = {
 results, units = simulate(
     stop_time=10,
     step_size=1e-3,
-    connections_config=connections_config,
     fmu_paths=fmu_paths,
     model_classes=model_classes,
-    parameters_to_log=parameters_to_log,
-    get_units=True,
+    connections_config=connections_config,
     start_values=start_values,
+    parameters_to_log=parameters_to_log,
+    logging_step_size=1e-3,
+    get_units=True,
 )
 
 ax, fig = plot_results(
