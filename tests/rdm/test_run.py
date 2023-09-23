@@ -83,7 +83,7 @@ class RunExtension(SingleFileSnapshotExtension):
         if sys.platform == "linux" or sys.platform == "linux2":
             return "test_run_linux"
         elif sys.platform == "win32":
-            return "test_run_mac"
+            return "test_run_win"
         elif sys.platform == "darwin":
             return "test_run_mac"
         raise ValueError("'Unknown platform")
