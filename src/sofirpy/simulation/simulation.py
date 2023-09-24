@@ -292,7 +292,8 @@ def simulate(
     start_values: StartValues | None = ...,
     parameters_to_log: ParametersToLog | None = ...,
     logging_step_size: float | None = ...,
-    get_units: Literal[True] = True,
+    *,
+    get_units: Literal[True],
 ) -> tuple[pd.DataFrame, Units]:
     ...
 
@@ -307,7 +308,22 @@ def simulate(
     start_values: StartValues | None = ...,
     parameters_to_log: ParametersToLog | None = ...,
     logging_step_size: float | None = ...,
-    get_units: Literal[False] = False,
+    *,
+    get_units: Literal[False],
+) -> pd.DataFrame:
+    ...
+
+
+@overload
+def simulate(
+    stop_time: float,
+    step_size: float,
+    fmu_paths: FmuPaths | None = ...,
+    model_classes: ModelClasses | None = ...,
+    connections_config: ConnectionsConfig | None = ...,
+    start_values: StartValues | None = ...,
+    parameters_to_log: ParametersToLog | None = ...,
+    logging_step_size: float | None = ...,
 ) -> pd.DataFrame:
     ...
 
