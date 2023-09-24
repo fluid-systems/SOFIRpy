@@ -259,7 +259,7 @@ class Run:
         Returns:
             Path: Path of the fmu.
         """
-        return self._models.fmu_paths[fmu_name]
+        return self._models.fmus[fmu_name].fmu_path
 
     def move_fmu(self, fmu_name: str, target_directory: str | Path) -> None:
         """Move a fmu to a target directory.
@@ -273,7 +273,7 @@ class Run:
         )
         self._models.move_fmu(fmu_name, target_directory)
 
-    def get_model_class(self, model_name: str) -> type[SimulationEntity]:
+    def get_model_class(self, model_name: str) -> Optional[type[SimulationEntity]]:
         """Get the instance of a python model.
 
         Args:
@@ -282,7 +282,7 @@ class Run:
         Returns:
             type[SimulationEntity]: Model instance.
         """
-        return self._models.model_classes[model_name]
+        return self._models.python_models[model_name].model_class
 
     def get_source_code_of_python_model(self, model_name: str) -> str:
         """Get the class source code of a python model.
