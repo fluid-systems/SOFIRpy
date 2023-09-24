@@ -286,13 +286,13 @@ class Simulator:
 def simulate(
     stop_time: float,
     step_size: float,
-    fmu_paths: FmuPaths | None,
-    model_classes: ModelClasses | None,
-    connections_config: ConnectionsConfig | None,
-    start_values: StartValues | None,
-    parameters_to_log: ParametersToLog | None,
-    logging_step_size: float | None,
-    get_units: Literal[True],
+    fmu_paths: FmuPaths | None = ...,
+    model_classes: ModelClasses | None = ...,
+    connections_config: ConnectionsConfig | None = ...,
+    start_values: StartValues | None = ...,
+    parameters_to_log: ParametersToLog | None = ...,
+    logging_step_size: float | None = ...,
+    get_units: Literal[True] = True,
 ) -> tuple[pd.DataFrame, Units]:
     ...
 
@@ -301,13 +301,13 @@ def simulate(
 def simulate(
     stop_time: float,
     step_size: float,
-    fmu_paths: FmuPaths | None,
-    model_classes: ModelClasses | None,
-    connections_config: ConnectionsConfig | None,
-    start_values: StartValues | None,
-    parameters_to_log: ParametersToLog | None,
-    logging_step_size: float | None,
-    get_units: Literal[False],
+    fmu_paths: FmuPaths | None = ...,
+    model_classes: ModelClasses | None = ...,
+    connections_config: ConnectionsConfig | None = ...,
+    start_values: StartValues | None = ...,
+    parameters_to_log: ParametersToLog | None = ...,
+    logging_step_size: float | None = ...,
+    get_units: Literal[False] = False,
 ) -> pd.DataFrame:
     ...
 
