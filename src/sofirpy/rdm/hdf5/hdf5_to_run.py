@@ -25,14 +25,12 @@ def create_run_from_hdf5(hdf5_path: Path, run_name: str) -> rdm_run.Run:
     hdf5 = h5.HDF5(hdf5_path)
     run_group = h5.Group.from_hdf5(hdf5, run_name)
     run_meta = deserialize.RunMeta.deserialize(run_group)
-    can_simulate_fmu, can_load_python_model = _check_compatibility(run_meta)
+    _check_compatibility(run_meta)
     results = deserialize.Results.deserialize(run_group)
     simulation_config = deserialize.SimulationConfig.deserialize(run_group)
     models = deserialize.Models.deserialize(
         run_group,
         hdf5=hdf5,
-        can_simulate_fmu=can_simulate_fmu,
-        can_load_python_model=can_load_python_model,
     )
     run = rdm_run.Run(
         run_name=run_name,
@@ -45,7 +43,7 @@ def create_run_from_hdf5(hdf5_path: Path, run_name: str) -> rdm_run.Run:
     return run
 
 
-def _check_compatibility(run_meta: rdm_run._RunMeta) -> tuple[bool, bool]:
+def _check_compatibility(run_meta: rdm_run._RunMeta) -> None:
     same_os = run_meta.os == sys.platform
     if not same_os:
         logging.warning(
@@ -65,10 +63,12 @@ def _check_compatibility(run_meta: rdm_run._RunMeta) -> tuple[bool, bool]:
             f"Run was created with sofirpy version '{run_meta.sofirpy_version}'."
             f"This is sofirpy version '{sofirpy.__version__}', an earlier release."
         )
-    can_simulate_fmu = same_os
-    can_load_python_models = same_py_version and same_os
+    if not same_os or not same_py_version:
+        logging.warning(
+            "The current environment is not fully compatible with the environment the "
+            "Run was created with. It might not be possible to rerun the simulation."
+        )
     _check_dependencies(run_meta)
-    return can_simulate_fmu, can_load_python_models
 
 
 def _check_dependencies(run_meta: rdm_run._RunMeta) -> None:

@@ -77,8 +77,6 @@ class Models(Deserializer):
         **kwargs: Any,
     ) -> rdm_run._Models:
         hdf5: h5.HDF5 = kwargs["hdf5"]
-        can_simulate_fmu: bool = kwargs["can_simulate_fmu"]
-        can_load_python_model: bool = kwargs["can_load_python_model"]
         fmu_models_group = run_group.get_group(
             config.RunGroupName.get_fmu_models_path()
         )
@@ -171,9 +169,7 @@ class Models(Deserializer):
             pickled_class = hdf5.read_data(
                 class_reference, config.ModelStorageGroupName.get_classes_path()
             )
-            model_class = None
-            if can_load_python_model:
-                model_class = cloudpickle.loads(pickled_class)
+            model_class = cloudpickle.loads(pickled_class)
             python_models[name] = rdm_run._PythonModel(
                 name,
                 connections=connections[config.RunDatasetName.CONNECTIONS.value],
@@ -187,6 +183,4 @@ class Models(Deserializer):
         return rdm_run._Models(
             fmus,
             python_models,
-            can_simulate_fmu=can_simulate_fmu,
-            can_simulate_python_model=can_load_python_model,
         )
