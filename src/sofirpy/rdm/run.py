@@ -273,6 +273,42 @@ class Run:
         )
         self._models.move_fmu(fmu_name, target_directory)
 
+    def add_fmu(
+        self,
+        fmu_name: str,
+        fmu_path: Path | str,
+        connections: list[_Connection] | None = None,
+        start_values: dict[str, StartValue] | None = None,
+        parameters_to_log: list[str] | None = None,
+    ) -> None:
+        """Add a fmu.
+
+        Args:
+            fmu_name (str): Name of the fmu.
+            fmu_path (Path | str): Path to the fmu.
+            connections (list[_Connection] | None, optional): Connection config for the
+                fmu. Defaults to None.
+            start_values (StartValues | None, optional): Start value for the fmu.
+                Defaults to None.
+            parameters_to_log (list[str] | None, optional): Parameters of the fmu that
+                should be logged . Defaults to None.
+        """
+        self._models.fmus[fmu_name] = _Fmu(
+            name=fmu_name,
+            connections=connections,
+            start_values=start_values,
+            parameters_to_log=parameters_to_log,
+            fmu_path=utils.convert_str_to_path(fmu_path, "fmu_path"),
+        )
+
+    def remove_fmu(self, fmu_name: str) -> None:
+        """Remove a fmu.
+
+        Args:
+            fmu_name (str): Name of the fmu that should be removed.
+        """
+        self._models.remove_fmu(fmu_name)
+
     def get_model_class(self, model_name: str) -> Optional[type[SimulationEntity]]:
         """Get the instance of a python model.
 
@@ -298,8 +334,55 @@ class Run:
     def create_file_from_source_code(
         self, model_name: str, target_path: str | Path
     ) -> None:
+        """Create a python file from the source code of a python model.
+
+        Args:
+            model_name (str): Name of the python model.
+            target_path (str | Path): Target path.
+        """
         target_path = utils.convert_str_to_path(target_path, "target_path")
         self._models.create_file_from_source_code(model_name, target_path)
+
+    def add_python_model(
+        self,
+        model_name: str,
+        model_class: type[SimulationEntity],
+        connections: list[_Connection] | None = None,
+        start_values: dict[str, StartValue] | None = None,
+        parameters_to_log: list[str] | None = None,
+    ) -> None:
+        """Add a python model.
+
+        Args:
+            model_name (str): Name of the python model.
+            model_class (type[SimulationEntity]): Model class.
+            connections (list[_Connection] | None, optional): Connection config for the
+                python model. Defaults to None.
+            start_values (StartValues | None, optional): Start value for the python
+                model. Defaults to None.
+            parameters_to_log (list[str] | None, optional): Parameters of the python
+                model that should be logged . Defaults to None.
+
+        Raises:
+            TypeError: 'model_class' is not subclass of SimulationEntity
+        """
+        if not issubclass(model_class, SimulationEntity):
+            raise TypeError(f"'model_classes must be a subclass of 'SimulationEntity'")
+        self._models.python_models[model_name] = _PythonModel(
+            name=model_name,
+            connections=connections,
+            start_values=start_values,
+            parameters_to_log=parameters_to_log,
+            model_class=model_class,
+        )
+
+    def remove_python_model(self, model_name: str) -> None:
+        """Remove a python model.
+
+        Args:
+            model_name (str): Name of the python model.
+        """
+        self._models.remove_python_model(model_name)
 
     @property
     def start_values(self) -> Optional[StartValues]:
@@ -452,15 +535,32 @@ class Run:
         """
         return self._models.get_connection(model_name, input_name)
 
-    def set_connection(self, model_name: str, connection: _Connection) -> None:
+    def set_connection(
+        self,
+        model_name: str,
+        parameter_name: str,
+        connect_to_system: str,
+        connect_to_external_parameter: str,
+    ) -> None:
         """Set the connection of an input parameter.
 
         Args:
             model_name (str): Name of the model.
             connection (_Connection): Connection to be set.
         """
-        utils.check_type(connection, "connection", dict)
-        self._models.set_connection(model_name, connection)
+        utils.check_type(parameter_name, "parameter_name", str)
+        utils.check_type(connect_to_system, "connect_to_system", str)
+        utils.check_type(
+            connect_to_external_parameter, "connect_to_external_parameter", str
+        )
+        self._models.set_connection(
+            model_name,
+            _Connection(
+                parameter_name=parameter_name,
+                connect_to_system=connect_to_system,
+                connect_to_external_parameter=connect_to_external_parameter,
+            ),
+        )
 
     def remove_connection(self, model_name: str, input_name: str) -> None:
         """Remove the connection of an input parameter.
@@ -650,10 +750,10 @@ class Run:
 
     def simulate(self) -> None:
         """Simulate the run."""
-        if not self._models.can_simulate_fmu and self._models.fmus:
-            raise ValueError()
-        if not self._models.can_simulate_python_model and self._models.python_models:
-            raise ValueError()
+        # if not self._models.can_simulate_fmu and self._models.fmus:
+        #     raise ValueError()
+        # if not self._models.can_simulate_python_model and self._models.python_models:
+        #     raise ValueError()
         time_series, units = simulate(
             **self._simulation_config.get_simulation_args(),
             **self._models.get_simulation_args(),
@@ -786,6 +886,18 @@ class _Models:
     def update_connections(self, prev_name: str, new_name: str) -> None:
         for model in self.models.values():
             model.update_connections(prev_name, new_name)
+
+    def remove_fmu(self, fmu_name: str) -> None:
+        del self.fmus[fmu_name]
+        self.remove_connections_to_external_model(fmu_name)
+
+    def remove_python_model(self, model_name: str) -> None:
+        del self.python_models[model_name]
+        self.remove_connections_to_external_model(model_name)
+
+    def remove_connections_to_external_model(self, model_name: str) -> None:
+        for model in self.models.values():
+            model.remove_connections_to_model(model_name)
 
     @property
     def start_values(self) -> Optional[StartValues]:
@@ -982,6 +1094,15 @@ class _Model:
             connection
             for connection in self.connections
             if not connection[ConnectionKeys.INPUT_PARAMETER.value] == input_name
+        ]
+
+    def remove_connections_to_model(self, model_name: str) -> None:
+        if self.connections is None:
+            return
+        self.connections = [
+            connection
+            for connection in self.connections
+            if not connection[ConnectionKeys.CONNECTED_SYSTEM.value] == model_name
         ]
 
     def update_connections(self, prev_name: str, new_name: str) -> None:
