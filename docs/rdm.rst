@@ -94,12 +94,10 @@ the current environment with the environment at the time the run was saved.
 Specifically, if both the operating system and Python version of the current environment
 match those of the original run, it is feasible to rerun the simulation.
 
-However, if there is a disparity in the Python version and custom model_classes were
-defined in the original run, a rerun of the simulation is not possible. The
-model_classes can be reconstructed manually using the stored source code of the classes
-and the dependencies used when storing the run.
-On the other hand, if only FMUs were defined without any custom model_classes, it
-remains possible to rerun the simulation.
+However, if there is a disparity in the Python version, and custom model classes were
+defined in the original run, rerunning the simulation might not be possible.
+Nevertheless, the model classes can be manually reconstructed using the stored source
+code of the classes and the dependencies used when storing the run.
 
-In cases where the operating system varies from the one in which the run was initially
-executed, it is not possible to simulate the run again.
+In cases where the operating system differs from the one in which the run was initially
+executed, simulating the model classes and the FMUs could fail.
