@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from enum import Enum
 from numbers import Real
 from pathlib import Path
-from typing import Literal, Optional, TypedDict, Union, overload
+from typing import Literal, Mapping, Optional, TypedDict, Union, overload
 
 import numpy as np
 import numpy.typing as npt
@@ -18,8 +18,8 @@ from sofirpy import utils
 from sofirpy.simulation.fmu import Fmu
 from sofirpy.simulation.simulation_entity import SimulationEntity, StartValue
 
-FmuPaths = dict[str, Union[str, Path]]
-ModelClasses = dict[str, type[SimulationEntity]]
+FmuPaths = Mapping[str, Union[str, Path]]
+ModelClasses = Mapping[str, type[SimulationEntity]]
 
 
 class _Connection(TypedDict):
