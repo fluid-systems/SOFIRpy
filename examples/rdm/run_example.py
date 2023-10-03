@@ -22,11 +22,11 @@ elif sys.platform == "darwin":
 
 fmu_paths = {"DC_Motor": fmu_path}
 
-run = Run.from_config(run_name, config_path, fmu_paths, model_classes)
+run = Run.from_config_file(run_name, config_path, fmu_paths, model_classes)
 
 run.simulate()
 
-hdf5_path = Path(__file__).parent / "run_examples.hdf5"
+hdf5_path = Path(__file__).parent / "run_example.hdf5"
 
 run.to_hdf5(hdf5_path)
 
