@@ -1,7 +1,7 @@
 from typing import Optional
 
 from sofirpy import SimulationEntity
-from sofirpy.simulation.simulation import StartValues
+from sofirpy.common import StartValues
 
 
 class PID(SimulationEntity):

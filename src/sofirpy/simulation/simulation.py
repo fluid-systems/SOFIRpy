@@ -14,34 +14,10 @@ import numpy.typing as npt
 import pandas as pd
 from tqdm import tqdm
 
+import sofirpy.common as co
 from sofirpy import utils
 from sofirpy.simulation.fmu import Fmu
-from sofirpy.simulation.simulation_entity import SimulationEntity, StartValue
-
-FmuPaths = Mapping[str, Union[str, Path]]
-ModelClasses = Mapping[str, type[SimulationEntity]]
-
-
-class _Connection(TypedDict):
-    parameter_name: str
-    connect_to_system: str
-    connect_to_external_parameter: str
-
-
-class ConnectionKeys(Enum):
-    """Enum containing the keys that define a connection"""
-
-    INPUT_PARAMETER = "parameter_name"
-    CONNECTED_SYSTEM = "connect_to_system"
-    OUTPUT_PARAMETER = "connect_to_external_parameter"
-
-
-Connections = list[_Connection]
-ConnectionsConfig = dict[str, Connections]
-
-Units = dict[str, Optional[str]]
-StartValues = dict[str, dict[str, StartValue]]
-ParametersToLog = dict[str, list[str]]
+from sofirpy.simulation.simulation_entity import SimulationEntity
 
 
 @dataclass(frozen=True)
@@ -264,7 +240,7 @@ class Simulator:
 
         return pd.DataFrame(results, columns=columns)
 
-    def get_units(self) -> Units:
+    def get_units(self) -> co.Units:
         """Get a dictionary with units of all logged parameters.
 
         Returns:
@@ -286,15 +262,15 @@ class Simulator:
 def simulate(
     stop_time: float,
     step_size: float,
-    fmu_paths: FmuPaths | None = ...,
-    model_classes: ModelClasses | None = ...,
-    connections_config: ConnectionsConfig | None = ...,
-    start_values: StartValues | None = ...,
-    parameters_to_log: ParametersToLog | None = ...,
+    fmu_paths: co.FmuPaths | None = ...,
+    model_classes: co.ModelClasses | None = ...,
+    connections_config: co.ConnectionsConfig | None = ...,
+    start_values: co.StartValues | None = ...,
+    parameters_to_log: co.ParametersToLog | None = ...,
     logging_step_size: float | None = ...,
     *,
     get_units: Literal[True],
-) -> tuple[pd.DataFrame, Units]:
+) -> tuple[pd.DataFrame, co.Units]:
     ...
 
 
@@ -302,11 +278,11 @@ def simulate(
 def simulate(
     stop_time: float,
     step_size: float,
-    fmu_paths: FmuPaths | None = ...,
-    model_classes: ModelClasses | None = ...,
-    connections_config: ConnectionsConfig | None = ...,
-    start_values: StartValues | None = ...,
-    parameters_to_log: ParametersToLog | None = ...,
+    fmu_paths: co.FmuPaths | None = ...,
+    model_classes: co.ModelClasses | None = ...,
+    connections_config: co.ConnectionsConfig | None = ...,
+    start_values: co.StartValues | None = ...,
+    parameters_to_log: co.ParametersToLog | None = ...,
     logging_step_size: float | None = ...,
     *,
     get_units: Literal[False],
@@ -318,11 +294,11 @@ def simulate(
 def simulate(
     stop_time: float,
     step_size: float,
-    fmu_paths: FmuPaths | None = ...,
-    model_classes: ModelClasses | None = ...,
-    connections_config: ConnectionsConfig | None = ...,
-    start_values: StartValues | None = ...,
-    parameters_to_log: ParametersToLog | None = ...,
+    fmu_paths: co.FmuPaths | None = ...,
+    model_classes: co.ModelClasses | None = ...,
+    connections_config: co.ConnectionsConfig | None = ...,
+    start_values: co.StartValues | None = ...,
+    parameters_to_log: co.ParametersToLog | None = ...,
     logging_step_size: float | None = ...,
 ) -> pd.DataFrame:
     ...
@@ -331,14 +307,14 @@ def simulate(
 def simulate(  # pylint: disable=too-many-locals
     stop_time: float,
     step_size: float,
-    fmu_paths: FmuPaths | None = None,
-    model_classes: ModelClasses | None = None,
-    connections_config: ConnectionsConfig | None = None,
-    start_values: StartValues | None = None,
-    parameters_to_log: ParametersToLog | None = None,
+    fmu_paths: co.FmuPaths | None = None,
+    model_classes: co.ModelClasses | None = None,
+    connections_config: co.ConnectionsConfig | None = None,
+    start_values: co.StartValues | None = None,
+    parameters_to_log: co.ParametersToLog | None = None,
     logging_step_size: float | None = None,
     get_units: bool = False,
-) -> Union[pd.DataFrame, tuple[pd.DataFrame, Units]]:
+) -> Union[pd.DataFrame, tuple[pd.DataFrame, co.Units]]:
     """Simulate fmus and models written in python.
 
     Any number of python models and fmus can be simulated, but at least one
@@ -529,7 +505,7 @@ def simulate(  # pylint: disable=too-many-locals
 
 
 def init_fmus(
-    fmu_paths: FmuPaths, step_size: float, start_values: StartValues
+    fmu_paths: co.FmuPaths, step_size: float, start_values: co.StartValues
 ) -> dict[str, System]:
     """Initialize fmus as a System object and store them in a dictionary.
 
@@ -557,8 +533,8 @@ def init_fmus(
 
 
 def init_models(
-    model_classes: ModelClasses,
-    start_values: StartValues,
+    model_classes: co.ModelClasses,
+    start_values: co.StartValues,
 ) -> dict[str, System]:
     """Initialize python models as a System object and store them in a dictionary.
 
@@ -584,7 +560,7 @@ def init_models(
     return models
 
 
-def init_connections(connections_config: ConnectionsConfig) -> list[Connection]:
+def init_connections(connections_config: co.ConnectionsConfig) -> list[Connection]:
     """Initialize all the connections.
 
     Args:
@@ -598,12 +574,12 @@ def init_connections(connections_config: ConnectionsConfig) -> list[Connection]:
 
     for this_system_name, connections in connections_config.items():
         for con in connections:
-            this_parameter_name = con[ConnectionKeys.INPUT_PARAMETER.value]
+            this_parameter_name = con[co.ConnectionKeys.INPUT_PARAMETER.value]
             this_connection_point = SystemParameter(
                 this_system_name, this_parameter_name
             )
-            other_system_name = con[ConnectionKeys.CONNECTED_SYSTEM.value]
-            other_parameter_name = con[ConnectionKeys.OUTPUT_PARAMETER.value]
+            other_system_name = con[co.ConnectionKeys.CONNECTED_SYSTEM.value]
+            other_parameter_name = con[co.ConnectionKeys.OUTPUT_PARAMETER.value]
             other_connection_point = SystemParameter(
                 other_system_name, other_parameter_name
             )
@@ -615,7 +591,7 @@ def init_connections(connections_config: ConnectionsConfig) -> list[Connection]:
     return all_connections
 
 
-def init_parameter_list(parameters_to_log: ParametersToLog) -> list[SystemParameter]:
+def init_parameter_list(parameters_to_log: co.ParametersToLog) -> list[SystemParameter]:
     """Initialize all parameters that should be logged.
 
     Args:
@@ -639,12 +615,12 @@ def init_parameter_list(parameters_to_log: ParametersToLog) -> list[SystemParame
 def _validate_input(
     stop_time: float,
     step_size: float,
-    fmu_paths: FmuPaths | None,
-    model_classes: ModelClasses | None,
-    connections_config: ConnectionsConfig | None,
-    parameters_to_log: ParametersToLog | None,
+    fmu_paths: co.FmuPaths | None,
+    model_classes: co.ModelClasses | None,
+    connections_config: co.ConnectionsConfig | None,
+    parameters_to_log: co.ParametersToLog | None,
     logging_step_size: float | None,
-    start_values: StartValues | None,
+    start_values: co.StartValues | None,
 ) -> None:
     utils.check_type(stop_time, "stop_time", Real)
     utils.check_type(step_size, "step_size", Real)
@@ -681,7 +657,7 @@ def _validate_input(
         _validate_start_values(start_values, all_system_names)
 
 
-def _validate_fmu_paths(fmu_paths: Optional[FmuPaths]) -> list[str]:
+def _validate_fmu_paths(fmu_paths: Optional[co.FmuPaths]) -> list[str]:
     if fmu_paths is None:
         return []
 
@@ -698,7 +674,7 @@ def _validate_fmu_paths(fmu_paths: Optional[FmuPaths]) -> list[str]:
     return fmu_names
 
 
-def _validate_model_classes(model_classes: ModelClasses | None) -> list[str]:
+def _validate_model_classes(model_classes: co.ModelClasses | None) -> list[str]:
     if model_classes is None:
         return []
 
@@ -721,7 +697,7 @@ def _validate_model_classes(model_classes: ModelClasses | None) -> list[str]:
 
 
 def _validate_connection_config(
-    connections_config: ConnectionsConfig | None, system_names: list[str]
+    connections_config: co.ConnectionsConfig | None, system_names: list[str]
 ) -> None:
     if connections_config is None:
         return
@@ -740,7 +716,7 @@ def _validate_connection_config(
                     f"specified for system {system_name}",
                     str,
                 )
-            connected_system = connection[ConnectionKeys.CONNECTED_SYSTEM.value]
+            connected_system = connection[co.ConnectionKeys.CONNECTED_SYSTEM.value]
             if connected_system not in system_names:
                 raise ValueError(
                     f"System '{connected_system}' specified "
@@ -748,7 +724,7 @@ def _validate_connection_config(
                 )
 
 
-def _check_key_exists(key: str, connection: _Connection, system_name: str) -> None:
+def _check_key_exists(key: str, connection: co.Connection, system_name: str) -> None:
     if key not in connection:
         raise KeyError(
             f"missing key '{key}' in connections specified for system '{system_name}'"
@@ -756,7 +732,7 @@ def _check_key_exists(key: str, connection: _Connection, system_name: str) -> No
 
 
 def _validate_parameters_to_log(
-    parameters_to_log: ParametersToLog, system_names: list[str]
+    parameters_to_log: co.ParametersToLog, system_names: list[str]
 ) -> None:
     utils.check_type(parameters_to_log, "parameters_to_log", dict)
 
@@ -781,7 +757,7 @@ def _validate_logging_step_size(logging_step_size: float, step_size: float) -> N
 
 
 def _validate_start_values(
-    start_values: StartValues, all_system_names: list[str]
+    start_values: co.StartValues, all_system_names: list[str]
 ) -> None:
     utils.check_type(start_values, "start_values", dict)
 

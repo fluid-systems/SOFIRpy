@@ -5,7 +5,7 @@ from __future__ import annotations
 import inspect
 import json
 import sys
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, field
 from datetime import datetime
 from pathlib import Path
 from typing import Any, ClassVar, Literal, Optional, TypedDict, cast
@@ -15,22 +15,12 @@ import pydantic
 from typing_extensions import NotRequired, Self
 
 import sofirpy
+import sofirpy.common as co
 import sofirpy.rdm.hdf5.hdf5_to_run
 import sofirpy.rdm.hdf5.run_to_hdf5
 from sofirpy import utils
-from sofirpy.simulation.simulation import (
-    ConnectionKeys,
-    Connections,
-    ConnectionsConfig,
-    FmuPaths,
-    ModelClasses,
-    ParametersToLog,
-    StartValues,
-    Units,
-    _Connection,
-    simulate,
-)
-from sofirpy.simulation.simulation_entity import SimulationEntity, StartValue
+from sofirpy.simulation.simulation import simulate
+from sofirpy.simulation.simulation_entity import SimulationEntity
 
 ConfigKeyType = Literal["run_meta", "models", "simulation_config"]
 
@@ -47,8 +37,8 @@ class _MetaConfigDict(TypedDict):
 
 
 class _ModelConfigDict(TypedDict):
-    start_values: NotRequired[dict[str, StartValue]]
-    connections: NotRequired[Connections]
+    start_values: NotRequired[dict[str, co.StartValue]]
+    connections: NotRequired[co.Connections]
     parameters_to_log: NotRequired[list[str]]
 
 
@@ -277,8 +267,8 @@ class Run:
         self,
         fmu_name: str,
         fmu_path: Path | str,
-        connections: list[_Connection] | None = None,
-        start_values: dict[str, StartValue] | None = None,
+        connections: list[co.Connection] | None = None,
+        start_values: dict[str, co.StartValue] | None = None,
         parameters_to_log: list[str] | None = None,
     ) -> None:
         """Add a fmu.
@@ -347,8 +337,8 @@ class Run:
         self,
         model_name: str,
         model_class: type[SimulationEntity],
-        connections: list[_Connection] | None = None,
-        start_values: dict[str, StartValue] | None = None,
+        connections: list[co.Connection] | None = None,
+        start_values: dict[str, co.StartValue] | None = None,
         parameters_to_log: list[str] | None = None,
     ) -> None:
         """Add a python model.
@@ -385,7 +375,7 @@ class Run:
         self._models.remove_python_model(model_name)
 
     @property
-    def start_values(self) -> Optional[StartValues]:
+    def start_values(self) -> Optional[co.StartValues]:
         """Start values of the simulation.
 
         Returns:
@@ -394,7 +384,7 @@ class Run:
         return self._models.start_values
 
     @start_values.setter
-    def start_values(self, start_values: Optional[StartValues]) -> None:
+    def start_values(self, start_values: Optional[co.StartValues]) -> None:
         """Start values of the simulation.
 
         Args:
@@ -406,7 +396,7 @@ class Run:
 
     def get_start_values_of_model(
         self, model_name: str
-    ) -> Optional[dict[str, StartValue]]:
+    ) -> Optional[dict[str, co.StartValue]]:
         """Get the start values of a model.
 
         Args:
@@ -418,7 +408,7 @@ class Run:
         return self._models.get_start_values_of_model(model_name)
 
     def set_start_values_of_model(
-        self, model_name: str, start_values: dict[str, StartValue]
+        self, model_name: str, start_values: dict[str, co.StartValue]
     ) -> None:
         """Set the start values of a model.
 
@@ -439,7 +429,7 @@ class Run:
 
     def get_start_value(
         self, model_name: str, parameter_name: str
-    ) -> Optional[StartValue]:
+    ) -> co.StartValue | None:
         """Get a start value from a model.
 
         Args:
@@ -452,7 +442,7 @@ class Run:
         return self._models.get_start_value(model_name, parameter_name)
 
     def set_start_value(
-        self, model_name: str, parameter_name: str, value: StartValue
+        self, model_name: str, parameter_name: str, value: co.StartValue
     ) -> None:
         """Set a start value for a parameter inside a model.
 
@@ -473,7 +463,7 @@ class Run:
         self._models.remove_start_value(model_name, parameter_name)
 
     @property
-    def connections(self) -> Optional[ConnectionsConfig]:
+    def connections(self) -> co.ConnectionsConfig | None:
         """Connection configuration for the simulation.
 
         Returns:
@@ -482,7 +472,7 @@ class Run:
         return self._models.connections_config
 
     @connections.setter
-    def connections(self, connections: ConnectionsConfig) -> None:
+    def connections(self, connections: co.ConnectionsConfig) -> None:
         """Connection configuration for the simulation.
 
         Args:
@@ -492,7 +482,7 @@ class Run:
         utils.check_type(connections, "connections", dict)
         self._models.connections_config = connections
 
-    def get_connections_of_model(self, model_name: str) -> Optional[Connections]:
+    def get_connections_of_model(self, model_name: str) -> Optional[co.Connections]:
         """Get the connections of a model.
 
         Args:
@@ -504,7 +494,7 @@ class Run:
         return self._models.get_connections_of_model(model_name)
 
     def set_connections_of_model(
-        self, model_name: str, connections: Connections
+        self, model_name: str, connections: co.Connections
     ) -> None:
         """Set the connections of a model.
 
@@ -523,7 +513,7 @@ class Run:
         """
         self._models.remove_connections_of_model(model_name)
 
-    def get_connection(self, model_name: str, input_name: str) -> Optional[_Connection]:
+    def get_connection(self, model_name: str, input_name: str) -> co.Connection | None:
         """Get the connection of an input parameter.
 
         Args:
@@ -555,7 +545,7 @@ class Run:
         )
         self._models.set_connection(
             model_name,
-            _Connection(
+            co.Connection(
                 parameter_name=parameter_name,
                 connect_to_system=connect_to_system,
                 connect_to_external_parameter=connect_to_external_parameter,
@@ -572,7 +562,7 @@ class Run:
         self._models.remove_connection(model_name, input_name)
 
     @property
-    def parameters_to_log(self) -> Optional[ParametersToLog]:
+    def parameters_to_log(self) -> co.ParametersToLog | None:
         """Parameters that are logged during the simulation.
 
         Returns:
@@ -581,7 +571,7 @@ class Run:
         return self._models.parameters_to_log
 
     @parameters_to_log.setter
-    def parameters_to_log(self, parameters_to_log: Optional[ParametersToLog]) -> None:
+    def parameters_to_log(self, parameters_to_log: co.ParametersToLog | None) -> None:
         """Parameters that are logged during the simulation.
 
         Args:
@@ -592,7 +582,7 @@ class Run:
             utils.check_type(parameters_to_log, "parameters_to_log", dict)
         self._models.parameters_to_log = parameters_to_log
 
-    def get_parameters_to_log_of_model(self, model_name: str) -> Optional[list[str]]:
+    def get_parameters_to_log_of_model(self, model_name: str) -> list[str] | None:
         """Get the parameters that are logged in the specified model.
 
         Args:
@@ -656,7 +646,7 @@ class Run:
         return self._results.time_series
 
     @property
-    def units(self) -> Optional[Units]:
+    def units(self) -> co.Units | None:
         """Units of the logged parameters.
 
         Raises:
@@ -669,13 +659,31 @@ class Run:
             raise AttributeError("No simulation performed yet.")
         return self._results.units
 
+    # @classmethod
+    # def from_config(
+    #     cls,
+    #     run_name: str,
+    #     stop_time: float,
+    #     step_size: float,
+    #     keywords: list[str] | None = None,
+    #     description: str = "",
+    #     fmu_paths: FmuPaths | None = None,
+    #     model_classes: ModelClasses | None = None,
+    #     connections_config: ConnectionsConfig | None = None,
+    #     start_values: StartValues | None = None,
+    #     parameters_to_log: ParametersToLog | None = None,
+    #     logging_step_size: float | None = None,
+    #     get_units: bool = False,
+    # ) -> Self:
+    #     ...
+
     @classmethod
     def from_config(
         cls,
         run_name: str,
         config_path: str | Path,
-        fmu_paths: Optional[FmuPaths] = None,
-        model_classes: Optional[ModelClasses] = None,
+        fmu_paths: co.FmuPaths | None = None,
+        model_classes: co.ModelClasses | None = None,
     ) -> Self:
         """Initialize a run from a config file.
 
@@ -750,10 +758,6 @@ class Run:
 
     def simulate(self) -> None:
         """Simulate the run."""
-        # if not self._models.can_simulate_fmu and self._models.fmus:
-        #     raise ValueError()
-        # if not self._models.can_simulate_python_model and self._models.python_models:
-        #     raise ValueError()
         time_series, units = simulate(
             **self._simulation_config.get_simulation_args(),
             **self._models.get_simulation_args(),
@@ -768,13 +772,13 @@ class Run:
             hdf5_path (Path | str): Path to the hdf5 file.
         """
         hdf5_path = utils.convert_str_to_path(hdf5_path, "hdf5_path")
-        sofirpy.rdm.hdf5.run_to_hdf5.run_to_hdf5(run=self, hdf5_path=hdf5_path)
+        sofirpy.rdm.hdf5.run_to_hdf5.RunToHDF5.store(run=self, hdf5_path=hdf5_path)
 
 
 @dataclass
 class _Results:
     time_series: pd.DataFrame
-    units: Optional[Units]
+    units: co.Units | None
 
 
 @pydantic.dataclasses.dataclass
@@ -791,8 +795,15 @@ class _RunMeta:
 
     @classmethod
     def from_config(cls, config: _ConfigDict) -> Self:
+        description = config[cls.CONFIG_KEY].get("description", "")
+        utils.check_type(description, "description", str)
+        assert isinstance(description, str)
+        keywords = config[cls.CONFIG_KEY].get("keywords", [])
+        utils.check_type(keywords, "keywords", list)
+        assert isinstance(keywords, list)
         return cls(
-            **config[cls.CONFIG_KEY],
+            description=description,
+            keywords=keywords,
             sofirpy_version=sofirpy.__version__,
             python_version=sys.version,
             date=datetime.now().strftime("%d-%b-%Y %H:%M:%S"),
@@ -849,8 +860,8 @@ class _Models:
     def from_config(
         cls,
         config: _ConfigDict,
-        fmu_paths: Optional[FmuPaths] = None,
-        model_classes: Optional[ModelClasses] = None,
+        fmu_paths: co.FmuPaths | None = None,
+        model_classes: co.ModelClasses | None = None,
     ) -> Self:
         model_config = cast(dict[str, _ModelConfigDict], config[cls.CONFIG_KEY])
         fmu_paths = fmu_paths or {}
@@ -900,7 +911,7 @@ class _Models:
             model.remove_connections_to_model(model_name)
 
     @property
-    def start_values(self) -> Optional[StartValues]:
+    def start_values(self) -> co.StartValues | None:
         start_values = {
             name: model.start_values
             for name, model in self.models.items()
@@ -909,7 +920,7 @@ class _Models:
         return start_values or None
 
     @start_values.setter
-    def start_values(self, start_values: Optional[StartValues]) -> None:
+    def start_values(self, start_values: co.StartValues | None) -> None:
         if start_values is None:
             start_values = {}
         for model_name, model in self.models.items():
@@ -917,11 +928,11 @@ class _Models:
 
     def get_start_values_of_model(
         self, model_name: str
-    ) -> Optional[dict[str, StartValue]]:
+    ) -> dict[str, co.StartValue] | None:
         return self.models[model_name].start_values
 
     def set_start_values_of_model(
-        self, model_name: str, start_values: dict[str, StartValue]
+        self, model_name: str, start_values: dict[str, co.StartValue]
     ) -> None:
         self.models[model_name].start_values = start_values
 
@@ -930,11 +941,11 @@ class _Models:
 
     def get_start_value(
         self, model_name: str, parameter_name: str
-    ) -> Optional[StartValue]:
+    ) -> co.StartValue | None:
         return self.models[model_name].get_start_value(parameter_name)
 
     def set_start_value(
-        self, model_name: str, parameter_name: str, value: StartValue
+        self, model_name: str, parameter_name: str, value: co.StartValue
     ) -> None:
         self.models[model_name].set_start_value(parameter_name, value)
 
@@ -942,7 +953,7 @@ class _Models:
         self.models[model_name].remove_start_value(parameter_name)
 
     @property
-    def connections_config(self) -> Optional[ConnectionsConfig]:
+    def connections_config(self) -> co.ConnectionsConfig | None:
         connections_config = {
             name: model.connections
             for name, model in self.models.items()
@@ -952,35 +963,35 @@ class _Models:
 
     @connections_config.setter
     def connections_config(
-        self, connections_config: Optional[ConnectionsConfig]
+        self, connections_config: co.ConnectionsConfig | None
     ) -> None:
         if connections_config is None:
             connections_config = {}
         for model_name, model in self.models.items():
             model.connections = connections_config.get(model_name)
 
-    def get_connections_of_model(self, model_name: str) -> Optional[Connections]:
+    def get_connections_of_model(self, model_name: str) -> Optional[co.Connections]:
         return self.models[model_name].connections
 
     def set_connections_of_model(
-        self, model_name: str, connections: Connections
+        self, model_name: str, connections: co.Connections
     ) -> None:
         self.models[model_name].connections = connections
 
     def remove_connections_of_model(self, model_name: str) -> None:
         self.models[model_name].connections = None
 
-    def get_connection(self, model_name: str, input_name: str) -> Optional[_Connection]:
+    def get_connection(self, model_name: str, input_name: str) -> co.Connection | None:
         return self.models[model_name].get_connection(input_name)
 
-    def set_connection(self, model_name: str, connection: _Connection) -> None:
+    def set_connection(self, model_name: str, connection: co.Connection) -> None:
         self.models[model_name].set_connection(connection)
 
     def remove_connection(self, model_name: str, input_name: str) -> None:
         self.models[model_name].remove_connection(input_name)
 
     @property
-    def parameters_to_log(self) -> Optional[ParametersToLog]:
+    def parameters_to_log(self) -> co.ParametersToLog | None:
         parameters_to_log = {
             name: model.parameters_to_log
             for name, model in self.models.items()
@@ -989,7 +1000,7 @@ class _Models:
         return parameters_to_log or None
 
     @parameters_to_log.setter
-    def parameters_to_log(self, parameter_to_log: Optional[ParametersToLog]) -> None:
+    def parameters_to_log(self, parameter_to_log: co.ParametersToLog | None) -> None:
         if parameter_to_log is None:
             parameter_to_log = {}
         for model_name, model in self.models.items():
@@ -1017,7 +1028,7 @@ class _Models:
         return {name: fmu.fmu_path for name, fmu in self.fmus.items()}
 
     @property
-    def model_classes(self) -> ModelClasses:
+    def model_classes(self) -> co.ModelClasses:
         return {
             name: python_model.model_class
             for name, python_model in self.python_models.items()
@@ -1052,19 +1063,19 @@ class _Models:
 @dataclass
 class _Model:
     name: str
-    connections: Optional[Connections]
-    start_values: Optional[dict[str, StartValue]]
-    parameters_to_log: Optional[list[str]]
+    connections: co.Connections | None
+    start_values: dict[str, co.StartValue] | None
+    parameters_to_log: list[str] | None
 
     class Config:
         arbitrary_types_allowed = True
 
-    def get_start_value(self, parameter_name: str) -> Optional[StartValue]:
+    def get_start_value(self, parameter_name: str) -> co.StartValue | None:
         if self.start_values is None:
             return None
         return self.start_values.get(parameter_name)
 
-    def set_start_value(self, parameter_name: str, value: StartValue) -> None:
+    def set_start_value(self, parameter_name: str, value: co.StartValue) -> None:
         if self.start_values is None:
             self.start_values = {}
         self.start_values[parameter_name] = value
@@ -1074,15 +1085,15 @@ class _Model:
             return
         del self.start_values[parameter_name]
 
-    def get_connection(self, input_name: str) -> Optional[_Connection]:
+    def get_connection(self, input_name: str) -> co.Connection | None:
         if self.connections is None:
             return None
         for connection in self.connections:
-            if connection[ConnectionKeys.INPUT_PARAMETER.value] == input_name:
+            if connection[co.ConnectionKeys.INPUT_PARAMETER.value] == input_name:
                 return connection
         raise KeyError(f"model '{self.name}' has not input parameter '{input_name}'")
 
-    def set_connection(self, connection: _Connection) -> None:
+    def set_connection(self, connection: co.Connection) -> None:
         if self.connections is None:
             self.connections = []
         self.connections.append(connection)
@@ -1093,7 +1104,7 @@ class _Model:
         self.connections = [
             connection
             for connection in self.connections
-            if not connection[ConnectionKeys.INPUT_PARAMETER.value] == input_name
+            if not connection[co.ConnectionKeys.INPUT_PARAMETER.value] == input_name
         ]
 
     def remove_connections_to_model(self, model_name: str) -> None:
@@ -1102,15 +1113,15 @@ class _Model:
         self.connections = [
             connection
             for connection in self.connections
-            if not connection[ConnectionKeys.CONNECTED_SYSTEM.value] == model_name
+            if not connection[co.ConnectionKeys.CONNECTED_SYSTEM.value] == model_name
         ]
 
     def update_connections(self, prev_name: str, new_name: str) -> None:
         if self.connections is None:
             return
         for connection in self.connections:
-            if connection[ConnectionKeys.CONNECTED_SYSTEM.value] == prev_name:
-                connection[ConnectionKeys.CONNECTED_SYSTEM.value] = new_name
+            if connection[co.ConnectionKeys.CONNECTED_SYSTEM.value] == prev_name:
+                connection[co.ConnectionKeys.CONNECTED_SYSTEM.value] = new_name
 
     def append_parameter_to_log(self, parameter_name: str) -> None:
         if self.parameters_to_log is None:

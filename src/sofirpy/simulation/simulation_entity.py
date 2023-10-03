@@ -1,10 +1,10 @@
 """Module containing abstract class SimulationEntity"""
 
-from abc import ABC, abstractmethod
-from typing import Optional, Union
+from __future__ import annotations
 
-ParameterValue = Union[bool, float]
-StartValue = Union[ParameterValue, tuple[ParameterValue, str]]
+from abc import ABC, abstractmethod
+
+import sofirpy.common as co
 
 
 class SimulationEntity(ABC):
@@ -12,7 +12,7 @@ class SimulationEntity(ABC):
 
     @abstractmethod
     def set_parameter(
-        self, parameter_name: str, parameter_value: ParameterValue
+        self, parameter_name: str, parameter_value: co.ParameterValue
     ) -> None:
         """Set the value of a parameter.
 
@@ -23,7 +23,7 @@ class SimulationEntity(ABC):
         """
 
     @abstractmethod
-    def get_parameter_value(self, parameter_name: str) -> ParameterValue:
+    def get_parameter_value(self, parameter_name: str) -> co.ParameterValue:
         """Return the value of a parameter.
 
         Args:
@@ -42,17 +42,17 @@ class SimulationEntity(ABC):
             time (float): current simulation time
         """
 
-    def initialize(self, start_values: dict[str, StartValue]) -> None:
+    def initialize(self, start_values: dict[str, co.StartValue]) -> None:
         """Initialize the model"""
 
-    def get_unit(self, parameter_name: str) -> Optional[str]:
+    def get_unit(self, parameter_name: str) -> str | None:
         """Return the unit of a parameter.
 
         Args:
             parameter_name (str): Name of the parameter.
 
         Returns:
-            Optional[str]: Unit of the parameter.
+            str | None: Unit of the parameter.
         """
 
     def conclude_simulation(self) -> None:

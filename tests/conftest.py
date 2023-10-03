@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from sofirpy.simulation.simulation import FmuPaths, ModelClasses, StartValues
+from sofirpy.common import FmuPaths, ModelClasses, StartValues
 from sofirpy.simulation.simulation_entity import SimulationEntity
 
 

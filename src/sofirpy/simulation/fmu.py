@@ -13,14 +13,11 @@ from fmpy.simulation import (
     settable_in_instantiated,
 )
 
-from sofirpy.simulation.simulation_entity import (
-    ParameterValue,
-    SimulationEntity,
-    StartValue,
-)
+import sofirpy.common as co
+from sofirpy.simulation.simulation_entity import SimulationEntity
 
-SetterFunction = Callable[[list[int], list[ParameterValue]], None]
-GetterFunction = Callable[[list[int]], list[ParameterValue]]
+SetterFunction = Callable[[list[int], list[co.ParameterValue]], None]
+GetterFunction = Callable[[list[int]], list[co.ParameterValue]]
 
 
 class Fmu(SimulationEntity):  # pylint: disable=too-many-instance-attributes
@@ -60,7 +57,7 @@ class Fmu(SimulationEntity):  # pylint: disable=too-many-instance-attributes
             raise FileNotFoundError(f"The path '{fmu_path}' does not exist")
         self._fmu_path = fmu_path
 
-    def initialize(self, start_values: dict[str, StartValue]) -> None:
+    def initialize(self, start_values: dict[str, co.StartValue]) -> None:
         """Initialize the fmu.
 
         Args:
@@ -109,7 +106,7 @@ class Fmu(SimulationEntity):  # pylint: disable=too-many-instance-attributes
         self.fmu.exitInitializationMode()
 
     def set_parameter(
-        self, parameter_name: str, parameter_value: ParameterValue
+        self, parameter_name: str, parameter_value: co.ParameterValue
     ) -> None:
         var_type = self.model_description_dict[parameter_name].type
         self.setter_functions[var_type](
@@ -117,7 +114,7 @@ class Fmu(SimulationEntity):  # pylint: disable=too-many-instance-attributes
             [parameter_value],
         )
 
-    def get_parameter_value(self, parameter_name: str) -> ParameterValue:
+    def get_parameter_value(self, parameter_name: str) -> co.ParameterValue:
         """Return the value of a parameter.
 
         Args:
@@ -128,7 +125,7 @@ class Fmu(SimulationEntity):  # pylint: disable=too-many-instance-attributes
             Union[int, float]: value of the parameter
         """
         var_type = self.model_description_dict[parameter_name].type
-        value: ParameterValue = self.getter_functions[var_type](
+        value: co.ParameterValue = self.getter_functions[var_type](
             [self.model_description_dict[parameter_name].valueReference]
         )[0]
         return value

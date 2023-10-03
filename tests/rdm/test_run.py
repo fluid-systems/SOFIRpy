@@ -20,6 +20,7 @@ from syrupy.types import (
 )
 
 from sofirpy import Run
+from sofirpy.common import FmuPaths, ModelClasses
 from sofirpy.rdm.run import (
     _ConfigDict,
     _Fmu,
@@ -31,7 +32,6 @@ from sofirpy.rdm.run import (
     _RunMeta,
     _SimulationConfig,
 )
-from sofirpy.simulation.simulation import FmuPaths, ModelClasses
 
 
 def test_store_run_in_hdf5(run: Run, tmp_path: str) -> None:
@@ -104,7 +104,8 @@ class RunExtension(SingleFileSnapshotExtension):
             snapshot_collection.location,
             next(iter(snapshot_collection)).data,
         )
-        run = cast(Run, data)
+        run = data
+        assert isinstance(run, Run)
         run.to_hdf5(filepath)
 
 

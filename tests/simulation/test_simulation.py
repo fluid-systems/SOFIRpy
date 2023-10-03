@@ -1,17 +1,17 @@
-import sys
 from pathlib import Path
-from typing import Union
 
 import numpy as np
 import pandas as pd
 import pytest
 
-from sofirpy.simulation.simulation import (
+from sofirpy.common import (
     ConnectionsConfig,
     FmuPaths,
     ModelClasses,
     ParametersToLog,
     StartValues,
+)
+from sofirpy.simulation.simulation import (
     _validate_input,
     _validate_parameters_to_log,
     simulate,

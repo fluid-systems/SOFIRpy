@@ -2,8 +2,6 @@ import os
 import sys
 from pathlib import Path
 
-import matplotlib.pyplot as plt
-
 from sofirpy import plot_results, simulate
 
 sys.path.append(os.path.join(os.path.dirname(__file__), "../../"))
