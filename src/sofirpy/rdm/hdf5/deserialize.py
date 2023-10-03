@@ -22,13 +22,13 @@ class Deserialize(Protocol):
 
 class RunMeta(Deserialize):
     @staticmethod
-    def deserialize(run_group: h5.Group, *args: Any, **kwargs: Any) -> rdm_run._RunMeta:
+    def deserialize(run_group: h5.Group, *args: Any, **kwargs: Any) -> rdm_run.RunMeta:
         assert run_group.attribute is not None
         assert run_group.attribute.attributes is not None
         dependencies = json.loads(
             run_group.get_dataset(config.RunDatasetName.DEPENDENCIES.value).data
         )
-        return rdm_run._RunMeta(
+        return rdm_run.RunMeta(
             **run_group.attribute.attributes, dependencies=dependencies
         )
 
@@ -37,15 +37,13 @@ class SimulationConfig(Deserialize):
     @staticmethod
     def deserialize(
         run_group: h5.Group, *args: Any, **kwargs: Any
-    ) -> rdm_run._SimulationConfig:
+    ) -> rdm_run.SimulationConfig:
         simulation_results_group = run_group.get_group(
             config.RunGroupName.SIMULATION_RESULTS.value
         )
         assert simulation_results_group.attribute is not None
         assert simulation_results_group.attribute.attributes is not None
-        return rdm_run._SimulationConfig(
-            **simulation_results_group.attribute.attributes
-        )
+        return rdm_run.SimulationConfig(**simulation_results_group.attribute.attributes)
 
 
 class TimeSeries(Deserialize):
@@ -66,7 +64,7 @@ class Units(Deserialize):
 
 class Results(Deserialize):
     @staticmethod
-    def deserialize(run_group: h5.Group, *args: Any, **kwargs: Any) -> rdm_run._Results:
+    def deserialize(run_group: h5.Group, *args: Any, **kwargs: Any) -> rdm_run.Results:
         simulation_results_group = run_group.get_group(
             config.RunGroupName.SIMULATION_RESULTS.value
         )
@@ -85,7 +83,7 @@ class Results(Deserialize):
             data=attributes.attributes,
         )
 
-        return rdm_run._Results(time_series, units)
+        return rdm_run.Results(time_series, units)
 
 
 class Connections(Deserialize):
@@ -162,12 +160,12 @@ class Models(Deserialize):
         run_group: h5.Group,
         *args: Any,
         **kwargs: Any,
-    ) -> rdm_run._Models:
+    ) -> rdm_run.Models:
         hdf5: h5.HDF5 = kwargs["hdf5"]
         fmu_models_group = run_group.get_group(
             config.RunGroupName.get_fmu_models_path()
         )
-        fmus: dict[str, rdm_run._Fmu] = {}
+        fmus: dict[str, rdm_run.Fmu] = {}
         for name, group in fmu_models_group.groups._groups.items():
             connections = Deserializer.connections.deserialize(
                 run_group,
@@ -200,7 +198,7 @@ class Models(Deserialize):
             assert fmu_content is not None
             with open(fmu_path, "wb") as fmu_file:
                 fmu_file.write(fmu_content)
-            fmus[name] = rdm_run._Fmu(
+            fmus[name] = rdm_run.Fmu(
                 name,
                 connections=connections[config.RunDatasetName.CONNECTIONS.value],
                 start_values=start_values[config.RunDatasetName.START_VALUES.value],
@@ -212,7 +210,7 @@ class Models(Deserialize):
         python_models_group = run_group.get_group(
             config.RunGroupName.get_python_models_path()
         )
-        python_models: dict[str, rdm_run._PythonModel] = {}
+        python_models: dict[str, rdm_run.PythonModel] = {}
         for name, group in python_models_group.groups._groups.items():
             connections = Deserializer.connections.deserialize(
                 run_group,
@@ -254,7 +252,7 @@ class Models(Deserialize):
                     class_reference, config.ModelStorageGroupName.get_classes_path()
                 ),
             )
-            python_models[name] = rdm_run._PythonModel(
+            python_models[name] = rdm_run.PythonModel(
                 name,
                 connections=connections[config.RunDatasetName.CONNECTIONS.value],
                 start_values=start_values[config.RunDatasetName.START_VALUES.value],
@@ -264,29 +262,29 @@ class Models(Deserialize):
                 code=source_code,
                 model_class=model_class,
             )
-        return rdm_run._Models(
+        return rdm_run.Models(
             fmus,
             python_models,
         )
 
 
 class Deserializer:
-    run_meta: type[RunMeta] = RunMeta
-    simulation_config: type[SimulationConfig] = SimulationConfig
-    time_series: type[TimeSeries] = TimeSeries
-    units: type[Units] = Units
-    results: type[Results] = Results
-    models: type[Models] = Models
-    connections: type[Connections] = Connections
-    start_values: type[StartValues] = StartValues
-    parameters_to_log: type[ParametersToLog] = ParametersToLog
-    fmu_reference: type[FmuReference] = FmuReference
-    fmu_content: type[FmuContent] = FmuContent
-    class_reference: type[ClassReference] = ClassReference
-    source_code_reference: type[SourceCodeReference] = SourceCodeReference
-    class_storage: type[ClassStorage] = ClassStorage
-    source_code_storage: type[SourceCodeStorage] = SourceCodeStorage
+    run_meta: type[Deserialize] = RunMeta
+    simulation_config: type[Deserialize] = SimulationConfig
+    time_series: type[Deserialize] = TimeSeries
+    units: type[Deserialize] = Units
+    results: type[Deserialize] = Results
+    models: type[Deserialize] = Models
+    connections: type[Deserialize] = Connections
+    start_values: type[Deserialize] = StartValues
+    parameters_to_log: type[Deserialize] = ParametersToLog
+    fmu_reference: type[Deserialize] = FmuReference
+    fmu_content: type[Deserialize] = FmuContent
+    class_reference: type[Deserialize] = ClassReference
+    source_code_reference: type[Deserialize] = SourceCodeReference
+    class_storage: type[Deserialize] = ClassStorage
+    source_code_storage: type[Deserialize] = SourceCodeStorage
 
     @classmethod
-    def use_start_values_deserializer(cls, deserializer: Deserialize) -> None:
+    def use_start_values_deserializer(cls, deserializer: type[Deserialize]) -> None:
         cls.start_values = deserializer

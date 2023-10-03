@@ -5,7 +5,7 @@ from __future__ import annotations
 import inspect
 import json
 import sys
-from dataclasses import asdict, dataclass, field
+from dataclasses import asdict, dataclass
 from datetime import datetime
 from pathlib import Path
 from typing import Any, ClassVar, Literal, Optional, TypedDict, cast
@@ -25,24 +25,24 @@ from sofirpy.simulation.simulation_entity import SimulationEntity
 ConfigKeyType = Literal["run_meta", "models", "simulation_config"]
 
 
-class _ConfigDict(TypedDict):
-    run_meta: _MetaConfigDict
-    models: dict[str, _ModelConfigDict]
-    simulation_config: _SimulationConfigDict
+class ConfigDict(TypedDict):
+    run_meta: MetaConfigDict
+    models: dict[str, ModelConfigDict]
+    simulation_config: SimulationConfigDict
 
 
-class _MetaConfigDict(TypedDict):
+class MetaConfigDict(TypedDict):
     description: str
     keywords: list[str]
 
 
-class _ModelConfigDict(TypedDict):
+class ModelConfigDict(TypedDict):
     start_values: NotRequired[dict[str, co.StartValue]]
     connections: NotRequired[co.Connections]
     parameters_to_log: NotRequired[list[str]]
 
 
-class _SimulationConfigDict(TypedDict):
+class SimulationConfigDict(TypedDict):
     stop_time: float
     step_size: float
     logging_step_size: NotRequired[float]
@@ -58,10 +58,10 @@ class Run:
     """
 
     run_name: str
-    _run_meta: _RunMeta
-    _models: _Models
-    _simulation_config: _SimulationConfig
-    _results: Optional[_Results] = None
+    _run_meta: RunMeta
+    _models: Models
+    _simulation_config: SimulationConfig
+    _results: Optional[Results] = None
 
     def __repr__(self) -> str:
         return (
@@ -222,12 +222,12 @@ class Run:
         self._simulation_config.logging_step_size = float(logging_step_size)
 
     @property
-    def models(self) -> dict[str, _Model]:
-        """Models of the run. key -> name of the model; value -> _Model object
+    def models(self) -> dict[str, Model]:
+        """Models of the run. key -> name of the model; value -> Model object
 
         Returns:
-            dict[str, _Model]: Models of the run. key -> name of the model;
-            value -> _Model object
+            dict[str, Model]: Models of the run. key -> name of the model;
+            value -> Model object
         """
         return self._models.models
 
@@ -283,7 +283,7 @@ class Run:
             parameters_to_log (list[str] | None, optional): Parameters of the fmu that
                 should be logged . Defaults to None.
         """
-        self._models.fmus[fmu_name] = _Fmu(
+        self._models.fmus[fmu_name] = Fmu(
             name=fmu_name,
             connections=connections,
             start_values=start_values,
@@ -357,8 +357,8 @@ class Run:
             TypeError: 'model_class' is not subclass of SimulationEntity
         """
         if not issubclass(model_class, SimulationEntity):
-            raise TypeError(f"'model_classes must be a subclass of 'SimulationEntity'")
-        self._models.python_models[model_name] = _PythonModel(
+            raise TypeError("'model_classes must be a subclass of 'SimulationEntity'")
+        self._models.python_models[model_name] = PythonModel(
             name=model_name,
             connections=connections,
             start_values=start_values,
@@ -721,13 +721,13 @@ class Run:
         """
         config_path = utils.convert_str_to_path(config_path, "config_path")
         with open(config_path, encoding="utf-8") as config_file:
-            config: _ConfigDict = json.load(config_file)
+            config: ConfigDict = json.load(config_file)
 
         return cls(
             run_name=run_name,
-            _run_meta=_RunMeta.from_config(config),
-            _models=_Models.from_config(config, fmu_paths, model_classes),
-            _simulation_config=_SimulationConfig.from_config(config),
+            _run_meta=RunMeta.from_config(config),
+            _models=Models.from_config(config, fmu_paths, model_classes),
+            _simulation_config=SimulationConfig.from_config(config),
         )
 
     @classmethod
@@ -744,13 +744,13 @@ class Run:
         hdf5_path = utils.convert_str_to_path(hdf5_path, "hdf5_path")
         return sofirpy.rdm.hdf5.hdf5_to_run.create_run_from_hdf5(hdf5_path, run_name)
 
-    def get_config(self) -> _ConfigDict:
+    def get_config(self) -> ConfigDict:
         """Get the configuration for the run.
 
         Returns:
-            _ConfigDict: Configuration for the run.
+            ConfigDict: Configuration for the run.
         """
-        return _ConfigDict(
+        return ConfigDict(
             run_meta=self._run_meta.to_config(),
             models=self._models.to_config(),
             simulation_config=self._simulation_config.to_config(),
@@ -763,7 +763,7 @@ class Run:
             **self._models.get_simulation_args(),
             get_units=True,
         )
-        self._results = _Results(time_series=time_series, units=units)
+        self._results = Results(time_series=time_series, units=units)
 
     def to_hdf5(self, hdf5_path: Path | str) -> None:
         """Store the run inside a hdf5 file.
@@ -776,13 +776,13 @@ class Run:
 
 
 @dataclass
-class _Results:
+class Results:
     time_series: pd.DataFrame
     units: co.Units | None
 
 
 @pydantic.dataclasses.dataclass
-class _RunMeta:
+class RunMeta:
     description: str
     keywords: list[str]
     sofirpy_version: str
@@ -794,7 +794,7 @@ class _RunMeta:
     CONFIG_KEY: ClassVar[ConfigKeyType] = "run_meta"
 
     @classmethod
-    def from_config(cls, config: _ConfigDict) -> Self:
+    def from_config(cls, config: ConfigDict) -> Self:
         description = config[cls.CONFIG_KEY].get("description", "")
         utils.check_type(description, "description", str)
         assert isinstance(description, str)
@@ -811,12 +811,12 @@ class _RunMeta:
             dependencies=utils.get_dependencies_of_current_env(),
         )
 
-    def to_config(self) -> _MetaConfigDict:
+    def to_config(self) -> MetaConfigDict:
         meta_config = cast(
-            _MetaConfigDict,
+            MetaConfigDict,
             {
-                field_name: self.__getattribute__(field_name)
-                for field_name in _MetaConfigDict.__annotations__.keys()
+                field_name: getattr(self, field_name)
+                for field_name in MetaConfigDict.__annotations__.keys()
             },
         )
         return meta_config
@@ -826,7 +826,7 @@ class _RunMeta:
 
 
 @pydantic.dataclasses.dataclass
-class _SimulationConfig:
+class SimulationConfig:
     stop_time: float
     step_size: float
     logging_step_size: Optional[float] = None
@@ -834,23 +834,23 @@ class _SimulationConfig:
     CONFIG_KEY: ClassVar[ConfigKeyType] = "simulation_config"
 
     @classmethod
-    def from_config(cls, config: _ConfigDict) -> Self:
+    def from_config(cls, config: ConfigDict) -> Self:
         return cls(**config[cls.CONFIG_KEY])
 
-    def to_dict(self) -> _SimulationConfigDict:
-        return cast(_SimulationConfigDict, asdict(self))
+    def to_dict(self) -> SimulationConfigDict:
+        return cast(SimulationConfigDict, asdict(self))
 
-    def to_config(self) -> _SimulationConfigDict:
+    def to_config(self) -> SimulationConfigDict:
         return self.to_dict()
 
-    def get_simulation_args(self) -> _SimulationConfigDict:
+    def get_simulation_args(self) -> SimulationConfigDict:
         return self.to_dict()
 
 
 @dataclass
-class _Models:
-    fmus: dict[str, _Fmu]
-    python_models: dict[str, _PythonModel]
+class Models:
+    fmus: dict[str, Fmu]
+    python_models: dict[str, PythonModel]
     can_simulate_fmu: bool = True
     can_simulate_python_model: bool = True
 
@@ -859,14 +859,14 @@ class _Models:
     @classmethod
     def from_config(
         cls,
-        config: _ConfigDict,
+        config: ConfigDict,
         fmu_paths: co.FmuPaths | None = None,
         model_classes: co.ModelClasses | None = None,
     ) -> Self:
-        model_config = cast(dict[str, _ModelConfigDict], config[cls.CONFIG_KEY])
+        model_config = cast(dict[str, ModelConfigDict], config[cls.CONFIG_KEY])
         fmu_paths = fmu_paths or {}
         fmus = {
-            name: _Fmu(
+            name: Fmu(
                 name=name,
                 fmu_path=utils.convert_str_to_path(path, "fmu_path"),
                 **model_config[name],
@@ -875,13 +875,13 @@ class _Models:
         }
         model_classes = model_classes or {}
         python_models = {
-            name: _PythonModel(name=name, model_class=model_class, **model_config[name])
+            name: PythonModel(name=name, model_class=model_class, **model_config[name])
             for name, model_class in model_classes.items()
         }
         return cls(fmus=fmus, python_models=python_models)
 
     @property
-    def models(self) -> dict[str, _Model]:
+    def models(self) -> dict[str, Model]:
         return {**self.fmus, **self.python_models}
 
     def change_model_name(self, prev_name: str, new_name: str) -> None:
@@ -1044,10 +1044,10 @@ class _Models:
     def create_file_from_source_code(self, model_name: str, target_path: Path) -> None:
         self.python_models[model_name].create_file_from_source_code(target_path)
 
-    def to_config(self) -> dict[str, _ModelConfigDict]:
+    def to_config(self) -> dict[str, ModelConfigDict]:
         return self.to_dict()
 
-    def to_dict(self) -> dict[str, _ModelConfigDict]:
+    def to_dict(self) -> dict[str, ModelConfigDict]:
         return {name: model.to_dict() for name, model in self.models.items()}
 
     def get_simulation_args(self) -> dict[str, Any]:
@@ -1061,7 +1061,7 @@ class _Models:
 
 
 @dataclass
-class _Model:
+class Model:
     name: str
     connections: co.Connections | None
     start_values: dict[str, co.StartValue] | None
@@ -1133,12 +1133,12 @@ class _Model:
             return
         self.parameters_to_log.remove(parameter_name)
 
-    def to_dict(self) -> _ModelConfigDict:
+    def to_dict(self) -> ModelConfigDict:
         model_config = cast(
-            _ModelConfigDict,
+            ModelConfigDict,
             {
                 field_name: self.__getattribute__(field_name)
-                for field_name in _ModelConfigDict.__annotations__.keys()
+                for field_name in ModelConfigDict.__annotations__.keys()
                 if self.__getattribute__(field_name) is not None
             },
         )
@@ -1146,7 +1146,7 @@ class _Model:
 
 
 @dataclass
-class _Fmu(_Model):
+class Fmu(Model):
     fmu_path: Path
 
     def move_fmu(self, target_directory: Path) -> None:
@@ -1157,7 +1157,7 @@ class _Fmu(_Model):
 
 
 @dataclass
-class _PythonModel(_Model):
+class PythonModel(Model):
     code: Optional[str] = None
     model_class: Optional[type[SimulationEntity]] = None
 

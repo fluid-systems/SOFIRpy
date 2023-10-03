@@ -4,10 +4,9 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
-from enum import Enum
 from numbers import Real
 from pathlib import Path
-from typing import Literal, Mapping, Optional, TypedDict, Union, overload
+from typing import Literal, Optional, Union, overload
 
 import numpy as np
 import numpy.typing as npt

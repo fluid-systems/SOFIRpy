@@ -45,7 +45,7 @@ def create_run_from_hdf5(hdf5_path: Path, run_name: str) -> rdm_run.Run:
     return run
 
 
-def _check_compatibility(run_meta: rdm_run._RunMeta) -> None:
+def _check_compatibility(run_meta: rdm_run.RunMeta) -> None:
     same_os = run_meta.os == sys.platform
     if not same_os:
         logging.warning(
@@ -73,7 +73,7 @@ def _check_compatibility(run_meta: rdm_run._RunMeta) -> None:
     _check_dependencies(run_meta)
 
 
-def _check_dependencies(run_meta: rdm_run._RunMeta) -> None:
+def _check_dependencies(run_meta: rdm_run.RunMeta) -> None:
     run_dep = run_meta.dependencies
     cur_env_dep = utils.get_dependencies_of_current_env()
     dependencies_in_hdf5_but_not_in_current_env = set(run_dep).difference(cur_env_dep)

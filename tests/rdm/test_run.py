@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 import sys
 from pathlib import Path
-from typing import Optional, cast
+from typing import Optional
 
 import numpy as np
 import pytest
@@ -22,15 +22,15 @@ from syrupy.types import (
 from sofirpy import Run
 from sofirpy.common import FmuPaths, ModelClasses
 from sofirpy.rdm.run import (
-    _ConfigDict,
-    _Fmu,
-    _MetaConfigDict,
-    _Model,
-    _Models,
-    _PythonModel,
-    _Results,
-    _RunMeta,
-    _SimulationConfig,
+    ConfigDict,
+    Fmu,
+    MetaConfigDict,
+    Model,
+    Models,
+    PythonModel,
+    Results,
+    RunMeta,
+    SimulationConfig,
 )
 
 
@@ -123,15 +123,15 @@ def _compare_runs(this_run: Run, other_run: Run) -> None:
     _compare_results(this_run._results, other_run._results)
 
 
-def _compare_meta(this_run_meta: _RunMeta, other_run_meta: _RunMeta) -> None:
+def _compare_meta(this_run_meta: RunMeta, other_run_meta: RunMeta) -> None:
     assert this_run_meta.description == other_run_meta.description
     assert this_run_meta.keywords == other_run_meta.keywords
     assert this_run_meta.sofirpy_version == other_run_meta.sofirpy_version
 
 
 def _compare_simulation_config(
-    this_simulation_config: _SimulationConfig,
-    other_simulation_config: _SimulationConfig,
+    this_simulation_config: SimulationConfig,
+    other_simulation_config: SimulationConfig,
 ) -> None:
     assert this_simulation_config.step_size == other_simulation_config.step_size
     assert this_simulation_config.stop_time == other_simulation_config.stop_time
@@ -141,7 +141,7 @@ def _compare_simulation_config(
     )
 
 
-def _compare_models(this_run_models: _Models, other_run_models: _Models) -> None:
+def _compare_models(this_run_models: Models, other_run_models: Models) -> None:
     for fmu_name in this_run_models.fmus:
         _compare_fmu(this_run_models.fmus[fmu_name], other_run_models.fmus[fmu_name])
     for python_model_name in this_run_models.python_models:
@@ -151,7 +151,7 @@ def _compare_models(this_run_models: _Models, other_run_models: _Models) -> None
         )
 
 
-def _compare_fmu(this_run_fmu: _Fmu, other_run_fmu: _Fmu) -> None:
+def _compare_fmu(this_run_fmu: Fmu, other_run_fmu: Fmu) -> None:
     compare_model(this_run_fmu, other_run_fmu)
     assert (
         this_run_fmu.fmu_path.open("rb").read()
@@ -160,7 +160,7 @@ def _compare_fmu(this_run_fmu: _Fmu, other_run_fmu: _Fmu) -> None:
 
 
 def _compare_python_model(
-    this_run_python_model: _PythonModel, other_run_python_model: _PythonModel
+    this_run_python_model: PythonModel, other_run_python_model: PythonModel
 ) -> None:
     assert (
         this_run_python_model.get_source_code()
@@ -169,14 +169,14 @@ def _compare_python_model(
     compare_model(this_run_python_model, other_run_python_model)
 
 
-def compare_model(this_run_model: _Model, other_run_model: _Model) -> None:
+def compare_model(this_run_model: Model, other_run_model: Model) -> None:
     assert this_run_model.name == other_run_model.name
     assert this_run_model.connections == other_run_model.connections
     assert this_run_model.start_values == other_run_model.start_values
     assert this_run_model.parameters_to_log == other_run_model.parameters_to_log
 
 
-def _compare_results(this_run_results: _Results, other_run_results: _Results) -> None:
+def _compare_results(this_run_results: Results, other_run_results: Results) -> None:
     assert np.isclose(
         this_run_results.time_series.to_numpy(),
         other_run_results.time_series.to_numpy(),
@@ -200,25 +200,25 @@ def run(config_path: Path, fmu_paths: FmuPaths, model_classes: ModelClasses) -> 
     )
 
 
-def _compare_config(this_config: _ConfigDict, other_config: _ConfigDict) -> None:
+def _compare_config(this_config: ConfigDict, other_config: ConfigDict) -> None:
     _compare_meta_config(
-        this_config[_RunMeta.CONFIG_KEY], other_config[_RunMeta.CONFIG_KEY]
+        this_config[RunMeta.CONFIG_KEY], other_config[RunMeta.CONFIG_KEY]
     )
     _compare_simulation_config_dict(
-        this_config[_SimulationConfig.CONFIG_KEY],
-        other_config[_SimulationConfig.CONFIG_KEY],
+        this_config[SimulationConfig.CONFIG_KEY],
+        other_config[SimulationConfig.CONFIG_KEY],
     )
 
 
 def _compare_meta_config(
-    this_meta_config: _MetaConfigDict, other_meta_config: _MetaConfigDict
+    this_meta_config: MetaConfigDict, other_meta_config: MetaConfigDict
 ) -> None:
     assert this_meta_config == other_meta_config
 
 
 def _compare_simulation_config_dict(
-    this_simulation_config: _SimulationConfig,
-    other_simulation_config: _SimulationConfig,
+    this_simulation_config: SimulationConfig,
+    other_simulation_config: SimulationConfig,
 ) -> None:
     assert float(other_simulation_config["step_size"]) == pytest.approx(
         float(this_simulation_config["step_size"])
