@@ -303,7 +303,7 @@ def simulate(
     ...
 
 
-def simulate(  # pylint: disable=too-many-locals
+def simulate(
     stop_time: float,
     step_size: float,
     fmu_paths: co.FmuPaths | None = None,

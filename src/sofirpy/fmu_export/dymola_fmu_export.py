@@ -15,7 +15,7 @@ from sofirpy.fmu_export.fmu_export import FmuExport, FmuExportError
 ParameterValue = Union[str, int, float, list[Union[int, float, str, bool]], bool]
 
 
-class DymolaFmuExport(FmuExport):  # pylint: disable=too-many-instance-attributes
+class DymolaFmuExport(FmuExport):
     """Object that performs the Dymola fmu export."""
 
     files_to_delete = [
@@ -28,7 +28,7 @@ class DymolaFmuExport(FmuExport):  # pylint: disable=too-many-instance-attribute
         "dsin.txt",
     ]
 
-    def __init__(  # pylint: disable=too-many-arguments
+    def __init__(
         self,
         model_path: Path,
         model_name: str,
@@ -389,7 +389,7 @@ class DymolaFmuExport(FmuExport):  # pylint: disable=too-many-instance-attribute
         utils.delete_file_or_directory(self._dump_directory)
 
 
-def export_dymola_model(  # pylint: disable=too-many-arguments, too-many-locals
+def export_dymola_model(
     dymola_exe_path: Union[Path, str],
     model_path: Union[Path, str],
     model_name: str,
