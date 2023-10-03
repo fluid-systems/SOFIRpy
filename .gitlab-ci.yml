@@ -1,35 +1,98 @@
+# include:
+#   - remote: 'https://gitlab.com/yesolutions/gitlab-ci-templates/raw/main/templates/pre-commit-autofix.yaml'
+
 image: python:3.9.14-bullseye
+
+variables:
+  PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
+
+cache:
+  paths:
+    - .cache/pip
 
 stages:
   - Static Analysis
   - Test
   - Documentation
+  - Release
 
-before_script:
-  - python --version
-  - pip install --upgrade pip setuptools
-  - pip install virtualenv
-  - virtualenv venv
-  - source venv/bin/activate
-  - pip install ".[test, doc, dev]"
-
-linting:
-  stage: Static Analysis
-  script:
-    - pylint src/sofirpy
+.venv_setup:
+  before_script:
+    - python --version
+    - pip install --upgrade pip setuptools
+    - pip install virtualenv
+    - virtualenv venv
+    - source venv/bin/activate
+    - pip install -e ".[test, doc, dev]"
 
 type_checking:
+  extends: .venv_setup
   stage: Static Analysis
   script:
     - mypy src/sofirpy
 
 test:
+  extends: .venv_setup
   stage: Test
   script:
-    - pytest tests/
+    - pytest --cov=src/ --junitxml=report.xml --snapshot-warn-unused
+  coverage: '/(?i)total.*? (100(?:\.0+)?\%|[1-9]?\d(?:\.\d+)?\%)$/'
+  artifacts:
+    reports:
+      junit: report.xml
+    when: always
 
 doc:
+  extends: .venv_setup
   stage: Documentation
   script:
     - cd docs/
     - make html
+
+test_publish:
+  extends: .venv_setup
+  stage: Release
+  rules:
+    - if: $CI_COMMIT_TAG
+  script:
+    - tag_version=`echo "$CI_COMMIT_TAG"|cut -d "v" -f2`
+    - ver=`pip show sofirpy|grep Version|cut -d " " -f2`
+    - |
+      if [ "$tag_version" != "$ver" ]
+      then
+        echo "GitLab TAG "$tag_version" does not match specified version "$ver" in sofirpy/__init__.py"
+        exit 1
+      fi
+    - pip install build twine
+    - python -m build
+    - TWINE_PASSWORD=${TWINE_PASSWORD_TEST} TWINE_USERNAME=${TWINE_USERNAME_TEST} twine upload --repository testpypi dist/*
+
+publish:
+  extends: .venv_setup
+  stage: Release
+  rules:
+    - if: $CI_COMMIT_TAG
+  script:
+    - tag_version=`echo "$CI_COMMIT_TAG"|cut -d "v" -f2`
+    - ver=`pip show sofirpy|grep Version|cut -d " " -f2`
+    - |
+      if [ "$tag_version" != "$ver" ]
+      then
+        echo "GitLab TAG "$tag_version" does not match specified version "$ver" in sofirpy/__init__.py"
+        exit 1
+      fi
+    - pip install build twine
+    - python -m build
+    - TWINE_PASSWORD=${TWINE_PASSWORD} TWINE_USERNAME=${TWINE_USERNAME} twine upload
+
+release:
+  stage: Release
+  image: registry.gitlab.com/gitlab-org/release-cli:latest
+  rules:
+    - if: $CI_COMMIT_TAG
+  script:
+    - echo "release job" # placeholder because script keyword must be included
+  release:
+    tag_name: $CI_COMMIT_TAG
+    name: 'Release $CI_COMMIT_TAG'
+    description: './docs/change_log/$CI_COMMIT_TAG.rst'

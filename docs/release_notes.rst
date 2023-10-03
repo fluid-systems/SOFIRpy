@@ -1,10 +1,10 @@
 Release notes
 =============
 
+v1.0.0
+------
+.. include:: change_log/v1.0.0.rst
+
 v0.1.0
 ------
-The first release of SOFIRpy. SOFIRpy provides functionalities to:
-
-- export Dymola and OpenModelica models as FMUs
-- co-simulate FMUs with custom python models
-- store data and meta data of the simulation
+.. include:: change_log/v0.1.0.rst

@@ -1,7 +1,7 @@
 Installation
 ============
 
-sofirpy can be installed from PyPI using the following command.
+The latest version of SOFIRpy can be installed using pip:
 
 .. code-block::
 

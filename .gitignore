@@ -150,3 +150,10 @@ cython_debug/
 *.prof
 
 *DS_Store
+.vscode/launch.json
+.vscode/settings.json
+
+.local_testing
+
+temp.py
+t.py

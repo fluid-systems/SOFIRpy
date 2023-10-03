@@ -1,5 +1,6 @@
-from pathlib import Path
 import json
+from pathlib import Path
+
 from sofirpy import export_dymola_model
 
 dir_path = Path(__file__).parent
@@ -9,7 +10,7 @@ package_custom_pump = dir_path / "Custom_Pump_V2.mo"
 package_custom_pump = dir_path / "Custom_Pump.mo"
 package_custom_sensors = dir_path / "Custom_Sensors.mo"
 packages = [package_custom_fittings, package_custom_pump, package_custom_sensors]
-output_direcotry = dir_path
+output_directory = dir_path
 dymola_exe_path = r"C:\Program Files\Dymola 2018 FD01\bin64\Dymola.exe"
 model_name = "Building"
 
@@ -23,14 +24,15 @@ for component_name, parameter_pairs in content.items():
         parameters[f"{component_name}.{parameter_name}"] = parameter_value
 
 model_modifiers = [
-    "redeclare package Medium = Modelica.Media.Water.ConstantPropertyLiquidWater"]
+    "redeclare package Medium = Modelica.Media.Water.ConstantPropertyLiquidWater"
+]
 
 
 export_dymola_model(
-    dymola_exe_path,
-    model_path,
-    model_name,
-    output_direcotry,
+    dymola_exe_path=dymola_exe_path,
+    model_path=model_path,
+    model_name=model_name,
+    output_directory=output_directory,
     parameters=parameters,
     model_modifiers=model_modifiers,
     packages=packages,
