@@ -34,6 +34,32 @@ from sofirpy.rdm.run import (
 )
 
 
+@pytest.fixture
+def config_path() -> Path:
+    return Path(__file__).parent / "test_config.json"
+
+
+@pytest.fixture
+def run(config_path: Path, fmu_paths: FmuPaths, model_classes: ModelClasses) -> Run:
+    return Run.from_config_file(
+        run_name="test_run",
+        config_file_path=config_path,
+        fmu_paths=fmu_paths,
+        model_classes=model_classes,
+    )
+
+
+def test_init_run_from_config_file(config_path) -> None:
+    Run.from_config_file(run_name="test_run", config_file_path=config_path)
+
+
+def test_init_run_config(fmu_paths: FmuPaths, model_classes: ModelClasses) -> None:
+    Run.from_config("test_run", 10, 0.1)
+    Run.from_config(
+        "test_run", 10, 0.1, fmu_paths=fmu_paths, model_classes=model_classes
+    )
+
+
 def test_store_run_in_hdf5(run: Run, tmp_path: str) -> None:
     temp_hdf5_path = Path(tmp_path) / "temp.hdf5"
     run.simulate()
@@ -183,21 +209,6 @@ def _compare_results(this_run_results: Results, other_run_results: Results) -> N
         atol=1e-6,
     ).all()
     assert this_run_results.units == other_run_results.units
-
-
-@pytest.fixture
-def config_path() -> Path:
-    return Path(__file__).parent / "test_config.json"
-
-
-@pytest.fixture
-def run(config_path: Path, fmu_paths: FmuPaths, model_classes: ModelClasses) -> Run:
-    return Run.from_config(
-        run_name="test_run",
-        config_path=config_path,
-        fmu_paths=fmu_paths,
-        model_classes=model_classes,
-    )
 
 
 def _compare_config(this_config: ConfigDict, other_config: ConfigDict) -> None:

@@ -659,29 +659,171 @@ class Run:
             raise AttributeError("No simulation performed yet.")
         return self._results.units
 
-    # @classmethod
-    # def from_config(
-    #     cls,
-    #     run_name: str,
-    #     stop_time: float,
-    #     step_size: float,
-    #     keywords: list[str] | None = None,
-    #     description: str = "",
-    #     fmu_paths: FmuPaths | None = None,
-    #     model_classes: ModelClasses | None = None,
-    #     connections_config: ConnectionsConfig | None = None,
-    #     start_values: StartValues | None = None,
-    #     parameters_to_log: ParametersToLog | None = None,
-    #     logging_step_size: float | None = None,
-    #     get_units: bool = False,
-    # ) -> Self:
-    #     ...
-
     @classmethod
     def from_config(
         cls,
         run_name: str,
-        config_path: str | Path,
+        stop_time: float,
+        step_size: float,
+        keywords: list[str] | None = None,
+        description: str = None,
+        fmu_paths: co.FmuPaths | None = None,
+        model_classes: co.ModelClasses | None = None,
+        connections_config: co.ConnectionsConfig | None = None,
+        start_values: co.StartValues | None = None,
+        parameters_to_log: co.ParametersToLog | None = None,
+        logging_step_size: float | None = None,
+    ) -> Self:
+        """Initialize a run from a configuration.
+
+        Args:
+            run_name (str): Name of the run.
+            stop_time (float): stop time for the simulation
+            step_size (float): step size for the simulation
+            keywords (list[str] | None, optional): Keywords describing the simulation.
+                Defaults to None.
+            description (str, optional): Description of the run. Defaults to None.
+            fmu_paths (Optional[FmuPaths], optional):
+                Dictionary which defines which fmu should be simulated.
+                key -> name of the fmu; value -> path to the fmu
+
+                >>> fmu_paths = {
+                ...    "<name of the fmu 1>": "path/to/fmu1",
+                ...    "<name of the fmu 2>": "path/to/fmu2",
+                ... }
+
+                Note: The name of the fmus can be chosen arbitrarily, but each name
+                in 'fmu_paths' and 'model_classes' must occur only once.
+                Defaults to None.
+            model_classes (Optional[ModelClasses], optional):
+                Dictionary which defines which Python Models should be simulated.
+                key -> name of the model; value -> Instance of th model. The class that
+                defines the model must inherit from the abstract class SimulationEntity
+
+                >>> model_classes = {
+                ...    "<name of the model 1>": <Instance of the model1>
+                ...    "<name of the model 2>": <Instance of the model2>
+                ... }
+
+                Note: The name of the models can be chosen arbitrarily, but each
+                name in 'fmu_paths' and 'model_classes' must occur only once.
+                Defaults to None..
+            connections_config (ConnectionsConfig | None, optional):
+                Dictionary which defines how the inputs and outputs of the systems
+                (fmu or python model) are connected.
+                key -> name of the system; value -> list of connections
+
+                >>> connections_config = {
+                ...     "<name of the system 1>": [
+                ...         {
+                ...             "parameter_name":       "<name of the input"
+                ...                                     "parameter of the system>",
+                ...             "connect_to_system":    "<name of the system the input"
+                ...                                     "parameter should be connected to>",
+                ...             "connect_to_external_parameter":    "<name of the output"
+                ...                                                 "parameter in the"
+                ...                                                 "connected system the"
+                ...                                                 "input parameter should"
+                ...                                                 "be connected to>"
+                ...         },
+                ...         {
+                ...             "parameter_name":       "<name of the input"
+                ...                                     "parameter of the system>",
+                ...             "connect_to_system":    "<name of the system the input"
+                ...                                     "parameter should be connected to>",
+                ...             "connect_to_external_parameter":    "<name of the output"
+                ...                                                 "parameter in the"
+                ...                                                 "connected system the"
+                ...                                                 "input parameter should"
+                ...                                                 "be connected to>"
+                ...         }
+                ...     ],
+                ...     "<name of the system 2>": [
+                ...         {
+                ...             "parameter_name":       "<name of the input"
+                ...                                     "parameter of the system>",
+                ...             "connect_to_system":    "<name of the system the input"
+                ...                                     "parameter should be connected to>",
+                ...             "connect_to_external_parameter":    "<name of the output"
+                ...                                                 "parameter in the"
+                ...                                                 "connected system the"
+                ...                                                 "input parameter should"
+                ...                                                 "be connected to>"
+                ...         }
+                ...     ]
+                ... }
+
+                Defaults to None.
+            start_values (StartValues | None, optional): Dictionary which defines start
+                values for the systems. For Fmus the unit can also be specified as a string.
+                key -> name of the system;
+                value -> dictionary (key -> name of the parameter; value -> start value)
+
+                >>> start_values = {
+                ...     "<name of system 1>":
+                ...     {
+                ...         "<name of parameter 1>": <start value>,
+                ...         "<name of parameter 2>", (<start value>, unit e.g 'kg.m2')
+                ...     },
+                ...     "<name of system 2>":
+                ...     {
+                ...         "<name of parameter 1>": <start value>,
+                ...         "<name of parameter 2>": <start value>
+                ...     }
+                ... }
+
+                Defaults to None.
+            parameters_to_log (ParametersToLog | None, optional):
+                Dictionary that defines which parameters should be logged.
+                key -> name of the system; value -> list of parameters names to be logged
+
+                >>> parameters_to_log = {
+                ...     "<name of system 1>":
+                ...     [
+                ...         "<name of parameter 1>",
+                ...         "<name of parameter 2>",
+                ...     ],
+                ...     "<name of system 2>":
+                ...     [
+                ...         "<name of parameter 1>",
+                ...         "<name of parameter 2>",
+                ...     ]
+                ... }
+
+                Defaults to None.
+            logging_step_size (float | None, optional): step size
+                for logging. It must be a multiple of the chosen simulation step size.
+                Example:
+                If the simulation step size is set to 1e-3 and logging step size
+                is set to 2e-3, every second time step is logged. Defaults to None.
+
+        Returns:
+            Run: Run instance.
+        """
+        return cls(
+            run_name=run_name,
+            _run_meta=RunMeta.from_config(
+                description=description or "", keywords=keywords or []
+            ),
+            _models=Models.from_config(
+                fmu_paths=fmu_paths or {},
+                model_classes=model_classes or {},
+                connections_config=connections_config or {},
+                start_values=start_values or {},
+                parameters_to_log=parameters_to_log or {},
+            ),
+            _simulation_config=SimulationConfig(
+                stop_time=stop_time,
+                step_size=step_size,
+                logging_step_size=logging_step_size,
+            ),
+        )
+
+    @classmethod
+    def from_config_file(
+        cls,
+        run_name: str,
+        config_file_path: str | Path,
         fmu_paths: co.FmuPaths | None = None,
         model_classes: co.ModelClasses | None = None,
     ) -> Self:
@@ -689,7 +831,7 @@ class Run:
 
         Args:
             run_name (str): Name of the run.
-            config_path (Path): Path to the config file.
+            config_file_path (Path | str): Path to the config file.
             fmu_paths (Optional[FmuPaths], optional):
                 Dictionary which defines which fmu should be simulated.
                 key -> name of the fmu; value -> path to the fmu
@@ -717,17 +859,23 @@ class Run:
                 Defaults to None.
 
         Returns:
-            Self: Run instance.
+            Run: Run instance.
         """
-        config_path = utils.convert_str_to_path(config_path, "config_path")
-        with open(config_path, encoding="utf-8") as config_file:
+        config_file_path = utils.convert_str_to_path(
+            config_file_path, "config_file_path"
+        )
+        with open(config_file_path, encoding="utf-8") as config_file:
             config: ConfigDict = json.load(config_file)
 
         return cls(
             run_name=run_name,
-            _run_meta=RunMeta.from_config(config),
-            _models=Models.from_config(config, fmu_paths, model_classes),
-            _simulation_config=SimulationConfig.from_config(config),
+            _run_meta=RunMeta.from_config_file(config),
+            _models=Models.from_config_file(
+                config=config,
+                fmu_paths=fmu_paths or {},
+                model_classes=model_classes or {},
+            ),
+            _simulation_config=SimulationConfig.from_config_file(config),
         )
 
     @classmethod
@@ -794,13 +942,9 @@ class RunMeta:
     CONFIG_KEY: ClassVar[ConfigKeyType] = "run_meta"
 
     @classmethod
-    def from_config(cls, config: ConfigDict) -> Self:
-        description = config[cls.CONFIG_KEY].get("description", "")
+    def from_config(cls, description: str, keywords: list[str]) -> Self:
         utils.check_type(description, "description", str)
-        assert isinstance(description, str)
-        keywords = config[cls.CONFIG_KEY].get("keywords", [])
         utils.check_type(keywords, "keywords", list)
-        assert isinstance(keywords, list)
         return cls(
             description=description,
             keywords=keywords,
@@ -809,6 +953,19 @@ class RunMeta:
             date=datetime.now().strftime("%d-%b-%Y %H:%M:%S"),
             os=sys.platform,
             dependencies=utils.get_dependencies_of_current_env(),
+        )
+
+    @classmethod
+    def from_config_file(cls, config: ConfigDict) -> Self:
+        description = config[cls.CONFIG_KEY].get("description", "")
+        utils.check_type(description, "description", str)
+        assert isinstance(description, str)
+        keywords = config[cls.CONFIG_KEY].get("keywords", [])
+        utils.check_type(keywords, "keywords", list)
+        assert isinstance(keywords, list)
+        return cls.from_config(
+            description=description,
+            keywords=keywords,
         )
 
     def to_config(self) -> MetaConfigDict:
@@ -834,7 +991,7 @@ class SimulationConfig:
     CONFIG_KEY: ClassVar[ConfigKeyType] = "simulation_config"
 
     @classmethod
-    def from_config(cls, config: ConfigDict) -> Self:
+    def from_config_file(cls, config: ConfigDict) -> Self:
         return cls(**config[cls.CONFIG_KEY])
 
     def to_dict(self) -> SimulationConfigDict:
@@ -859,12 +1016,42 @@ class Models:
     @classmethod
     def from_config(
         cls,
+        fmu_paths: co.FmuPaths,
+        model_classes: co.ModelClasses,
+        connections_config: co.ConnectionsConfig,
+        start_values: co.StartValues,
+        parameters_to_log: co.ParametersToLog,
+    ) -> Self:
+        fmus = {
+            name: Fmu(
+                name=name,
+                fmu_path=utils.convert_str_to_path(path, "fmu_path"),
+                connections=connections_config.get(name),
+                start_values=start_values.get(name),
+                parameters_to_log=parameters_to_log.get(name),
+            )
+            for name, path in fmu_paths.items()
+        }
+        python_models = {
+            name: PythonModel(
+                name=name,
+                model_class=model_class,
+                connections=connections_config.get(name),
+                start_values=start_values.get(name),
+                parameters_to_log=parameters_to_log.get(name),
+            )
+            for name, model_class in model_classes.items()
+        }
+        return cls(fmus=fmus, python_models=python_models)
+
+    @classmethod
+    def from_config_file(
+        cls,
         config: ConfigDict,
-        fmu_paths: co.FmuPaths | None = None,
-        model_classes: co.ModelClasses | None = None,
+        fmu_paths: co.FmuPaths,
+        model_classes: co.ModelClasses,
     ) -> Self:
         model_config = cast(dict[str, ModelConfigDict], config[cls.CONFIG_KEY])
-        fmu_paths = fmu_paths or {}
         fmus = {
             name: Fmu(
                 name=name,
@@ -873,7 +1060,6 @@ class Models:
             )
             for name, path in fmu_paths.items()
         }
-        model_classes = model_classes or {}
         python_models = {
             name: PythonModel(name=name, model_class=model_class, **model_config[name])
             for name, model_class in model_classes.items()
