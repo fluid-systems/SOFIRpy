@@ -1,27 +1,12 @@
-# %%
 import os
-import pickle
 import sys
 from pathlib import Path
 
-import numpy as np
-
 from sofirpy import Run
-from sofirpy.rdm.hdf5.serialize import DatasetSerializer, Serializer
 
 sys.path.append(os.path.join(os.path.dirname(__file__), "../"))
 
 from discrete_pid import PID
-
-
-class StartValuesSerializer(DatasetSerializer):
-    @staticmethod
-    def serialize(run: Run, model_name: str) -> bytes:
-        model = run.models[model_name]
-        return np.void(pickle.dumps(model.start_values))
-
-
-Serializer.use_start_value_serializer(StartValuesSerializer)
 
 # Simulating and storing a run to a hdf5
 run_name = "Run_1"
@@ -45,6 +30,5 @@ hdf5_path = Path(__file__).parent / "run_examples.hdf5"
 
 run.to_hdf5(hdf5_path)
 
-# %%
 # Loading the run from the hdf5
 run_loaded = Run.from_hdf5(run_name, hdf5_path)
