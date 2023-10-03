@@ -666,7 +666,7 @@ class Run:
         stop_time: float,
         step_size: float,
         keywords: list[str] | None = None,
-        description: str = None,
+        description: str | None = None,
         fmu_paths: co.FmuPaths | None = None,
         model_classes: co.ModelClasses | None = None,
         connections_config: co.ConnectionsConfig | None = None,
