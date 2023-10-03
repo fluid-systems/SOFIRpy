@@ -19,6 +19,8 @@ if sys.platform == "win32":
     fmu_path = Path(__file__).parent.parent / "DC_Motor.fmu"
 elif sys.platform == "darwin":
     fmu_path = Path(__file__).parent.parent / "DC_Motor_mac.fmu"
+elif sys.platform == "linux":
+    fmu_path = Path(__file__).parent.parent / "DC_Motor_linux.fmu"
 
 fmu_paths = {"DC_Motor": fmu_path}
 
