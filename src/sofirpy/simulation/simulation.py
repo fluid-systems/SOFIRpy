@@ -633,7 +633,7 @@ def _validate_input(
     if not fmu_paths and not model_classes:
         raise ValueError(
             "'fmu_paths' and 'model_classes' are empty; "
-            "expected at least one to be not empty"
+            "expected at least one not to be empty"
         )
 
     fmu_names = _validate_fmu_paths(fmu_paths)
