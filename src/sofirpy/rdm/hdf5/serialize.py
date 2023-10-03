@@ -5,9 +5,7 @@ import hashlib
 import inspect
 import json
 import pickle
-from abc import ABC, abstractmethod
-from dataclasses import asdict
-from typing import Any, cast
+from typing import Any, Protocol, cast
 
 import cloudpickle
 import numpy as np
@@ -15,16 +13,14 @@ import numpy as np
 import sofirpy.rdm.run as rdm_run
 
 
-class Serializer(ABC):
+class DatasetSerializer(Protocol):
     @staticmethod
-    @abstractmethod
     def serialize(run: rdm_run.Run, *args: Any, **kwargs: Any) -> Any:
         ...
 
 
-class AttributeSerializer(ABC):
+class AttributeSerializer(Protocol):
     @staticmethod
-    @abstractmethod
     def serialize(run: rdm_run.Run) -> dict[str, Any]:
         ...
 
@@ -37,13 +33,13 @@ class RunMeta(AttributeSerializer):
         return run_meta
 
 
-class Config(Serializer):
+class Config(DatasetSerializer):
     @staticmethod
     def serialize(run: rdm_run.Run, *args: Any, **kwargs: Any) -> Any:
         return json.dumps(run.get_config())
 
 
-class Dependencies(Serializer):
+class Dependencies(DatasetSerializer):
     @staticmethod
     def serialize(run: rdm_run.Run, *args: Any, **kwargs: Any) -> Any:
         return json.dumps(run._run_meta.dependencies)
@@ -64,7 +60,7 @@ class Units(AttributeSerializer):
         return {k: v if v is not None else "" for k, v in run._results.units.items()}
 
 
-class TimeSeries(Serializer):
+class TimeSeries(DatasetSerializer):
     @staticmethod
     def serialize(run: rdm_run.Run, *args: Any, **kwargs: Any) -> Any:
         if run._results is None:
@@ -72,28 +68,28 @@ class TimeSeries(Serializer):
         return run._results.time_series.to_records(index=False)
 
 
-class Connections(Serializer):
+class Connections(DatasetSerializer):
     @staticmethod
     def serialize(run: rdm_run.Run, *args: Any, **kwargs: Any) -> Any:
         model = run.models[kwargs["model_name"]]
         return json.dumps({"connections": model.connections or []})
 
 
-class StartValues(Serializer):
+class StartValues(DatasetSerializer):
     @staticmethod
     def serialize(run: rdm_run.Run, *args: Any, **kwargs: Any) -> Any:
         model = run.models[kwargs["model_name"]]
         return json.dumps({"start_values": model.start_values or {}})
 
 
-class ParametersToLog(Serializer):
+class ParametersToLog(DatasetSerializer):
     @staticmethod
     def serialize(run: rdm_run.Run, *args: Any, **kwargs: Any) -> Any:
         model = run.models[kwargs["model_name"]]
         return json.dumps({"parameters_to_log": model.parameters_to_log or []})
 
 
-class FmuReference(Serializer):
+class FmuReference(DatasetSerializer):
     @staticmethod
     def serialize(run: rdm_run.Run, *args: Any, **kwargs: Any) -> Any:
         fmu_path = run.get_fmu_path(kwargs["fmu_name"])
@@ -101,14 +97,14 @@ class FmuReference(Serializer):
         return hashlib.sha256(fmu_content).hexdigest()
 
 
-class FmuStorage(Serializer):
+class FmuStorage(DatasetSerializer):
     @staticmethod
     def serialize(run: rdm_run.Run, *args: Any, **kwargs: Any) -> Any:
         fmu_path = run.get_fmu_path(kwargs["fmu_name"])
         return np.void(fmu_path.open("rb").read())
 
 
-class PythonModelInstanceReference(Serializer):
+class PythonModelClassReference(DatasetSerializer):
     @staticmethod
     def serialize(run: rdm_run.Run, *args: Any, **kwargs: Any) -> Any:
         model = run.get_model_class(kwargs["python_model_name"])
@@ -118,7 +114,7 @@ class PythonModelInstanceReference(Serializer):
         return model_hash
 
 
-class PythonModelClassStorage(Serializer):
+class PythonModelClassStorage(DatasetSerializer):
     @staticmethod
     def serialize(run: rdm_run.Run, *args: Any, **kwargs: Any) -> Any:
         model = run.get_model_class(kwargs["python_model_name"])
@@ -129,7 +125,7 @@ class PythonModelClassStorage(Serializer):
         return np.void(cloudpickle.dumps(model))
 
 
-class PythonModelSourceCodeReference(Serializer):
+class PythonModelSourceCodeReference(DatasetSerializer):
     @staticmethod
     def serialize(run: rdm_run.Run, *args: Any, **kwargs: Any) -> Any:
         source_code = run.get_source_code_of_python_model(kwargs["python_model_name"])
@@ -137,7 +133,37 @@ class PythonModelSourceCodeReference(Serializer):
         return source_code_hash
 
 
-class PythonModelSourceCodeStorage(Serializer):
+class PythonModelSourceCodeStorage(DatasetSerializer):
     @staticmethod
     def serialize(run: rdm_run.Run, *args: Any, **kwargs: Any) -> Any:
         return run.get_source_code_of_python_model(kwargs["python_model_name"])
+
+
+class Serializer:
+    run_meta_serializer: type[AttributeSerializer] = RunMeta
+    simulation_config_serializer: type[AttributeSerializer] = SimulationConfig
+    units_serializer: type[AttributeSerializer] = Units
+    config_serializer: type[DatasetSerializer] = Config
+    dependencies_serializer: type[DatasetSerializer] = Dependencies
+    time_series_serializer: type[DatasetSerializer] = TimeSeries
+    connections_serializer: type[DatasetSerializer] = Connections
+    start_values_serializer: type[DatasetSerializer] = StartValues
+    parameters_to_log_serializer: type[DatasetSerializer] = ParametersToLog
+    fmu_reference_serializer: type[DatasetSerializer] = FmuReference
+    fmu_storage_serializer: type[DatasetSerializer] = FmuStorage
+    python_model_class_reference_serializer: type[
+        DatasetSerializer
+    ] = PythonModelClassReference
+    python_model_class_storage_serializer: type[
+        DatasetSerializer
+    ] = PythonModelClassStorage
+    python_model_source_code_reference_serializer: type[
+        DatasetSerializer
+    ] = PythonModelSourceCodeReference
+    python_model_source_code_storage_serializer: type[
+        DatasetSerializer
+    ] = PythonModelSourceCodeStorage
+
+    @classmethod
+    def use_start_value_serializer(cls, serializer: type[DatasetSerializer]) -> None:
+        cls.start_values_serializer = serializer

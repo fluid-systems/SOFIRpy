@@ -2,11 +2,11 @@ from __future__ import annotations
 
 import json
 import tempfile
-from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Any, cast
+from typing import Any, Protocol
 
 import cloudpickle
+import numpy as np
 import pandas as pd
 
 import sofirpy.rdm.hdf5.config as config
@@ -14,14 +14,13 @@ import sofirpy.rdm.hdf5.hdf5 as h5
 import sofirpy.rdm.run as rdm_run
 
 
-class Deserializer(ABC):
+class Deserialize(Protocol):
     @staticmethod
-    @abstractmethod
     def deserialize(run_group: h5.Group, *args: Any, **kwargs: Any) -> Any:
         ...
 
 
-class RunMeta(Deserializer):
+class RunMeta(Deserialize):
     @staticmethod
     def deserialize(run_group: h5.Group, *args: Any, **kwargs: Any) -> rdm_run._RunMeta:
         assert run_group.attribute is not None
@@ -34,7 +33,7 @@ class RunMeta(Deserializer):
         )
 
 
-class SimulationConfig(Deserializer):
+class SimulationConfig(Deserialize):
     @staticmethod
     def deserialize(
         run_group: h5.Group, *args: Any, **kwargs: Any
@@ -49,27 +48,115 @@ class SimulationConfig(Deserializer):
         )
 
 
-class Results(Deserializer):
+class TimeSeries(Deserialize):
+    @staticmethod
+    def deserialize(run_group: h5.Group, *args: Any, **kwargs: Any) -> Any:
+        data = kwargs.get("data")
+        assert isinstance(data, np.ndarray)
+        return pd.DataFrame.from_records(data)
+
+
+class Units(Deserialize):
+    @staticmethod
+    def deserialize(run_group: h5.Group, *args: Any, **kwargs: Any) -> Any:
+        units = kwargs.get("data")
+        assert isinstance(units, dict)
+        return {name: unit if unit else None for name, unit in units.items()}
+
+
+class Results(Deserialize):
     @staticmethod
     def deserialize(run_group: h5.Group, *args: Any, **kwargs: Any) -> rdm_run._Results:
         simulation_results_group = run_group.get_group(
             config.RunGroupName.SIMULATION_RESULTS.value
         )
-        _time_series = simulation_results_group.datasets._datasets[
-            config.RunDatasetName.TIME_SERIES.value
-        ].data
-        time_series = pd.DataFrame.from_records(_time_series)
-        units_attr = simulation_results_group.datasets._datasets[
+        time_series = Deserializer.time_series.deserialize(
+            run_group,
+            data=simulation_results_group.datasets._datasets[
+                config.RunDatasetName.TIME_SERIES.value
+            ].data,
+        )
+        attributes = simulation_results_group.datasets._datasets[
             config.RunDatasetName.TIME_SERIES.value
         ].attribute
-        assert units_attr is not None
-        units = units_attr.attributes
-        assert units is not None
-        units = {name: unit if unit else None for name, unit in units.items()}
+        assert attributes is not None
+        units = Deserializer.units.deserialize(
+            run_group,
+            data=attributes.attributes,
+        )
+
         return rdm_run._Results(time_series, units)
 
 
-class Models(Deserializer):
+class Connections(Deserialize):
+    @staticmethod
+    def deserialize(run_group: h5.Group, *args: Any, **kwargs: Any) -> Any:
+        data = kwargs.get("data")
+        assert isinstance(data, bytes)
+        return json.loads(data)
+
+
+class StartValues(Deserialize):
+    @staticmethod
+    def deserialize(run_group: h5.Group, *args: Any, **kwargs: Any) -> Any:
+        data = kwargs.get("data")
+        assert isinstance(data, bytes)
+        return json.loads(data)
+
+
+class ParametersToLog(Deserialize):
+    @staticmethod
+    def deserialize(run_group: h5.Group, *args: Any, **kwargs: Any) -> Any:
+        data = kwargs.get("data")
+        assert isinstance(data, bytes)
+        return json.loads(data)
+
+
+class FmuReference(Deserialize):
+    @staticmethod
+    def deserialize(run_group: h5.Group, *args: Any, **kwargs: Any) -> Any:
+        data = kwargs.get("data")
+        assert isinstance(data, bytes)
+        return data.decode()
+
+
+class FmuContent(Deserialize):
+    @staticmethod
+    def deserialize(run_group: h5.Group, *args: Any, **kwargs: Any) -> Any:
+        return kwargs.get("data")
+
+
+class ClassReference(Deserialize):
+    @staticmethod
+    def deserialize(run_group: h5.Group, *args: Any, **kwargs: Any) -> Any:
+        data = kwargs.get("data")
+        assert isinstance(data, bytes)
+        return data.decode()
+
+
+class SourceCodeReference(Deserialize):
+    @staticmethod
+    def deserialize(run_group: h5.Group, *args: Any, **kwargs: Any) -> Any:
+        data = kwargs.get("data")
+        assert isinstance(data, bytes)
+        return data.decode()
+
+
+class ClassStorage(Deserialize):
+    @staticmethod
+    def deserialize(run_group: h5.Group, *args: Any, **kwargs: Any) -> Any:
+        return cloudpickle.loads(kwargs.get("data"))
+
+
+class SourceCodeStorage(Deserialize):
+    @staticmethod
+    def deserialize(run_group: h5.Group, *args: Any, **kwargs: Any) -> Any:
+        data = kwargs.get("data")
+        assert isinstance(data, bytes)
+        return data.decode()
+
+
+class Models(Deserialize):
     @staticmethod
     def deserialize(
         run_group: h5.Group,
@@ -82,32 +169,30 @@ class Models(Deserializer):
         )
         fmus: dict[str, rdm_run._Fmu] = {}
         for name, group in fmu_models_group.groups._groups.items():
-            connections = json.loads(
-                cast(
-                    bytes,
-                    group.get_dataset(config.RunDatasetName.CONNECTIONS.value).data,
-                )
+            connections = Deserializer.connections.deserialize(
+                run_group,
+                data=group.get_dataset(config.RunDatasetName.CONNECTIONS.value).data,
             )
-            start_values = json.loads(
-                cast(
-                    bytes,
-                    group.get_dataset(config.RunDatasetName.START_VALUES.value).data,
-                )
+            start_values = Deserializer.start_values.deserialize(
+                run_group,
+                data=group.get_dataset(config.RunDatasetName.START_VALUES.value).data,
             )
-            parameters_to_log = json.loads(
-                cast(
-                    bytes,
-                    group.get_dataset(
-                        config.RunDatasetName.PARAMETERS_TO_LOG.value
-                    ).data,
-                )
+
+            parameters_to_log = Deserializer.parameters_to_log.deserialize(
+                run_group,
+                data=group.get_dataset(
+                    config.RunDatasetName.PARAMETERS_TO_LOG.value
+                ).data,
             )
-            reference = cast(
-                bytes, group.get_dataset(config.RunDatasetName.FMU_REFERENCE.value).data
-            ).decode()
-            fmu_content = cast(
-                bytes,
-                hdf5.read_data(reference, config.ModelStorageGroupName.get_fmu_path()),
+            reference = Deserializer.fmu_reference.deserialize(
+                run_group,
+                data=group.get_dataset(config.RunDatasetName.FMU_REFERENCE.value).data,
+            )
+            fmu_content = Deserializer.fmu_content.deserialize(
+                run_group,
+                data=hdf5.read_data(
+                    reference, config.ModelStorageGroupName.get_fmu_path()
+                ),
             )
             tmp_dir = Path(tempfile.mkdtemp())
             fmu_path = tmp_dir / f"{name}.fmu"
@@ -129,47 +214,46 @@ class Models(Deserializer):
         )
         python_models: dict[str, rdm_run._PythonModel] = {}
         for name, group in python_models_group.groups._groups.items():
-            connections = json.loads(
-                cast(
-                    bytes,
-                    group.get_dataset(config.RunDatasetName.CONNECTIONS.value).data,
-                )
+            connections = Deserializer.connections.deserialize(
+                run_group,
+                data=group.get_dataset(config.RunDatasetName.CONNECTIONS.value).data,
             )
-            start_values = json.loads(
-                cast(
-                    bytes,
-                    group.get_dataset(config.RunDatasetName.START_VALUES.value).data,
-                )
+            start_values = Deserializer.start_values.deserialize(
+                run_group,
+                data=group.get_dataset(config.RunDatasetName.START_VALUES.value).data,
             )
-            parameters_to_log = json.loads(
-                cast(
-                    bytes,
-                    group.get_dataset(
-                        config.RunDatasetName.PARAMETERS_TO_LOG.value
-                    ).data,
-                )
+
+            parameters_to_log = Deserializer.parameters_to_log.deserialize(
+                run_group,
+                data=group.get_dataset(
+                    config.RunDatasetName.PARAMETERS_TO_LOG.value
+                ).data,
             )
-            class_reference = cast(
-                bytes,
-                group.get_dataset(config.RunDatasetName.REFERENCE_CLASS.value).data,
-            ).decode()
-            source_code_reference = cast(
-                bytes,
-                group.get_dataset(
+            class_reference = Deserializer.class_reference.deserialize(
+                run_group,
+                data=group.get_dataset(
+                    config.RunDatasetName.REFERENCE_CLASS.value
+                ).data,
+            )
+            source_code_reference = Deserializer.source_code_reference.deserialize(
+                run_group,
+                data=group.get_dataset(
                     config.RunDatasetName.REFERENCE_SOURCE_CODE.value
                 ).data,
-            ).decode()
-            source_code = cast(
-                bytes,
-                hdf5.read_data(
+            )
+            source_code = Deserializer.source_code_storage.deserialize(
+                run_group,
+                data=hdf5.read_data(
                     source_code_reference,
                     config.ModelStorageGroupName.get_source_code_path(),
                 ),
-            ).decode()
-            pickled_class = hdf5.read_data(
-                class_reference, config.ModelStorageGroupName.get_classes_path()
             )
-            model_class = cloudpickle.loads(pickled_class)
+            model_class = Deserializer.class_storage.deserialize(
+                run_group,
+                data=hdf5.read_data(
+                    class_reference, config.ModelStorageGroupName.get_classes_path()
+                ),
+            )
             python_models[name] = rdm_run._PythonModel(
                 name,
                 connections=connections[config.RunDatasetName.CONNECTIONS.value],
@@ -184,3 +268,25 @@ class Models(Deserializer):
             fmus,
             python_models,
         )
+
+
+class Deserializer:
+    run_meta: type[RunMeta] = RunMeta
+    simulation_config: type[SimulationConfig] = SimulationConfig
+    time_series: type[TimeSeries] = TimeSeries
+    units: type[Units] = Units
+    results: type[Results] = Results
+    models: type[Models] = Models
+    connections: type[Connections] = Connections
+    start_values: type[StartValues] = StartValues
+    parameters_to_log: type[ParametersToLog] = ParametersToLog
+    fmu_reference: type[FmuReference] = FmuReference
+    fmu_content: type[FmuContent] = FmuContent
+    class_reference: type[ClassReference] = ClassReference
+    source_code_reference: type[SourceCodeReference] = SourceCodeReference
+    class_storage: type[ClassStorage] = ClassStorage
+    source_code_storage: type[SourceCodeStorage] = SourceCodeStorage
+
+    @classmethod
+    def use_start_values_deserializer(cls, deserializer: Deserialize) -> None:
+        cls.start_values = deserializer

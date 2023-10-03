@@ -24,10 +24,12 @@ def create_run_from_hdf5(hdf5_path: Path, run_name: str) -> rdm_run.Run:
         raise FileNotFoundError(f"'{hdf5_path}' does not exist")
     hdf5 = h5.HDF5(hdf5_path)
     run_group = h5.Group.from_hdf5(hdf5, run_name)
-    run_meta = deserialize.RunMeta.deserialize(run_group)
+    run_meta = deserialize.Deserializer.run_meta.deserialize(run_group)
     _check_compatibility(run_meta)
-    results = deserialize.Results.deserialize(run_group)
-    simulation_config = deserialize.SimulationConfig.deserialize(run_group)
+    results = deserialize.Deserializer.results.deserialize(run_group)
+    simulation_config = deserialize.Deserializer.simulation_config.deserialize(
+        run_group
+    )
     models = deserialize.Models.deserialize(
         run_group,
         hdf5=hdf5,
