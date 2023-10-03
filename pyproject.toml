@@ -99,4 +99,11 @@ max-args = 9
 max-line-length = 88
 
 [tool.pylint."messages control"]
-disable = ["attribute-defined-outside-init", "logging-fstring-interpolation"]
+disable = [
+    "attribute-defined-outside-init",
+    "logging-fstring-interpolation",
+    "missing-function-docstring",
+    "too-few-public-methods",
+    "missing-class-docstring",
+
+]
