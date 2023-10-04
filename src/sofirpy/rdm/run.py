@@ -912,6 +912,11 @@ class Run:
             get_units=True,
         )
         self._results = Results(time_series=time_series, units=units)
+        self._update_run()
+
+    def _update_run(self) -> None:
+        """Updates the meta data of a run."""
+        self._run_meta.update()
 
     def to_hdf5(self, hdf5_path: Path | str) -> None:
         """Store the run inside a hdf5 file.
@@ -967,6 +972,13 @@ class RunMeta:
             description=description,
             keywords=keywords,
         )
+
+    def update(self) -> None:
+        self.sofirpy_version = sofirpy.__version__
+        self.python_version = sys.version
+        self.date = datetime.now().strftime("%d-%b-%Y %H:%M:%S")
+        self.os = sys.platform
+        self.dependencies = utils.get_dependencies_of_current_env()
 
     def to_config(self) -> MetaConfigDict:
         meta_config = cast(

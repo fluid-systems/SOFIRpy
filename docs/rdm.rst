@@ -159,3 +159,5 @@ code of the classes and the dependencies used when storing the run.
 
 In cases where the operating system differs from the one in which the run was initially
 executed, simulating the model classes and the FMUs could fail.
+
+If a rerun of the simulation was successful all the metadata of the run will be updated.
