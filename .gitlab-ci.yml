@@ -69,7 +69,7 @@ publish:
       fi
     - pip install build twine
     - python -m build
-    - TWINE_PASSWORD=${TWINE_PASSWORD} TWINE_USERNAME=${TWINE_USERNAME} twine upload
+    - TWINE_PASSWORD=${TWINE_PASSWORD} TWINE_USERNAME=${TWINE_USERNAME} twine upload dist/*
 
 release:
   stage: Release
