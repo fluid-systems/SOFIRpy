@@ -1,9 +1,9 @@
 Release notes
 =============
 
-v1.0.0
+v1.0.1
 ------
-.. include:: change_log/v1.0.0.rst
+.. include:: change_log/v1.0.1.rst
 
 v0.1.0
 ------
