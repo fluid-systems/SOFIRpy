@@ -1,0 +1,354 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg xmlns="http://www.w3.org/2000/svg"
+    xmlns:xlink="http://www.w3.org/1999/xlink" contentStyleType="text/css" height="715px" preserveAspectRatio="none"
+    style="width:1168px;height:715px;background:#FFFFFF;" version="1.1" viewBox="0 0 1168 715" width="1168px"
+    zoomAndPan="magnify">
+    <defs>
+        <filter height="300%" id="ft770j6uybyxs" width="300%" x="-1" y="-1">
+            <feGaussianBlur result="blurOut" stdDeviation="2.0" />
+            <feColorMatrix in="blurOut" result="blurOut2" type="matrix"
+                values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 .4 0" />
+            <feOffset dx="4.0" dy="4.0" in="blurOut2" result="blurOut3" />
+            <feBlend in="SourceGraphic" in2="blurOut3" mode="normal" />
+        </filter>
+    </defs>
+    <g>
+        <rect fill="none" height="27.6094" id="_title" style="stroke:none;stroke-width:1.0;" width="198" x="478"
+            y="5" /><text fill="#000000" font-family="sans-serif" font-size="14" font-weight="bold"
+            lengthAdjust="spacing" textLength="188" x="483" y="24.5332">Simulation Class Diagramm</text>
+        <!--MD5=[e78d3bd29d68b8fbdb4aae8710e3db25]
+class Simulator-->
+        <g id="elem_Simulator">
+            <rect codeLine="7" fill="#FEFECE" filter="url(#ft770j6uybyxs)" height="118.4375" id="Simulator"
+                style="stroke:#A80036;stroke-width:1.0;" width="534" x="109.5" y="45.6094" />
+            <ellipse cx="342.75" cy="61.6094" fill="#ADD1B2" rx="11" ry="11" style="stroke:#A80036;stroke-width:1.0;" />
+            <path
+                d="M345.5156,57.4844 Q345.6719,57.2656 345.8594,57.1563 Q346.0469,57.0469 346.2656,57.0469 Q346.6406,57.0469 346.875,57.3125 Q347.1094,57.5625 347.1094,58.1719 L347.1094,59.625 Q347.1094,60.2344 346.875,60.5 Q346.6406,60.7656 346.2656,60.7656 Q345.9219,60.7656 345.7188,60.5625 Q345.5156,60.375 345.4063,59.8594 Q345.3594,59.5 345.1719,59.3125 Q344.8438,58.9375 344.2344,58.7188 Q343.625,58.5 343,58.5 Q342.2344,58.5 341.5938,58.8281 Q340.9688,59.1563 340.4688,59.9063 Q339.9844,60.6563 339.9844,61.6875 L339.9844,62.7813 Q339.9844,64.0156 340.875,64.8438 Q341.7656,65.6563 343.3594,65.6563 Q344.2969,65.6563 344.9531,65.4063 Q345.3438,65.25 345.7656,64.8125 Q346.0313,64.5469 346.1719,64.4688 Q346.3281,64.3906 346.5313,64.3906 Q346.8594,64.3906 347.1094,64.6563 Q347.375,64.9063 347.375,65.25 Q347.375,65.5938 347.0313,66 Q346.5313,66.5781 345.7344,66.9063 Q344.6563,67.3594 343.3594,67.3594 Q341.8438,67.3594 340.6406,66.7344 Q339.6563,66.2344 338.9688,65.1719 Q338.2813,64.0938 338.2813,62.8125 L338.2813,61.6563 Q338.2813,60.3281 338.8906,59.1875 Q339.5156,58.0313 340.6094,57.4219 Q341.7031,56.7969 342.9375,56.7969 Q343.6719,56.7969 344.3125,56.9688 Q344.9688,57.125 345.5156,57.4844 Z "
+                fill="#000000" /><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing"
+                textLength="59" x="363.25" y="67.3379">Simulator</text>
+            <line style="stroke:#A80036;stroke-width:1.0;" x1="110.5" x2="642.5" y1="77.6094" y2="77.6094" />
+            <ellipse cx="120.5" cy="91.9141" fill="none" rx="3" ry="3" style="stroke:#038048;stroke-width:1.0;" /><text
+                fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="159" x="129.5"
+                y="96.1426">systems: dict[str, System]</text>
+            <ellipse cx="120.5" cy="109.5234" fill="none" rx="3" ry="3" style="stroke:#038048;stroke-width:1.0;" /><text
+                fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="188" x="129.5"
+                y="113.752">connections: list[Connections]</text>
+            <ellipse cx="120.5" cy="127.1328" fill="none" rx="3" ry="3" style="stroke:#038048;stroke-width:1.0;" /><text
+                fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="264" x="129.5"
+                y="131.3613">parameters_to_log: list[SystemParameter]</text>
+            <line style="stroke:#A80036;stroke-width:1.0;" x1="110.5" x2="642.5" y1="138.4375" y2="138.4375" />
+            <ellipse cx="120.5" cy="152.7422" fill="#84BE84" rx="3" ry="3" style="stroke:#038048;stroke-width:1.0;" />
+            <text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="508"
+                x="129.5" y="156.9707">simulate(stop_time: float, step_size: float, logging_step_size: float) -&gt;
+                DataFrame</text>
+        </g>
+        <!--MD5=[ad510ca42d1a057b37ac2813b8ee5b40]
+class Connection-->
+        <g id="elem_Connection">
+            <rect codeLine="15" fill="#FEFECE" filter="url(#ft770j6uybyxs)" height="83.2188" id="Connection"
+                style="stroke:#A80036;stroke-width:1.0;" width="225" x="7" y="241.6094" />
+            <ellipse cx="79.25" cy="257.6094" fill="#ADD1B2" rx="11" ry="11" style="stroke:#A80036;stroke-width:1.0;" />
+            <path
+                d="M82.0156,253.4844 Q82.1719,253.2656 82.3594,253.1563 Q82.5469,253.0469 82.7656,253.0469 Q83.1406,253.0469 83.375,253.3125 Q83.6094,253.5625 83.6094,254.1719 L83.6094,255.625 Q83.6094,256.2344 83.375,256.5 Q83.1406,256.7656 82.7656,256.7656 Q82.4219,256.7656 82.2188,256.5625 Q82.0156,256.375 81.9063,255.8594 Q81.8594,255.5 81.6719,255.3125 Q81.3438,254.9375 80.7344,254.7188 Q80.125,254.5 79.5,254.5 Q78.7344,254.5 78.0938,254.8281 Q77.4688,255.1563 76.9688,255.9063 Q76.4844,256.6563 76.4844,257.6875 L76.4844,258.7813 Q76.4844,260.0156 77.375,260.8438 Q78.2656,261.6563 79.8594,261.6563 Q80.7969,261.6563 81.4531,261.4063 Q81.8438,261.25 82.2656,260.8125 Q82.5313,260.5469 82.6719,260.4688 Q82.8281,260.3906 83.0313,260.3906 Q83.3594,260.3906 83.6094,260.6563 Q83.875,260.9063 83.875,261.25 Q83.875,261.5938 83.5313,262 Q83.0313,262.5781 82.2344,262.9063 Q81.1563,263.3594 79.8594,263.3594 Q78.3438,263.3594 77.1406,262.7344 Q76.1563,262.2344 75.4688,261.1719 Q74.7813,260.0938 74.7813,258.8125 L74.7813,257.6563 Q74.7813,256.3281 75.3906,255.1875 Q76.0156,254.0313 77.1094,253.4219 Q78.2031,252.7969 79.4375,252.7969 Q80.1719,252.7969 80.8125,252.9688 Q81.4688,253.125 82.0156,253.4844 Z "
+                fill="#000000" /><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing"
+                textLength="72" x="99.75" y="263.3379">Connection</text>
+            <line style="stroke:#A80036;stroke-width:1.0;" x1="8" x2="231" y1="273.6094" y2="273.6094" />
+            <ellipse cx="18" cy="287.9141" fill="none" rx="3" ry="3" style="stroke:#038048;stroke-width:1.0;" /><text
+                fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="190" x="27"
+                y="292.1426">input_point: SystemParameter</text>
+            <ellipse cx="18" cy="305.5234" fill="none" rx="3" ry="3" style="stroke:#038048;stroke-width:1.0;" /><text
+                fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="199" x="27"
+                y="309.752">output_point: SystemParameter</text>
+            <line style="stroke:#A80036;stroke-width:1.0;" x1="8" x2="231" y1="316.8281" y2="316.8281" />
+        </g>
+        <!--MD5=[344db48aa2b44cfbbbaa357fa19daf4f]
+class SystemParameter-->
+        <g id="elem_SystemParameter">
+            <rect codeLine="19" fill="#FEFECE" filter="url(#ft770j6uybyxs)" height="83.2188" id="SystemParameter"
+                style="stroke:#A80036;stroke-width:1.0;" width="144" x="304.5" y="241.6094" />
+            <ellipse cx="319.5" cy="257.6094" fill="#ADD1B2" rx="11" ry="11" style="stroke:#A80036;stroke-width:1.0;" />
+            <path
+                d="M322.2656,253.4844 Q322.4219,253.2656 322.6094,253.1563 Q322.7969,253.0469 323.0156,253.0469 Q323.3906,253.0469 323.625,253.3125 Q323.8594,253.5625 323.8594,254.1719 L323.8594,255.625 Q323.8594,256.2344 323.625,256.5 Q323.3906,256.7656 323.0156,256.7656 Q322.6719,256.7656 322.4688,256.5625 Q322.2656,256.375 322.1563,255.8594 Q322.1094,255.5 321.9219,255.3125 Q321.5938,254.9375 320.9844,254.7188 Q320.375,254.5 319.75,254.5 Q318.9844,254.5 318.3438,254.8281 Q317.7188,255.1563 317.2188,255.9063 Q316.7344,256.6563 316.7344,257.6875 L316.7344,258.7813 Q316.7344,260.0156 317.625,260.8438 Q318.5156,261.6563 320.1094,261.6563 Q321.0469,261.6563 321.7031,261.4063 Q322.0938,261.25 322.5156,260.8125 Q322.7813,260.5469 322.9219,260.4688 Q323.0781,260.3906 323.2813,260.3906 Q323.6094,260.3906 323.8594,260.6563 Q324.125,260.9063 324.125,261.25 Q324.125,261.5938 323.7813,262 Q323.2813,262.5781 322.4844,262.9063 Q321.4063,263.3594 320.1094,263.3594 Q318.5938,263.3594 317.3906,262.7344 Q316.4063,262.2344 315.7188,261.1719 Q315.0313,260.0938 315.0313,258.8125 L315.0313,257.6563 Q315.0313,256.3281 315.6406,255.1875 Q316.2656,254.0313 317.3594,253.4219 Q318.4531,252.7969 319.6875,252.7969 Q320.4219,252.7969 321.0625,252.9688 Q321.7188,253.125 322.2656,253.4844 Z "
+                fill="#000000" /><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing"
+                textLength="112" x="333.5" y="263.3379">SystemParameter</text>
+            <line style="stroke:#A80036;stroke-width:1.0;" x1="305.5" x2="447.5" y1="273.6094" y2="273.6094" /><text
+                fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="111" x="310.5"
+                y="292.1426">system_name: str</text><text fill="#000000" font-family="sans-serif" font-size="14"
+                lengthAdjust="spacing" textLength="59" x="310.5" y="309.752">name: str</text>
+            <line style="stroke:#A80036;stroke-width:1.0;" x1="305.5" x2="447.5" y1="316.8281" y2="316.8281" />
+        </g>
+        <!--MD5=[f8e092794d52bf9a252466252ae7bd1c]
+class System-->
+        <g id="elem_System">
+            <rect codeLine="23" fill="#FEFECE" filter="url(#ft770j6uybyxs)" height="83.2188" id="System"
+                style="stroke:#A80036;stroke-width:1.0;" width="225" x="484" y="241.6094" />
+            <ellipse cx="569.25" cy="257.6094" fill="#ADD1B2" rx="11" ry="11"
+                style="stroke:#A80036;stroke-width:1.0;" />
+            <path
+                d="M572.0156,253.4844 Q572.1719,253.2656 572.3594,253.1563 Q572.5469,253.0469 572.7656,253.0469 Q573.1406,253.0469 573.375,253.3125 Q573.6094,253.5625 573.6094,254.1719 L573.6094,255.625 Q573.6094,256.2344 573.375,256.5 Q573.1406,256.7656 572.7656,256.7656 Q572.4219,256.7656 572.2188,256.5625 Q572.0156,256.375 571.9063,255.8594 Q571.8594,255.5 571.6719,255.3125 Q571.3438,254.9375 570.7344,254.7188 Q570.125,254.5 569.5,254.5 Q568.7344,254.5 568.0938,254.8281 Q567.4688,255.1563 566.9688,255.9063 Q566.4844,256.6563 566.4844,257.6875 L566.4844,258.7813 Q566.4844,260.0156 567.375,260.8438 Q568.2656,261.6563 569.8594,261.6563 Q570.7969,261.6563 571.4531,261.4063 Q571.8438,261.25 572.2656,260.8125 Q572.5313,260.5469 572.6719,260.4688 Q572.8281,260.3906 573.0313,260.3906 Q573.3594,260.3906 573.6094,260.6563 Q573.875,260.9063 573.875,261.25 Q573.875,261.5938 573.5313,262 Q573.0313,262.5781 572.2344,262.9063 Q571.1563,263.3594 569.8594,263.3594 Q568.3438,263.3594 567.1406,262.7344 Q566.1563,262.2344 565.4688,261.1719 Q564.7813,260.0938 564.7813,258.8125 L564.7813,257.6563 Q564.7813,256.3281 565.3906,255.1875 Q566.0156,254.0313 567.1094,253.4219 Q568.2031,252.7969 569.4375,252.7969 Q570.1719,252.7969 570.8125,252.9688 Q571.4688,253.125 572.0156,253.4844 Z "
+                fill="#000000" /><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing"
+                textLength="46" x="589.75" y="263.3379">System</text>
+            <line style="stroke:#A80036;stroke-width:1.0;" x1="485" x2="708" y1="273.6094" y2="273.6094" /><text
+                fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="213" x="490"
+                y="292.1426">simulation_entity: SimulationEntity</text><text fill="#000000" font-family="sans-serif"
+                font-size="14" lengthAdjust="spacing" textLength="59" x="490" y="309.752">name: str</text>
+            <line style="stroke:#A80036;stroke-width:1.0;" x1="485" x2="708" y1="316.8281" y2="316.8281" />
+        </g>
+        <!--MD5=[05230c18362c8242ac0df5df33f4682d]
+class SimulationEntity-->
+        <g id="elem_SimulationEntity">
+            <rect codeLine="28" fill="#FEFECE" filter="url(#ft770j6uybyxs)" height="153.6563" id="SimulationEntity"
+                style="stroke:#A80036;stroke-width:1.0;" width="539" x="327" y="385.6094" />
+            <ellipse cx="542.25" cy="401.6094" fill="#A9DCDF" rx="11" ry="11"
+                style="stroke:#A80036;stroke-width:1.0;" />
+            <path
+                d="M544.4375,403.375 L540.2969,403.375 L539.875,404.4063 L540.2969,404.4063 Q540.9063,404.4063 541.1719,404.6406 Q541.4375,404.875 541.4375,405.2656 Q541.4375,405.6406 541.1719,405.875 Q540.9063,406.1094 540.2969,406.1094 L538,406.1094 Q537.3906,406.1094 537.1406,405.875 Q536.875,405.6406 536.875,405.25 Q536.875,404.875 537.1563,404.6406 Q537.4219,404.3906 538.0469,404.4063 L540.7188,397.75 L539.6094,397.75 Q539,397.75 538.7344,397.5156 Q538.4688,397.2813 538.4688,396.8906 Q538.4688,396.5156 538.7344,396.2813 Q539,396.0469 539.6094,396.0469 L543.2813,396.0469 L546.6719,404.4063 Q547.2656,404.4063 547.4531,404.5469 Q547.8438,404.8125 547.8438,405.2656 Q547.8438,405.6406 547.5781,405.875 Q547.3281,406.1094 546.7188,406.1094 L544.4219,406.1094 Q543.8125,406.1094 543.5469,405.875 Q543.2813,405.6406 543.2813,405.25 Q543.2813,404.875 543.5469,404.6406 Q543.8125,404.4063 544.4219,404.4063 L544.8438,404.4063 L544.4375,403.375 Z M543.7188,401.6719 L542.3594,398.2969 L540.9844,401.6719 L543.7188,401.6719 Z "
+                fill="#000000" /><text fill="#000000" font-family="sans-serif" font-size="14" font-style="italic"
+                lengthAdjust="spacing" textLength="100" x="562.75" y="407.3379">SimulationEntity</text>
+            <line style="stroke:#A80036;stroke-width:1.0;" x1="328" x2="865" y1="417.6094" y2="417.6094" />
+            <line style="stroke:#A80036;stroke-width:1.0;" x1="328" x2="865" y1="425.6094" y2="425.6094" />
+            <ellipse cx="338" cy="439.9141" fill="#84BE84" rx="3" ry="3" style="stroke:#038048;stroke-width:1.0;" />
+            <text fill="#000000" font-family="sans-serif" font-size="14" font-style="italic" lengthAdjust="spacing"
+                textLength="513" x="347" y="444.1426">set_parameter(parameter_name: str, parameter_value:
+                ParameterValue) -&gt; None</text>
+            <ellipse cx="338" cy="457.5234" fill="#84BE84" rx="3" ry="3" style="stroke:#038048;stroke-width:1.0;" />
+            <text fill="#000000" font-family="sans-serif" font-size="14" font-style="italic" lengthAdjust="spacing"
+                textLength="399" x="347" y="461.752">get_parameter_value(parameter_name: str) -&gt;
+                ParameterValue</text>
+            <ellipse cx="338" cy="475.1328" fill="#84BE84" rx="3" ry="3" style="stroke:#038048;stroke-width:1.0;" />
+            <text fill="#000000" font-family="sans-serif" font-size="14" font-style="italic" lengthAdjust="spacing"
+                textLength="177" x="347" y="479.3613">do_step(time: float) -&gt; None</text>
+            <ellipse cx="338" cy="492.7422" fill="#84BE84" rx="3" ry="3" style="stroke:#038048;stroke-width:1.0;" />
+            <text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="354" x="347"
+                y="496.9707">initialize(start_values: dict[str, ParameterValue]) -&gt; None</text>
+            <ellipse cx="338" cy="510.3516" fill="#84BE84" rx="3" ry="3" style="stroke:#038048;stroke-width:1.0;" />
+            <text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="274" x="347"
+                y="514.5801">get_unit(parameter_name: str) -&gt; str | None</text>
+            <ellipse cx="338" cy="527.9609" fill="#84BE84" rx="3" ry="3" style="stroke:#038048;stroke-width:1.0;" />
+            <text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="192" x="347"
+                y="532.1895">conclude_simulation() -&gt; None</text>
+        </g>
+        <!--MD5=[8a26117d3c83bf795c05d60ec80ddc13]
+class Fmu-->
+        <g id="elem_Fmu">
+            <rect codeLine="37" fill="#FEFECE" filter="url(#ft770j6uybyxs)" height="100.8281" id="Fmu"
+                style="stroke:#A80036;stroke-width:1.0;" width="539" x="41" y="600.6094" />
+            <ellipse cx="292.25" cy="616.6094" fill="#ADD1B2" rx="11" ry="11"
+                style="stroke:#A80036;stroke-width:1.0;" />
+            <path
+                d="M295.0156,612.4844 Q295.1719,612.2656 295.3594,612.1563 Q295.5469,612.0469 295.7656,612.0469 Q296.1406,612.0469 296.375,612.3125 Q296.6094,612.5625 296.6094,613.1719 L296.6094,614.625 Q296.6094,615.2344 296.375,615.5 Q296.1406,615.7656 295.7656,615.7656 Q295.4219,615.7656 295.2188,615.5625 Q295.0156,615.375 294.9063,614.8594 Q294.8594,614.5 294.6719,614.3125 Q294.3438,613.9375 293.7344,613.7188 Q293.125,613.5 292.5,613.5 Q291.7344,613.5 291.0938,613.8281 Q290.4688,614.1563 289.9688,614.9063 Q289.4844,615.6563 289.4844,616.6875 L289.4844,617.7813 Q289.4844,619.0156 290.375,619.8438 Q291.2656,620.6563 292.8594,620.6563 Q293.7969,620.6563 294.4531,620.4063 Q294.8438,620.25 295.2656,619.8125 Q295.5313,619.5469 295.6719,619.4688 Q295.8281,619.3906 296.0313,619.3906 Q296.3594,619.3906 296.6094,619.6563 Q296.875,619.9063 296.875,620.25 Q296.875,620.5938 296.5313,621 Q296.0313,621.5781 295.2344,621.9063 Q294.1563,622.3594 292.8594,622.3594 Q291.3438,622.3594 290.1406,621.7344 Q289.1563,621.2344 288.4688,620.1719 Q287.7813,619.0938 287.7813,617.8125 L287.7813,616.6563 Q287.7813,615.3281 288.3906,614.1875 Q289.0156,613.0313 290.1094,612.4219 Q291.2031,611.7969 292.4375,611.7969 Q293.1719,611.7969 293.8125,611.9688 Q294.4688,612.125 295.0156,612.4844 Z "
+                fill="#000000" /><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing"
+                textLength="28" x="312.75" y="622.3379">Fmu</text>
+            <line style="stroke:#A80036;stroke-width:1.0;" x1="42" x2="579" y1="632.6094" y2="632.6094" />
+            <line style="stroke:#A80036;stroke-width:1.0;" x1="42" x2="579" y1="640.6094" y2="640.6094" />
+            <ellipse cx="52" cy="654.9141" fill="#84BE84" rx="3" ry="3" style="stroke:#038048;stroke-width:1.0;" /><text
+                fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="513" x="61"
+                y="659.1426">set_parameter(parameter_name: str, parameter_value: ParameterValue) -&gt; None</text>
+            <ellipse cx="52" cy="672.5234" fill="#84BE84" rx="3" ry="3" style="stroke:#038048;stroke-width:1.0;" /><text
+                fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="400" x="61"
+                y="676.752">get_parameter_value(parameter_name: str) -&gt; ParameterValue</text>
+            <ellipse cx="52" cy="690.1328" fill="#84BE84" rx="3" ry="3" style="stroke:#038048;stroke-width:1.0;" /><text
+                fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="176" x="61"
+                y="694.3613">do_step(time: float) -&gt; None</text>
+        </g>
+        <!--MD5=[8f3630be3d904c5567d3ae0e44f6df20]
+class CustomPythonModel-->
+        <g id="elem_CustomPythonModel">
+            <rect codeLine="43" fill="#FEFECE" filter="url(#ft770j6uybyxs)" height="100.8281" id="CustomPythonModel"
+                style="stroke:#A80036;stroke-width:1.0;" width="539" x="615" y="600.6094" />
+            <ellipse cx="815.25" cy="616.6094" fill="#ADD1B2" rx="11" ry="11"
+                style="stroke:#A80036;stroke-width:1.0;" />
+            <path
+                d="M818.0156,612.4844 Q818.1719,612.2656 818.3594,612.1563 Q818.5469,612.0469 818.7656,612.0469 Q819.1406,612.0469 819.375,612.3125 Q819.6094,612.5625 819.6094,613.1719 L819.6094,614.625 Q819.6094,615.2344 819.375,615.5 Q819.1406,615.7656 818.7656,615.7656 Q818.4219,615.7656 818.2188,615.5625 Q818.0156,615.375 817.9063,614.8594 Q817.8594,614.5 817.6719,614.3125 Q817.3438,613.9375 816.7344,613.7188 Q816.125,613.5 815.5,613.5 Q814.7344,613.5 814.0938,613.8281 Q813.4688,614.1563 812.9688,614.9063 Q812.4844,615.6563 812.4844,616.6875 L812.4844,617.7813 Q812.4844,619.0156 813.375,619.8438 Q814.2656,620.6563 815.8594,620.6563 Q816.7969,620.6563 817.4531,620.4063 Q817.8438,620.25 818.2656,619.8125 Q818.5313,619.5469 818.6719,619.4688 Q818.8281,619.3906 819.0313,619.3906 Q819.3594,619.3906 819.6094,619.6563 Q819.875,619.9063 819.875,620.25 Q819.875,620.5938 819.5313,621 Q819.0313,621.5781 818.2344,621.9063 Q817.1563,622.3594 815.8594,622.3594 Q814.3438,622.3594 813.1406,621.7344 Q812.1563,621.2344 811.4688,620.1719 Q810.7813,619.0938 810.7813,617.8125 L810.7813,616.6563 Q810.7813,615.3281 811.3906,614.1875 Q812.0156,613.0313 813.1094,612.4219 Q814.2031,611.7969 815.4375,611.7969 Q816.1719,611.7969 816.8125,611.9688 Q817.4688,612.125 818.0156,612.4844 Z "
+                fill="#000000" /><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing"
+                textLength="130" x="835.75" y="622.3379">CustomPythonModel</text>
+            <line style="stroke:#A80036;stroke-width:1.0;" x1="616" x2="1153" y1="632.6094" y2="632.6094" />
+            <line style="stroke:#A80036;stroke-width:1.0;" x1="616" x2="1153" y1="640.6094" y2="640.6094" />
+            <ellipse cx="626" cy="654.9141" fill="#84BE84" rx="3" ry="3" style="stroke:#038048;stroke-width:1.0;" />
+            <text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="513" x="635"
+                y="659.1426">set_parameter(parameter_name: str, parameter_value: ParameterValue) -&gt; None</text>
+            <ellipse cx="626" cy="672.5234" fill="#84BE84" rx="3" ry="3" style="stroke:#038048;stroke-width:1.0;" />
+            <text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="400" x="635"
+                y="676.752">get_parameter_value(parameter_name: str) -&gt; ParameterValue</text>
+            <ellipse cx="626" cy="690.1328" fill="#84BE84" rx="3" ry="3" style="stroke:#038048;stroke-width:1.0;" />
+            <text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="176" x="635"
+                y="694.3613">do_step(time: float) -&gt; None</text>
+        </g>
+        <!--MD5=[5195c7a46f24941a2c9736b50d2b9969]
+reverse link Simulator to System-->
+        <g id="link_Simulator_System">
+            <path codeLine="49"
+                d="M465.43,171.5394 C474.97,178.8994 484.48,186.3594 493.5,193.6094 C512.51,208.8994 532.99,226.2994 550.64,241.5894 "
+                fill="none" id="Simulator-backto-System" style="stroke:#A80036;stroke-width:1.0;" />
+            <polygon fill="none"
+                points="455.08,163.6094,457.4051,170.4353,464.6003,170.9144,462.2752,164.0885,455.08,163.6094"
+                style="stroke:#A80036;stroke-width:1.0;" /><text fill="#000000" font-family="sans-serif" font-size="13"
+                lengthAdjust="spacing" textLength="50" x="515.5" y="208.1045">systems</text><text fill="#000000"
+                font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="20" x="521.3882"
+                y="230.8937">1..*</text>
+        </g>
+        <!--MD5=[aeae63493cf465d8052fb0849348e0de]
+reverse link Simulator to Connection-->
+        <g id="link_Simulator_Connection">
+            <path codeLine="50" d="M281,171.1894 C246.75,194.7194 209.15,220.5394 178.85,241.3494 " fill="none"
+                id="Simulator-backto-Connection" style="stroke:#A80036;stroke-width:1.0;" />
+            <polygon fill="none"
+                points="291.99,163.6494,284.7796,163.7483,282.0977,170.4421,289.3081,170.3432,291.99,163.6494"
+                style="stroke:#A80036;stroke-width:1.0;" /><text fill="#000000" font-family="sans-serif" font-size="13"
+                lengthAdjust="spacing" textLength="70" x="249.5" y="208.1045">connections</text><text fill="#000000"
+                font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="20" x="167.0236"
+                y="230.614">0..*</text>
+        </g>
+        <!--MD5=[f169c65c80efd70a2008a826a2da0220]
+reverse link Simulator to SystemParameter-->
+        <g id="link_Simulator_SystemParameter">
+            <path codeLine="51" d="M376.5,176.9594 C376.5,198.9194 376.5,222.3194 376.5,241.4594 " fill="none"
+                id="Simulator-backto-SystemParameter" style="stroke:#A80036;stroke-width:1.0;" />
+            <polygon fill="none" points="376.5,163.8894,372.5,169.8894,376.5,175.8894,380.5,169.8894,376.5,163.8894"
+                style="stroke:#A80036;stroke-width:1.0;" /><text fill="#000000" font-family="sans-serif" font-size="13"
+                lengthAdjust="spacing" textLength="107" x="377.5" y="208.1045">parameters_to_log</text><text
+                fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="20"
+                x="354.8438" y="230.7422">0..*</text>
+        </g>
+        <!--MD5=[63d3592bae2149feb69fa583071e9b35]
+reverse link Connection to SystemParameter-->
+        <g id="link_Connection_SystemParameter">
+            <path codeLine="53"
+                d="M245.46,305.3594 C258.22,305.7794 270.99,305.4694 283.25,304.1094 C290.18,303.3394 297.34,302.2594 304.48,300.9794 "
+                fill="none" id="Connection-backto-SystemParameter" style="stroke:#A80036;stroke-width:1.0;" />
+            <polygon fill="#A80036"
+                points="232.19,304.6594,237.9755,308.9639,244.174,305.279,238.3885,300.9745,232.19,304.6594"
+                style="stroke:#A80036;stroke-width:1.0;" /><text fill="#000000" font-family="sans-serif" font-size="13"
+                lengthAdjust="spacing" textLength="28" x="254.25" y="300.6045">input</text>
+        </g>
+        <!--MD5=[63d3592bae2149feb69fa583071e9b35]
+reverse link Connection to SystemParameter-->
+        <g id="link_Connection_SystemParameter">
+            <path codeLine="54" d="M245.44,283.1094 C265.59,283.1094 285.83,283.1094 304.18,283.1094 " fill="none"
+                id="Connection-backto-SystemParameter-1" style="stroke:#A80036;stroke-width:1.0;" />
+            <polygon fill="#A80036"
+                points="232.22,283.1094,238.22,287.1094,244.22,283.1094,238.22,279.1094,232.22,283.1094"
+                style="stroke:#A80036;stroke-width:1.0;" /><text fill="#000000" font-family="sans-serif" font-size="13"
+                lengthAdjust="spacing" textLength="36" x="250.25" y="276.6045">output</text>
+        </g>
+        <!--MD5=[fcca057b05587fbb4f695ec7a71d007c]
+link Connection to SystemParameter-->
+        <!--MD5=[46fdf56577f0da353ff5aa2801f6394d]
+link System to SimulationEntity-->
+        <g id="link_System_SimulationEntity">
+            <path codeLine="56" d="M596.5,324.8294 C596.5,339.0494 596.5,355.6094 596.5,372.2094 " fill="none"
+                id="System-to-SimulationEntity" style="stroke:#A80036;stroke-width:1.0;" />
+            <polygon fill="none" points="596.5,385.4794,600.5,379.4794,596.5,373.4794,592.5,379.4794,596.5,385.4794"
+                style="stroke:#A80036;stroke-width:1.0;" /><text fill="#000000" font-family="sans-serif" font-size="13"
+                lengthAdjust="spacing" textLength="7" x="589.1555" y="374.6287">1</text>
+        </g>
+        <!--MD5=[d3afcc9f01c8efce03885f44daba633b]
+link SystemParameter to System-->
+        <g id="link_SystemParameter_System">
+            <path codeLine="57" d="M448.69,283.1094 C456.03,283.1094 463.36,283.1094 470.7,283.1094 " fill="none"
+                id="SystemParameter-to-System" style="stroke:#A80036;stroke-width:1.0;" />
+            <polygon fill="none"
+                points="483.91,283.1094,477.91,279.1094,471.91,283.1094,477.91,287.1094,483.91,283.1094"
+                style="stroke:#A80036;stroke-width:1.0;" /><text fill="#000000" font-family="sans-serif" font-size="13"
+                lengthAdjust="spacing" textLength="20" x="456.0566" y="280.0962">0..*</text>
+        </g>
+        <!--MD5=[f09a682a95f1753eb9d44c5ac4794518]
+link Fmu to SimulationEntity-->
+        <g id="link_Fmu_SimulationEntity">
+            <path codeLine="59" d="M398.87,600.3694 C423.34,585.1094 450.27,567.8394 476.2,550.8394 " fill="none"
+                id="Fmu-to-SimulationEntity" style="stroke:#A80036;stroke-width:1.0;" />
+            <polygon fill="none" points="472.5,544.8994,493.06,539.7394,480.21,556.5894,472.5,544.8994"
+                style="stroke:#A80036;stroke-width:1.0;" />
+        </g>
+        <!--MD5=[3b4e5e5f10d973b55b01a0a1945a8ffc]
+link SimulationEntity to Fmu-->
+        <!--MD5=[23398bbb2e0e180024015007fcad774f]
+link CustomPythonModel to SimulationEntity-->
+        <g id="link_CustomPythonModel_SimulationEntity">
+            <path codeLine="60" d="M819.79,600.3694 C797.17,585.0394 770.83,567.6794 744.31,550.5994 " fill="none"
+                id="CustomPythonModel-to-SimulationEntity" style="stroke:#A80036;stroke-width:1.0;" />
+            <polygon fill="none" points="740.41,556.4194,727.35,539.7394,747.97,544.6294,740.41,556.4194"
+                style="stroke:#A80036;stroke-width:1.0;" />
+        </g>
+        <!--MD5=[a7a917dd37246ebe7aaee06d864d35c0]
+link SimulationEntity to CustomPythonModel-->
+        <!--MD5=[5ddc99c7cd7b51741dd9391c008e9b5a]
+@startuml simulation
+
+skin rose
+
+title Simulation Class Diagramm
+
+
+class Simulator {
+  +systems: dict[str, System]
+  +connections: list[Connections]
+  +parameters_to_log: list[SystemParameter]
+  +simulate(stop_time: float, step_size: float, logging_step_size: float) -> DataFrame
+
+}
+
+class Connection {
+    +input_point: SystemParameter
+    +output_point: SystemParameter
+}
+class SystemParameter {
+    system_name: str
+    name: str
+}
+class System {
+    simulation_entity: SimulationEntity
+    name: str
+}
+
+abstract class SimulationEntity {
+    +set_parameter(parameter_name: str, parameter_value: ParameterValue) -> None {abstract}
+    +get_parameter_value(parameter_name: str) -> ParameterValue {abstract}
+    +do_step(time: float) -> None {abstract}
+    +initialize(start_values: dict[str, ParameterValue]) -> None
+    +get_unit(parameter_name: str) -> str | None
+    +conclude_simulation() -> None
+}
+
+class Fmu {
+    +set_parameter(parameter_name: str, parameter_value: ParameterValue) -> None
+    +get_parameter_value(parameter_name: str) -> ParameterValue
+    +do_step(time: float) -> None
+}
+
+class CustomPythonModel {
+    +set_parameter(parameter_name: str, parameter_value: ParameterValue) -> None
+    +get_parameter_value(parameter_name: str) -> ParameterValue
+    +do_step(time: float) -> None
+}
+
+Simulator o- - "1..*" System: systems
+Simulator o- - "0..*" Connection: connections
+Simulator o- - "0..*" SystemParameter: parameters_to_log
+
+Connection *- - SystemParameter: input
+Connection *- - SystemParameter: output
+
+System - -o "1" SimulationEntity
+SystemParameter -right-o "0..*" System
+
+Fmu - -|> SimulationEntity
+CustomPythonModel - -|> SimulationEntity
+
+SimulationEntity -[hidden]-> Fmu
+SimulationEntity -[hidden]-> CustomPythonModel
+
+Connection -[hidden]> SystemParameter
+
+@enduml
+
+PlantUML version 1.2022.7(Mon Aug 22 19:01:30 CEST 2022)
+(GPL source distribution)
+Java Runtime: OpenJDK Runtime Environment
+JVM: OpenJDK 64-Bit Server VM
+Default Encoding: Cp1252
+Language: de
+Country: DE
+-->
+    </g>
+</svg>
