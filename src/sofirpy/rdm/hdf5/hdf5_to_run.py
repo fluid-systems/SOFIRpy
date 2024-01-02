@@ -30,7 +30,7 @@ def create_run_from_hdf5(hdf5_path: Path, run_name: str) -> rdm_run.Run:
     simulation_config = deserialize.Deserializer.simulation_config.deserialize(
         run_group
     )
-    models = deserialize.Models.deserialize(
+    models = deserialize.Deserializer.models.deserialize(
         run_group,
         hdf5=hdf5,
     )
