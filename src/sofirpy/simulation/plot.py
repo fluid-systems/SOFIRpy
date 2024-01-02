@@ -3,6 +3,8 @@
 from pathlib import Path
 from typing import Optional, Union
 
+import matplotlib.axes
+import matplotlib.figure
 import matplotlib.pyplot as plt
 import pandas as pd
 
@@ -16,7 +18,7 @@ def plot_results(
     title: Optional[str] = None,
     legend: Optional[Union[str, list[str]]] = None,
     style_sheet_path: Optional[Union[str, Path]] = None,
-) -> tuple[plt.Axes, plt.Figure]:
+) -> "tuple[matplotlib.axes.Axes, matplotlib.figure.Figure]":
     """Plot the simulation results.
 
     Args:
@@ -33,7 +35,7 @@ def plot_results(
             style sheet. Defaults to None.
 
     Returns:
-        tuple[plt.Axes, plt.Figure]: Matplotlib Axes and figure object.
+        tuple[Axes, Figure]: Matplotlib Axes and figure object.
     """
     if style_sheet_path:
         plt.style.use(style_sheet_path)
