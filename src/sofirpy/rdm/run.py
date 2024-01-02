@@ -1084,7 +1084,7 @@ class Models:
 
     def change_model_name(self, prev_name: str, new_name: str) -> None:
         if prev_name not in self.models:
-            raise ValueError
+            raise KeyError(f"name {prev_name} not in models.")
         if prev_name in self.fmus:
             self.fmus[new_name] = self.fmus.pop(prev_name)
         if prev_name in self.python_models:
@@ -1371,9 +1371,11 @@ class PythonModel(Model):
 
     def create_file_from_source_code(self, target_path: Path) -> None:
         if not target_path.suffix.lower() == ".py":
-            raise ValueError()
+            raise ValueError(
+                f"Suffix of target path was {target_path.suffix}; expected 'py'"
+            )
         if not target_path.exists():
             target_path.touch()
         if not target_path.is_file():
-            raise ValueError()
+            raise FileNotFoundError(f"'{str(target_path)}' is not a file.")
         target_path.open("w").write(self.get_source_code())
