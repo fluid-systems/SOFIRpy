@@ -107,3 +107,20 @@ disable = [
     "missing-class-docstring",
 
 ]
+
+[tool.tox]
+legacy_tox_ini = """
+    [tox]
+    min_version = 4.0
+    env_list =
+        py39
+        type
+
+    [testenv]
+    extras = test
+    commands = pytest tests
+
+    [testenv:type]
+    extras = test
+    commands = mypy src
+"""
