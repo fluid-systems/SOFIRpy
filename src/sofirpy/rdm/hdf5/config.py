@@ -21,24 +21,24 @@ class ModelStorageGroupName(str, Enum):
     @classmethod
     def absolute_paths(cls) -> set[str]:
         return {
-            str(cls.MODELS),
-            f"{cls.MODELS}/{cls.FMUS}",
-            f"{cls.MODELS}/{cls.PYTHON_MODELS}",
-            f"{cls.MODELS}/{cls.PYTHON_MODELS}/{cls.CLASSES}",
-            f"{cls.MODELS}/{cls.PYTHON_MODELS}/{cls.SOURCE_CODE}",
+            str(cls.MODELS.value),
+            f"{cls.MODELS.value}/{cls.FMUS.value}",
+            f"{cls.MODELS.value}/{cls.PYTHON_MODELS.value}",
+            f"{cls.MODELS.value}/{cls.PYTHON_MODELS.value}/{cls.CLASSES.value}",
+            f"{cls.MODELS.value}/{cls.PYTHON_MODELS.value}/{cls.SOURCE_CODE.value}",
         }
 
     @classmethod
     def get_fmu_path(cls) -> str:
-        return f"{cls.MODELS}/{cls.FMUS}"
+        return f"{cls.MODELS.value}/{cls.FMUS.value}"
 
     @classmethod
     def get_source_code_path(cls) -> str:
-        return f"{cls.MODELS}/{cls.PYTHON_MODELS}/{cls.SOURCE_CODE}"
+        return f"{cls.MODELS.value}/{cls.PYTHON_MODELS.value}/{cls.SOURCE_CODE.value}"
 
     @classmethod
     def get_classes_path(cls) -> str:
-        return f"{cls.MODELS}/{cls.PYTHON_MODELS}/{cls.CLASSES}"
+        return f"{cls.MODELS.value}/{cls.PYTHON_MODELS.value}/{cls.CLASSES.value}"
 
 
 class RunGroupName(str, Enum):
@@ -49,11 +49,11 @@ class RunGroupName(str, Enum):
 
     @classmethod
     def get_fmu_models_path(cls) -> str:
-        return f"{cls.MODELS}/{cls.FMUS}"
+        return f"{cls.MODELS.value}/{cls.FMUS.value}"
 
     @classmethod
     def get_python_models_path(cls) -> str:
-        return f"{cls.MODELS}/{cls.PYTHON_MODELS}"
+        return f"{cls.MODELS.value}/{cls.PYTHON_MODELS.value}"
 
 
 class RunDatasetName(Enum):
