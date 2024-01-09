@@ -90,26 +90,26 @@ Example:
             self.parameters = {"parameter1": 0, "parameter2": 0}
             self.units = {"parameter1": "m", "parameter2": "V"}
 
-        def do_step(self, time: float):  # mandatory method
+        def do_step(self, time):  # mandatory method
             self.parameter["parameter1"] += time/100
             self.parameter["parameter2"] += 1
 
         def set_parameter(
             self, parameter_name, parameter_value
-        ) -> None:  # mandatory method
+        ):  # mandatory method
             self.parameters[parameter_name] = parameter_value
 
         def get_parameter_value(self, output_name):  # mandatory method
             return self.parameters[output_name]
 
-        def initialize(self, start_values) -> None:  # optional
+        def initialize(self, start_values):  # optional
             for name, value in start_values.items():
                 self.parameters[name] = value
 
-        def get_unit(self, parameter_name) -> Optional[str]: #optional
+        def get_unit(self, parameter_name): #optional
             return self.units.get(parameter_name)
 
-        def conclude_simulation(self) -> None: # optional
+        def conclude_simulation(self): # optional
             print("Concluded simulation!")
 
     # simulate one python model called foo
