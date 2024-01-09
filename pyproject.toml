@@ -80,8 +80,8 @@ module = [
 ]
 ignore_missing_imports = true
 
-[tool.black]
-line_length = 88
+[tool.ruff]
+line-length = 88
 
 [tool.isort]
 atomic = true
