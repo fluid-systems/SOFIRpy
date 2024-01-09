@@ -44,7 +44,13 @@ test = [
     "types-tqdm>=4.64.5",
     "types-pytz>=2022.2.1.0",
 ]
-dev = ["black>=22.12.0", "isort>=5.12.0", "pylint>=2.15.3", "pre-commit>=3.2.2", "ruff >= 0.1.11"]
+dev = [
+    "black>=22.12.0",
+    "isort>=5.12.0",
+    "pylint>=2.15.3",
+    "pre-commit>=3.2.2",
+    "ruff >= 0.1.11",
+]
 doc = ["sphinx>=5.1.1", "sphinx-rtd-theme>=1.0.0"]
 
 [project.urls]
@@ -107,20 +113,3 @@ disable = [
     "missing-class-docstring",
 
 ]
-
-[tool.tox]
-legacy_tox_ini = """
-    [tox]
-    min_version = 4.0
-    env_list =
-        py39
-        type
-
-    [testenv]
-    extras = test
-    commands = pytest tests
-
-    [testenv:type]
-    extras = test
-    commands = mypy src
-"""
