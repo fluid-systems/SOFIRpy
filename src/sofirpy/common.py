@@ -6,6 +6,8 @@ from enum import Enum
 from pathlib import Path
 from typing import Mapping, Optional, TypedDict, Union
 
+from typing_extensions import TypeAlias
+
 import sofirpy.simulation.simulation_entity as simulation_entity
 
 
@@ -23,16 +25,16 @@ class Connection(TypedDict):
     connect_to_external_parameter: str
 
 
-Connections = list[Connection]
-ConnectionsConfig = dict[str, Connections]
+Connections: TypeAlias = list[Connection]
+ConnectionsConfig: TypeAlias = dict[str, Connections]
 
-FmuPaths = Mapping[str, Union[str, Path]]
-ModelClasses = Mapping[str, type[simulation_entity.SimulationEntity]]
+FmuPaths: TypeAlias = Mapping[str, Union[str, Path]]
+ModelClasses: TypeAlias = Mapping[str, type[simulation_entity.SimulationEntity]]
 
-ParametersToLog = dict[str, list[str]]
-ParameterValue = Union[bool, float]
+ParametersToLog: TypeAlias = dict[str, list[str]]
+ParameterValue: TypeAlias = Union[bool, float]
 
-StartValue = Union[ParameterValue, tuple[ParameterValue, str]]
-StartValues = dict[str, dict[str, StartValue]]
+StartValue: TypeAlias = Union[ParameterValue, tuple[ParameterValue, str]]
+StartValues: TypeAlias = dict[str, dict[str, StartValue]]
 
-Units = dict[str, Optional[str]]
+Units: TypeAlias = dict[str, Optional[str]]
