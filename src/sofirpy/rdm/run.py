@@ -2,13 +2,14 @@
 
 from __future__ import annotations
 
+import enum
 import inspect
 import json
 import sys
 from dataclasses import asdict, dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import Any, ClassVar, Literal, Optional, TypedDict, cast
+from typing import Any, ClassVar, Optional, TypedDict, cast
 
 import pandas as pd
 import pydantic
@@ -22,7 +23,11 @@ from sofirpy import utils
 from sofirpy.simulation.simulation import simulate
 from sofirpy.simulation.simulation_entity import SimulationEntity
 
-ConfigKeyType = Literal["run_meta", "models", "simulation_config"]
+
+class ConfigKeyType(enum.Enum):
+    RUN_META = "run_meta"
+    MODELS = "models"
+    SIMULATION_CONFIG = "simulation_config"
 
 
 class ConfigDict(TypedDict):
@@ -52,9 +57,9 @@ class SimulationConfigDict(TypedDict):
 class Run:
     """Run object representing a simulation Run.
 
-    Run can be initiated from a config file or loaded from a hdf5 file. It provides
-    several methods for updating the configuration of the run. Runs can be saved to a
-    hdf5 file.
+    A Run can be initiated from a config file or loaded from a hdf5 file. It provides
+    several methods for updating the configuration of the run. A Run can be serialized
+    and stored inside a hdf5 file.
     """
 
     run_name: str
@@ -944,7 +949,7 @@ class RunMeta:
     os: str
     dependencies: dict[str, str]
 
-    CONFIG_KEY: ClassVar[ConfigKeyType] = "run_meta"
+    CONFIG_KEY: ClassVar[ConfigKeyType] = ConfigKeyType.RUN_META
 
     @classmethod
     def from_config(cls, description: str, keywords: list[str]) -> Self:
@@ -962,10 +967,10 @@ class RunMeta:
 
     @classmethod
     def from_config_file(cls, config: ConfigDict) -> Self:
-        description = config[cls.CONFIG_KEY].get("description", "")
+        description = config[cls.CONFIG_KEY.value].get("description", "")
         utils.check_type(description, "description", str)
         assert isinstance(description, str)
-        keywords = config[cls.CONFIG_KEY].get("keywords", [])
+        keywords = config[cls.CONFIG_KEY.value].get("keywords", [])
         utils.check_type(keywords, "keywords", list)
         assert isinstance(keywords, list)
         return cls.from_config(
@@ -1000,11 +1005,11 @@ class SimulationConfig:
     step_size: float
     logging_step_size: Optional[float] = None
 
-    CONFIG_KEY: ClassVar[ConfigKeyType] = "simulation_config"
+    CONFIG_KEY: ClassVar[ConfigKeyType] = ConfigKeyType.SIMULATION_CONFIG
 
     @classmethod
     def from_config_file(cls, config: ConfigDict) -> Self:
-        return cls(**config[cls.CONFIG_KEY])
+        return cls(**config[cls.CONFIG_KEY.value])
 
     def to_dict(self) -> SimulationConfigDict:
         return cast(SimulationConfigDict, asdict(self))
@@ -1023,7 +1028,7 @@ class Models:
     can_simulate_fmu: bool = True
     can_simulate_python_model: bool = True
 
-    CONFIG_KEY: ClassVar[ConfigKeyType] = "models"
+    CONFIG_KEY: ClassVar[ConfigKeyType] = ConfigKeyType.MODELS
 
     @classmethod
     def from_config(
@@ -1063,7 +1068,7 @@ class Models:
         fmu_paths: co.FmuPaths,
         model_classes: co.ModelClasses,
     ) -> Self:
-        model_config = cast(dict[str, ModelConfigDict], config[cls.CONFIG_KEY])
+        model_config = cast(dict[str, ModelConfigDict], config[cls.CONFIG_KEY.value])
         fmus = {
             name: Fmu(
                 name=name,
