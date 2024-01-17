@@ -549,7 +549,7 @@ class Group(HDF5Object):
         return self
 
     def to_hdf5(self, hdf5: HDF5, overwrite: bool = False) -> None:
-        if not self.path in hdf5:
+        if self.path not in hdf5:
             hdf5.create_group(self.path)
         self._attribute_to_hdf5(hdf5)
         self._groups_to_hdf5(hdf5)
