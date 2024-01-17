@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pytest
 
-from sofirpy.fmu_export.dymola_fmu_export import DymolaFmuExport, export_dymola_model
+from sofirpy.fmu_export.dymola_fmu_export import DymolaFmuExport
 
 
 @pytest.fixture

@@ -29,7 +29,7 @@ def test_create_new_hdf5(file_suffix: str) -> None:
     with tempfile.TemporaryDirectory() as tmp_dir:
         temp_path = Path(tmp_dir) / f"test_new_hdf5.{file_suffix}"
         h5.HDF5(temp_path)
-        assert temp_path.exists() == True
+        assert temp_path.exists()
 
 
 @pytest.mark.parametrize("file_suffix", [".txt", ".hdf6", ".h7"])
