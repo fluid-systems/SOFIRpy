@@ -22,6 +22,12 @@ stages:
     - source venv/bin/activate
     - pip install -e ".[test, doc, dev]"
 
+linting:
+  extends: .venv_setup
+  stage: Static Analysis
+  script:
+    - ruff check src tests
+
 type_checking:
   extends: .venv_setup
   stage: Static Analysis
