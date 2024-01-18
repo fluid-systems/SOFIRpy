@@ -15,9 +15,9 @@ model_name = "DC_Motor"
 parameters = {"damper.d": 0.1, "damper.useHeatPort": False}
 
 fmu_path = export_dymola_model(
-    dymola_exe_path,
-    model_path,
-    model_name,
+    dymola_exe_path=dymola_exe_path,
+    model_path=model_path,
+    model_name=model_name,
     output_directory=output_directory,
     parameters=parameters,
     fmi_type="cs",
