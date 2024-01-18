@@ -7,18 +7,26 @@ import tempfile
 from html import unescape
 from pathlib import Path
 from types import TracebackType
-from typing import Literal, Optional, Type, Union
+from typing import Final, Literal, Union
+
+from typing_extensions import Self, TypeAlias
 
 from sofirpy import utils
 from sofirpy.fmu_export.fmu_export import FmuExport, FmuExportError
 
-ParameterValue = Union[str, int, float, list[Union[int, float, str, bool]], bool]
+ParameterValue: TypeAlias = Union[
+    str,
+    int,
+    float,
+    list[Union[int, float, str, bool]],
+    bool,
+]
 
 
 class DymolaFmuExport(FmuExport):
     """Object that performs the Dymola fmu export."""
 
-    files_to_delete = [
+    files_to_delete: Final[list[str]] = [
         "dslog.txt",
         "fmiModelIdentifier.h",
         "dsmodel.c",
@@ -32,11 +40,11 @@ class DymolaFmuExport(FmuExport):
         self,
         model_path: Path,
         model_name: str,
-        fmu_name: Optional[str] = None,
-        parameters: Optional[dict[str, ParameterValue]] = None,
-        model_modifiers: Optional[list[str]] = None,
-        packages: Optional[list[Union[str, Path]]] = None,
-        output_directory: Optional[Path] = None,
+        fmu_name: str | None = None,
+        parameters: dict[str, ParameterValue] | None = None,
+        model_modifiers: list[str] | None = None,
+        packages: list[str | Path] | None = None,
+        output_directory: Path | None = None,
         fmi_version: Literal[1, 2] = 2,
         fmi_type: Literal["me", "cs", "all", "csSolver"] = "all",
         include_source: bool = False,
@@ -175,7 +183,9 @@ class DymolaFmuExport(FmuExport):
         for com_sym, value in parameters.items():
             utils.check_type(com_sym, "key of parameters", str)
             utils.check_type(
-                value, "value of parameters", (str, int, bool, float, list)
+                value,
+                "value of parameters",
+                (str, int, bool, float, list),
             )
             self._parameters[com_sym] = value
 
@@ -298,8 +308,7 @@ class DymolaFmuExport(FmuExport):
         Args:
             mos_script (str): The content for the mos file.
         """
-        with open(str(self.mos_file_path), mode="w", encoding="utf-8") as mos_file:
-            mos_file.write(mos_script)
+        self.mos_file_path.write_text(mos_script, encoding="utf-8")
 
     def format_parameters(self) -> list[str]:
         """Format parameter values.
@@ -328,7 +337,7 @@ class DymolaFmuExport(FmuExport):
                     + "}"
                 )
             raise TypeError(
-                f"value is {type(value)}; expected str, bool, float, int, list"
+                f"value is {type(value)}; expected str, bool, float, int, list",
             )
 
         parameter_declaration = []
@@ -339,7 +348,10 @@ class DymolaFmuExport(FmuExport):
         return parameter_declaration
 
     def move_files_to_output_directory(
-        self, export_successful: bool, keep_mos: bool, keep_log: bool
+        self,
+        export_successful: bool,
+        keep_mos: bool,
+        keep_log: bool,
     ) -> None:
         """Move the fmu, the mos script and the log to the output directory.
 
@@ -373,31 +385,31 @@ class DymolaFmuExport(FmuExport):
         Returns:
             str: Dymola error message
         """
-        with open(self.error_log_path, "r", encoding="utf-8") as error_log:
-            return unescape(error_log.read())
+        return unescape(self.error_log_path.read_text(encoding="utf-8"))
 
-    def __enter__(self) -> DymolaFmuExport:
+    def __enter__(self) -> Self:
         return self
 
     def __exit__(
         self,
-        exc_type: Optional[Type[BaseException]],
-        exc_val: Optional[BaseException],
-        exc_tb: Optional[TracebackType],
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: TracebackType | None,
     ) -> None:
         utils.delete_paths(self._paths_to_delete)
         utils.delete_file_or_directory(self._dump_directory)
 
 
 def export_dymola_model(
-    dymola_exe_path: Union[Path, str],
-    model_path: Union[Path, str],
+    *,
+    dymola_exe_path: Path | str,
+    model_path: Path | str,
     model_name: str,
     fmu_name: str | None = None,
-    output_directory: Union[Path, str] | None = None,
+    output_directory: Path | str | None = None,
     parameters: dict[str, ParameterValue] | None = None,
     model_modifiers: list[str] | None = None,
-    packages: list[Union[str, Path]] | None = None,
+    packages: list[str | Path] | None = None,
     fmi_version: Literal[1, 2] = 2,
     fmi_type: Literal["me", "cs", "all", "csSolver"] = "all",
     include_source: bool = False,
@@ -455,7 +467,8 @@ def export_dymola_model(
     model_path = utils.convert_str_to_path(model_path, "model_path")
     if output_directory is not None:
         output_directory = utils.convert_str_to_path(
-            output_directory, "output_directory"
+            output_directory,
+            "output_directory",
         )
     _validate_fmu_export_settings(fmi_version, fmi_type, include_source, include_image)
 
@@ -479,7 +492,7 @@ def export_dymola_model(
         if not successful:
             err = dymola_exporter.read_dymola_error()
             raise FmuExportError(
-                f"Fmu export was not successful.\nDymola error message:\n{err}\n"
+                f"Fmu export was not successful.\nDymola error message:\n{err}\n",
             )
         return dymola_exporter.fmu_path
 
@@ -494,7 +507,7 @@ def _validate_fmu_export_settings(
         raise ValueError(f"'fmi_version' is {fmi_version}; expected 1 or 2")
     if fmi_type not in ["me", "cs", "all", "csSolver"]:
         raise ValueError(
-            f"'fmi_type' is {fmi_type}; expected 'me', 'cs', 'all' or 'csSolver'"
+            f"'fmi_type' is {fmi_type}; expected 'me', 'cs', 'all' or 'csSolver'",
         )
     utils.check_type(include_source, "include_source", bool)
     if include_image not in [1, 2]:

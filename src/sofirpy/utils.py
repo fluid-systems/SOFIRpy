@@ -1,14 +1,18 @@
 """Utility functions used across sofirpy."""
 
+from __future__ import annotations
+
 import shutil
 from pathlib import Path
-from typing import Any, Union
+from typing import Any
 
 import pkg_resources
 
 
 def delete_file_or_directory(
-    path: Path, print_status: bool = False, must_exist: bool = False
+    path: Path,
+    print_status: bool = False,
+    must_exist: bool = False,
 ) -> None:
     """Delete file ore directory.
 
@@ -25,7 +29,7 @@ def delete_file_or_directory(
     if not path.exists():
         if not must_exist:
             return
-        raise FileNotFoundError(f"{str(path)} does not exist")
+        raise FileNotFoundError(f"{path!s} does not exist")
 
     if path.is_dir():
         shutil.rmtree(str(path), ignore_errors=True)
@@ -33,11 +37,13 @@ def delete_file_or_directory(
         path.unlink()
 
     if print_status:
-        print(f"{str(path)} has been deleted")
+        print(f"{path!s} has been deleted")
 
 
 def delete_files_in_directory(
-    file_names: list[str], directory: Path, print_status: bool = False
+    file_names: list[str],
+    directory: Path,
+    print_status: bool = False,
 ) -> None:
     """Delete multiple files in a directory.
 
@@ -131,12 +137,13 @@ def copy_file(source_path: Path, target_path: Path) -> None:
 
 
 def get_user_input_for_overwriting(
-    target_path: Union[Path, str], typ: str = "path"
+    target_path: Path | str,
+    typ: str = "path",
 ) -> bool:
     """Get user input for overwriting a path.
 
     Args:
-        target_path (Union[Path, str]): Path that should be overwritten.
+        target_path (Path | str): Path that should be overwritten.
         typ (str, optional): Name of the path. Defaults to "path".
 
     Returns:
@@ -180,11 +187,11 @@ def rename_file(file_path: Path, new_name: str) -> Path:
     return file_path.rename(target_path)
 
 
-def convert_str_to_path(path: Union[str, Path], variable_name: str) -> Path:
+def convert_str_to_path(path: str | Path, variable_name: str) -> Path:
     """Convert a str to a Path object.
 
     Args:
-        path (Union[str, Path]): Path.
+        path (Path | str): Path.
         variable_name (str): Name of the variable.
 
     Raises:

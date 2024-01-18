@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from enum import Enum
 from pathlib import Path
-from typing import Mapping, Optional, TypedDict, Union
+from typing import Optional, TypedDict, Union
 
 from typing_extensions import TypeAlias
 

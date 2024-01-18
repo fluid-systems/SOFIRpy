@@ -1,7 +1,7 @@
 """This module contains the base class for a fmu export."""
+from __future__ import annotations
 
 from pathlib import Path
-from typing import Optional
 
 from sofirpy import utils
 
@@ -10,15 +10,18 @@ class FmuExport:
     """Object that sets the paths for the fmu export."""
 
     def __init__(
-        self, model_path: Path, fmu_path: Path, output_directory: Optional[Path] = None
+        self,
+        model_path: Path,
+        fmu_path: Path,
+        output_directory: Path | None = None,
     ) -> None:
         """Initialize the FmuExport object.
 
         Args:
-            model_path (Path):  Path to the modelica model that
+            model_path (Path):  Path to the Modelica model that
                 should be exported.
             fmu_path (Path): Path the exported fmu is going to have.
-             output_directory (Optional[Path], optional): Output directory for the fmu.
+             output_directory (Path | None, optional): Output directory for the fmu.
         """
         self.model_path = model_path
         self.model_directory = model_path.parent

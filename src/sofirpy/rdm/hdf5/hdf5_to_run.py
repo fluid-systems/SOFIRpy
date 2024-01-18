@@ -18,7 +18,9 @@ import sofirpy.utils as utils
 def create_run_from_hdf5(hdf5_path: Path, run_name: str) -> rdm_run.Run:
     # TODO if loaded model is None because it could not be pickled.
     logging.basicConfig(
-        format="HDF5ToRun::%(levelname)s::%(message)s", level=logging.INFO, force=True
+        format="HDF5ToRun::%(levelname)s::%(message)s",
+        level=logging.INFO,
+        force=True,
     )
     if not hdf5_path.exists():
         raise FileNotFoundError(f"'{hdf5_path}' does not exist")
@@ -28,7 +30,7 @@ def create_run_from_hdf5(hdf5_path: Path, run_name: str) -> rdm_run.Run:
     _check_compatibility(run_meta)
     results = deserialize.Deserializer.results.deserialize(run_group)
     simulation_config = deserialize.Deserializer.simulation_config.deserialize(
-        run_group
+        run_group,
     )
     models = deserialize.Deserializer.models.deserialize(
         run_group,
@@ -49,26 +51,26 @@ def _check_compatibility(run_meta: rdm_run.RunMeta) -> None:
     same_os = run_meta.os == sys.platform
     if not same_os:
         logging.warning(
-            f"Run was created with os '{run_meta.os}'. This is '{sys.platform}'."
+            f"Run was created with os '{run_meta.os}'. This is '{sys.platform}'.",
         )
     same_py_version = run_meta.python_version == sys.version
     if not same_py_version:
         logging.warning(
             f"Run was created with python version '{run_meta.python_version}'."
-            f"This is python version '{sys.version}'."
+            f"This is python version '{sys.version}'.",
         )
     is_later_release = parse_version(run_meta.sofirpy_version) <= parse_version(
-        sofirpy.__version__
+        sofirpy.__version__,
     )
     if not is_later_release:
         logging.warning(
             f"Run was created with sofirpy version '{run_meta.sofirpy_version}'."
-            f"This is sofirpy version '{sofirpy.__version__}', an earlier release."
+            f"This is sofirpy version '{sofirpy.__version__}', an earlier release.",
         )
     if not same_os or not same_py_version:
         logging.warning(
             "The current environment is not fully compatible with the environment the "
-            "Run was created with. It might not be possible to rerun the simulation."
+            "Run was created with. It might not be possible to rerun the simulation.",
         )
     _check_dependencies(run_meta)
 
@@ -81,14 +83,15 @@ def _check_dependencies(run_meta: rdm_run.RunMeta) -> None:
         logging.warning(
             "The following dependencies were installed when storing the run in the "
             "hdf5 and are not installed in the current environment:\n"
-            f"{', '.join(dependencies_in_hdf5_but_not_in_current_env)}"
+            f"{', '.join(dependencies_in_hdf5_but_not_in_current_env)}",
         )
-    difference_in_version_number: list[str] = []
-    for dep_name in set(run_dep).intersection(cur_env_dep):
-        if run_dep[dep_name] != cur_env_dep[dep_name]:
-            difference_in_version_number.append(dep_name)
+    difference_in_version_number = [
+        dep_name
+        for dep_name in set(run_dep).intersection(cur_env_dep)
+        if run_dep[dep_name] != cur_env_dep[dep_name]
+    ]
     if difference_in_version_number:
         logging.warning(
             "The following dependencies have a different version: "
-            f"{', '.join(difference_in_version_number)}"
+            f"{', '.join(difference_in_version_number)}",
         )
