@@ -3,7 +3,6 @@ from __future__ import annotations
 import json
 import sys
 from pathlib import Path
-from typing import Optional
 
 import numpy as np
 import pytest
@@ -92,7 +91,7 @@ class RunExtension(SingleFileSnapshotExtension):
     ) -> bool:
         try:
             _compare_runs(serialized_data, snapshot_data)
-        except Exception:
+        except Exception:  # noqa: BLE001
             return False
         return True
 
@@ -112,15 +111,15 @@ class RunExtension(SingleFileSnapshotExtension):
     ) -> str:
         if sys.platform == "linux" or sys.platform == "linux2":
             return "test_run_linux"
-        elif sys.platform == "win32":
+        if sys.platform == "win32":
             return "test_run_win"
-        elif sys.platform == "darwin":
+        if sys.platform == "darwin":
             return "test_run_mac"
         raise ValueError("'Unknown platform")
 
     def _read_snapshot_data_from_location(
         self, *, snapshot_location: str, snapshot_name: str, session_id: str
-    ) -> Optional[SerializableData]:
+    ) -> SerializableData | None:
         try:
             return Run.from_hdf5("test_run", snapshot_location)
         except FileNotFoundError:
@@ -217,11 +216,11 @@ def _compare_results(this_run_results: Results, other_run_results: Results) -> N
 
 def _compare_config(this_config: ConfigDict, other_config: ConfigDict) -> None:
     _compare_meta_config(
-        this_config[RunMeta.CONFIG_KEY], other_config[RunMeta.CONFIG_KEY]
+        this_config[RunMeta.CONFIG_KEY.value], other_config[RunMeta.CONFIG_KEY.value]
     )
     _compare_simulation_config_dict(
-        this_config[SimulationConfig.CONFIG_KEY],
-        other_config[SimulationConfig.CONFIG_KEY],
+        this_config[SimulationConfig.CONFIG_KEY.value],
+        other_config[SimulationConfig.CONFIG_KEY.value],
     )
 
 
