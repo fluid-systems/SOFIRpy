@@ -209,16 +209,14 @@ class Simulator:
             time (float): current simulation time
             log_step (int): current time step
         """
-        new_value_row = [time]
+        self.results[log_step, 0] = time
 
-        for parameter in self.parameters_to_log:
+        for i, parameter in enumerate(self.parameters_to_log, start=1):
             system_name = parameter.system_name
             system = self.systems[system_name]
             parameter_name = parameter.name
             value = system.simulation_entity.get_parameter_value(parameter_name)
-            new_value_row += [value]
-
-        self.results[log_step] = new_value_row
+            self.results[log_step, i] = value
 
     def conclude_simulation(self) -> None:
         """Conclude the simulation for all simulation entities."""
