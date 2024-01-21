@@ -3,10 +3,9 @@
 from __future__ import annotations
 
 import shutil
+from importlib.metadata import distributions
 from pathlib import Path
 from typing import Any
-
-import pkg_resources
 
 
 def delete_file_or_directory(
@@ -230,5 +229,5 @@ def get_dependencies_of_current_env() -> dict[str, str]:
     Returns:
         dict[str, str]: key -> name of the package; value -> version
     """
-    installed_packages = pkg_resources.working_set
-    return {package.project_name: package.version for package in installed_packages}
+    installed_packages = distributions()
+    return {package.metadata["Name"]: package.version for package in installed_packages}
