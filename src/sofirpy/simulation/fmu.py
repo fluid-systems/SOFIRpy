@@ -127,7 +127,7 @@ class Fmu(SimulationEntity):
                 obtained
 
         Returns:
-            Union[int, float]: value of the parameter
+            ParameterValue: value of the parameter
         """
         var_type = self.model_description_dict[parameter_name].type
         value: co.ParameterValue = self.getter_functions[var_type](

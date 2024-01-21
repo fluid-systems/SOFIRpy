@@ -58,7 +58,7 @@ class DymolaFmuExport(FmuExport):
             model_name (str): Name of the model that should be exported. If the
                 model that should be exported is inside a package, separate the
                 package name and the model name with a '.'.
-            fmu_name (Optional[str], optional): Name the exported fmu should have. If
+            fmu_name (str | None, optional): Name the exported fmu should have. If
                 not specified the fmu will have the same name as the model.
                 Defaults to None.
             parameters (dict[str, ParameterValue], optional):
@@ -80,7 +80,7 @@ class DymolaFmuExport(FmuExport):
                 Defaults to None.
             packages (list[str], optional): List of model/package paths that
                 need to be loaded as dependencies for the model. Defaults to None.
-            output_directory (Optional[Path], optional): Output directory for the fmu,
+            output_directory (Path | None, optional): Output directory for the fmu,
                 the log and the mos script. Defaults to None.
             fmi_version (Literal[1, 2], optional): FMI version, 1 or 2. Defaults to 2.
             fmi_type (Literal["me", "cs", "all", "csSolver"], optional): FMI type,
@@ -420,15 +420,15 @@ def export_dymola_model(
     """Export a dymola model as a fmu.
 
     Args:
-        dymola_exe_path (Union[Path, str]):  Path to the dymola executable.
-        model_path (Union[Path, str]): Path to the dymola model that should be
+        dymola_exe_path (Path | str):  Path to the dymola executable.
+        model_path (Path | str): Path to the dymola model that should be
             exported.
         model_name (str): Name of the model that should be exported. If the
             model that should be exported is inside a package, separate the
             package name and the model name with a '.'.
-        fmu_name (Optional[str], optional): Name the exported fmu should have. If not
+        fmu_name (str | None, optional): Name the exported fmu should have. If not
             specified the fmu will have the same name as the model. Defaults to None.
-        output_directory (Union[Path, str]): Output directory for the fmu, the log and
+        output_directory (Path | str): Output directory for the fmu, the log and
             the mos script. Defaults to None.
         parameters (dict[str, ParameterValue], optional):
             Dictionary of parameter names and values.
@@ -444,9 +444,9 @@ def export_dymola_model(
             ...     "Modelica.Media.Water.ConstantPropertyLiquidWater"]
 
             Defaults to None.
-        packages (Optional[list[Union[str, Path]]], optional): List of
+        packages (list[str | Path] | None, optional): List of
             model/package paths that need to be loaded as dependencies for the
-            model.
+            model. Defaults to None.
         fmi_version (Literal[1, 2], optional): FMI version, 1 or 2. Defaults to 2.
         fmi_type (Literal["me", "cs", "all", "csSolver"], optional): FMI type,
             me (model exchange), cs (co-simulation), all or

@@ -138,10 +138,10 @@ def export_open_modelica_model(
     """Exports a modelica model as an fmu and moves the fmu to the output directory
 
     Args:
-        model_path (Union[Path, str]): Path to the modelica model that should be
+        model_path (Path | str): Path to the modelica model that should be
             exported.
         model_name (str): Name of the model.
-        output_directory (Union[Path, str]): Output directory for the fmu.
+        output_directory (Path | str): Output directory for the fmu.
 
     Returns:
         Path: Path to the exported FMU.

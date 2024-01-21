@@ -451,7 +451,7 @@ def simulate(
         ValueError: step_size value was invalid
 
     Returns:
-        Union[pd.DataFrame, tuple[pd.DataFrame, dict[str, Units]]:
+        pd.DataFrame | tuple[pd.DataFrame, co.Units]:
             Result DataFrame with times series of logged parameters, units of
             logged parameters.
     """

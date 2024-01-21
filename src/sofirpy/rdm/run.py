@@ -450,7 +450,7 @@ class Run:
             parameter_name (str): Name of the parameter inside the model.
 
         Returns:
-            Optional[StartValue]: Start value
+            StartValue | None: Start value
         """
         return self._models.get_start_value(model_name, parameter_name)
 
@@ -483,7 +483,7 @@ class Run:
         """Connection configuration for the simulation.
 
         Returns:
-            Optional[ConnectionsConfig]: Connection configuration for the simulation.
+            ConnectionsConfig | None: Connection configuration for the simulation.
         """
         return self._models.connections_config
 
@@ -539,7 +539,7 @@ class Run:
             input_name (str): Name of the input parameter.
 
         Returns:
-            Optional[_Connection]: The connection of the input parameter.
+            _Connection | None: The connection of the input parameter.
         """
         return self._models.get_connection(model_name, input_name)
 
@@ -586,7 +586,7 @@ class Run:
         """Parameters that are logged during the simulation.
 
         Returns:
-            Optional[ParametersToLog]: Parameters that are logged during the simulation.
+            ParametersToLog | None: Parameters that are logged during the simulation.
         """
         return self._models.parameters_to_log
 
@@ -595,7 +595,7 @@ class Run:
         """Parameters that are logged during the simulation.
 
         Args:
-            parameters_to_log (Optional[ParametersToLog]): Parameters that are logged
+            parameters_to_log (ParametersToLog | None): Parameters that are logged
                 during the simulation.
         """
         if parameters_to_log is not None:
@@ -609,7 +609,7 @@ class Run:
             model_name (str): Name of the model.
 
         Returns:
-            Optional[list[str]]: Parameters that are logged in the specified model.
+            list[str] | None: Parameters that are logged in the specified model.
         """
         return self._models.get_parameters_to_log_of_model(model_name)
 
@@ -675,7 +675,7 @@ class Run:
             AttributeError: No simulation was performed.
 
         Returns:
-            Optional[Units]: Units of the logged parameters.
+            Units | None: Units of the logged parameters.
         """
         if self._results is None:
             raise AttributeError("No simulation performed yet.")
@@ -705,7 +705,7 @@ class Run:
             keywords (list[str] | None, optional): Keywords describing the simulation.
                 Defaults to None.
             description (str, optional): Description of the run. Defaults to None.
-            fmu_paths (Optional[FmuPaths], optional):
+            fmu_paths (FmuPaths | None, optional):
                 Dictionary which defines which fmu should be simulated.
                 key -> name of the fmu; value -> path to the fmu
 
@@ -717,7 +717,7 @@ class Run:
                 Note: The name of the fmus can be chosen arbitrarily, but each name
                 in 'fmu_paths' and 'model_classes' must occur only once.
                 Defaults to None.
-            model_classes (Optional[ModelClasses], optional):
+            model_classes (ModelClasses | None, optional):
                 Dictionary which defines which Python Models should be simulated.
                 key -> name of the model; value -> Instance of th model. The class that
                 defines the model must inherit from the abstract class SimulationEntity
@@ -855,7 +855,7 @@ class Run:
         Args:
             run_name (str): Name of the run.
             config_file_path (Path | str): Path to the config file.
-            fmu_paths (Optional[FmuPaths], optional):
+            fmu_paths (FmuPaths | None, optional):
                 Dictionary which defines which fmu should be simulated.
                 key -> name of the fmu; value -> path to the fmu
 
@@ -867,7 +867,7 @@ class Run:
                 Note: The name of the fmus can be chosen arbitrarily, but each name
                 in 'fmu_paths' and 'model_classes' must occur only once.
                 Defaults to None.
-            model_classes (Optional[ModelClasses], optional):
+            model_classes (ModelClasses | None, optional):
                 Dictionary which defines which Python Models should be simulated.
                 key -> name of the model; value -> Instance of th model. The class that
                 defines the model must inherit from the abstract class SimulationEntity
