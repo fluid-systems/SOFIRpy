@@ -33,7 +33,7 @@ FmuPaths: TypeAlias = Mapping[str, Union[str, Path]]
 ModelClasses: TypeAlias = Mapping[str, type[simulation_entity.SimulationEntity]]
 
 ParametersToLog: TypeAlias = dict[str, list[str]]
-ParameterValue: TypeAlias = Union[bool, float]
+ParameterValue: TypeAlias = Union[bool, float, int, str, object]
 
 StartValue: TypeAlias = Union[ParameterValue, tuple[ParameterValue, str]]
 StartValues: TypeAlias = dict[str, dict[str, StartValue]]

@@ -62,3 +62,14 @@ class SimulationEntity(ABC):
     def conclude_simulation(self) -> None:
         """Conclude the simulation."""
         return None
+
+    def get_dtype_of_parameter(self, parameter_name: str) -> type:
+        """Return the data type of a parameter.
+
+        Args:
+            parameter_name (str): Name of the parameter.
+
+        Returns:
+            type: Data type of the parameter.
+        """
+        return float

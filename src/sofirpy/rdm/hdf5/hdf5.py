@@ -15,15 +15,14 @@ from sofirpy import utils
 
 
 class HDF5:
-    """Object representing a HDF5 file."""
+    """Object representing a HDF5 file.
+
+    Args:
+        hdf5_path (Path | str): Path to a hdf5 file. If it doesn't
+            exists it will be created.
+    """
 
     def __init__(self, hdf5_path: Path | str) -> None:
-        """Initialize the HDF5 object.
-
-        Args:
-            hdf5_path (Path | str): Path to a hdf5 file. If it doesn't
-                exists it will be created.
-        """
         self.hdf5_path = hdf5_path  # type: ignore[assignment]
 
     @property

@@ -61,7 +61,15 @@ class Connection:
 
 
 class Simulator:
-    """Object that performs the simulation."""
+    """Object that performs the simulation.
+
+    Args:
+        systems (list[System]): list of systems which are to be simulated
+        connections (list[Connection]): list of connections between the
+                systems
+        parameters_to_log (list[SystemParameter]): List of Parameters that should
+            be logged.
+    """
 
     def __init__(
         self,
@@ -69,15 +77,6 @@ class Simulator:
         connections: list[Connection],
         parameters_to_log: list[SystemParameter],
     ) -> None:
-        """Initialize Simulator object.
-
-        Args:
-            systems (list[System]): list of systems which are to be simulated
-            connections (list[Connection]): list of connections between the
-                 systems
-            parameters_to_log (list[SystemParameter]): List of Parameters that should
-                be logged.
-        """
         self.systems = systems
         self.connections = connections
         self.parameters_to_log = parameters_to_log
@@ -137,7 +136,9 @@ class Simulator:
         time_series = self.compute_time_array(stop_time, step_size, start_time)
         number_log_steps = int(stop_time / logging_step_size) + 1
         logging_multiple = round(logging_step_size / step_size)
-        self.results = np.zeros((number_log_steps, len(self.parameters_to_log) + 1))
+        dtypes = self.get_dtypes_of_logged_parameters()
+        # self.results is a structured numpy array
+        self.results = np.zeros(number_log_steps, dtype=dtypes)
 
         logging.info("Starting simulation.")
 
@@ -209,36 +210,31 @@ class Simulator:
             time (float): current simulation time
             log_step (int): current time step
         """
-        self.results[log_step, 0] = time
+        self.results[log_step][0] = time
 
         for i, parameter in enumerate(self.parameters_to_log, start=1):
             system_name = parameter.system_name
             system = self.systems[system_name]
             parameter_name = parameter.name
             value = system.simulation_entity.get_parameter_value(parameter_name)
-            self.results[log_step, i] = value
+            self.results[log_step][i] = value
 
     def conclude_simulation(self) -> None:
         """Conclude the simulation for all simulation entities."""
         for system in self.systems.values():
             system.simulation_entity.conclude_simulation()
 
-    def convert_to_data_frame(self, results: npt.NDArray[np.float64]) -> pd.DataFrame:
+    def convert_to_data_frame(self, results: npt.NDArray[np.void]) -> pd.DataFrame:
         """Covert result numpy array to DataFrame.
 
         Args:
-            results (npt.NDArray[npt.float64]): Results of the simulation.
+            results (npt.NDArray[np.void]): Results of the simulation.
 
         Returns:
             pd.DataFrame: Results as DataFrame. Columns are named as follows:
             '<system_name>.<parameter_name>'.
         """
-        columns = ["time"] + [
-            f"{parameter.system_name}.{parameter.name}"
-            for parameter in self.parameters_to_log
-        ]
-
-        return pd.DataFrame(results, columns=columns)
+        return pd.DataFrame(results)
 
     def get_units(self) -> co.Units:
         """Get a dictionary with units of all logged parameters.
@@ -256,6 +252,21 @@ class Simulator:
             units[f"{system.name}.{parameter_name}"] = unit
 
         return units
+
+    def get_dtypes_of_logged_parameters(self) -> np.dtypes.VoidDType:
+        """Get the dtypes of the logged parameters.
+
+        Returns:
+            np.dtypes.VoidDType: dtypes of the logged parameters
+        """
+        dtypes: list[tuple[str, type]] = [("time", np.float64)]
+        for parameter in self.parameters_to_log:
+            system_name = parameter.system_name
+            system = self.systems[system_name]
+            parameter_name = parameter.name
+            dtype = system.simulation_entity.get_dtype_of_parameter(parameter_name)
+            dtypes.append((f"{system.name}.{parameter_name}", dtype))
+        return np.dtype(dtypes)
 
 
 @overload
