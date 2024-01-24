@@ -24,7 +24,47 @@ ParameterValue: TypeAlias = Union[
 
 
 class DymolaFmuExport(FmuExport):
-    """Object that performs the Dymola fmu export."""
+    """Object that performs the Dymola fmu export.
+
+    Args:
+        model_path (Path): Path to the modelica model that
+            should be exported.
+        model_name (str): Name of the model that should be exported. If the
+            model that should be exported is inside a package, separate the
+            package name and the model name with a '.'.
+        fmu_name (str | None, optional): Name the exported fmu should have. If
+            not specified the fmu will have the same name as the model.
+            Defaults to None.
+        parameters (dict[str, ParameterValue], optional):
+            Dictionary of parameter names and values.
+            Example:
+
+            >>> parameters = {"Resistor.R" : "1",
+            ...     "Resistor.useHeatPort": True}
+
+            Defaults to None.
+        model_modifiers (list[str]], optional): List of model modifiers.
+            Example:
+
+            >>> model_modifiers = [
+            ...     "redeclare package Medium = "
+            ...     "Modelica.Media.Water.ConstantPropertyLiquidWater"
+            ... ]
+
+            Defaults to None.
+        packages (list[str], optional): List of model/package paths that
+            need to be loaded as dependencies for the model. Defaults to None.
+        output_directory (Path | None, optional): Output directory for the fmu,
+            the log and the mos script. Defaults to None.
+        fmi_version (Literal[1, 2], optional): FMI version, 1 or 2. Defaults to 2.
+        fmi_type (Literal["me", "cs", "all", "csSolver"], optional): FMI type,
+            me (model exchange), cs (co-simulation), all or csSolver (using Dymola
+            solver). Defaults to "all".
+        include_source (bool, optional): Whether to include source code in FMU.
+            Defaults to False.
+        include_image (Literal[0, 1, 2], optional): Whether to include the model
+            image (0 - no image, 1 icon, 2 diagram). Defaults to 2.
+    """
 
     files_to_delete: Final[list[str]] = [
         "dslog.txt",
@@ -50,47 +90,6 @@ class DymolaFmuExport(FmuExport):
         include_source: bool = False,
         include_image: Literal[0, 1, 2] = 2,
     ) -> None:
-        """Initialize the DymolaFmuExport object.
-
-        Args:
-            model_path (Path): Path to the modelica model that
-                should be exported.
-            model_name (str): Name of the model that should be exported. If the
-                model that should be exported is inside a package, separate the
-                package name and the model name with a '.'.
-            fmu_name (str | None, optional): Name the exported fmu should have. If
-                not specified the fmu will have the same name as the model.
-                Defaults to None.
-            parameters (dict[str, ParameterValue], optional):
-                Dictionary of parameter names and values.
-                Example:
-
-                >>> parameters = {"Resistor.R" : "1",
-                ...     "Resistor.useHeatPort": True}
-
-                Defaults to None.
-            model_modifiers (list[str]], optional): List of model modifiers.
-                Example:
-
-                >>> model_modifiers = [
-                ...     "redeclare package Medium = "
-                ...     "Modelica.Media.Water.ConstantPropertyLiquidWater"
-                ... ]
-
-                Defaults to None.
-            packages (list[str], optional): List of model/package paths that
-                need to be loaded as dependencies for the model. Defaults to None.
-            output_directory (Path | None, optional): Output directory for the fmu,
-                the log and the mos script. Defaults to None.
-            fmi_version (Literal[1, 2], optional): FMI version, 1 or 2. Defaults to 2.
-            fmi_type (Literal["me", "cs", "all", "csSolver"], optional): FMI type,
-                me (model exchange), cs (co-simulation), all or csSolver (using Dymola
-                solver). Defaults to "all".
-            include_source (bool, optional): Whether to include source code in FMU.
-                Defaults to False.
-            include_image (Literal[0, 1, 2], optional): Whether to include the model
-                image (0 - no image, 1 icon, 2 diagram). Defaults to 2.
-        """
         self.model_name = model_name
         if fmu_name is None:
             fmu_name = self.model_name

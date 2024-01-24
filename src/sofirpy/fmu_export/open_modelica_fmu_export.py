@@ -13,7 +13,14 @@ from sofirpy.fmu_export.fmu_export import FmuExport, FmuExportError
 
 
 class OpenModelicaFmuExport(FmuExport):
-    """Object that performs the OpenModelica fmu export"""
+    """Object that performs the OpenModelica fmu export.
+
+    Args:
+        model_path (Path): Path to the modelica model that should
+            be exported
+        model_name (str): Name of the model.
+        output_directory (Path | None, optional): Output directory for the fmu.
+    """
 
     files_to_delete: Final[list[str]] = [
         ".c",
@@ -81,15 +88,6 @@ class OpenModelicaFmuExport(FmuExport):
         model_name: str,
         output_directory: Path | None = None,
     ) -> None:
-        """Initialize the OpenModelicaFmuExport object.
-
-        Args:
-            model_path (Path): Path to the modelica model that should
-                be exported
-            model_name (str): Name of the model.
-            output_directory (Path | None, optional): Output directory for the fmu.
-        """
-
         self._dump_directory = Path.cwd()
         fmu_path = self._dump_directory / f"{model_path.stem}.fmu"
         super().__init__(model_path, fmu_path, output_directory)
