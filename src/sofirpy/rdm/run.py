@@ -170,6 +170,11 @@ class Run:
 
     @property
     def dependencies(self) -> dict[str, str]:
+        """Dependencies installed in the Python environment when the run is created.
+
+        Returns:
+            dict[str, str]: key -> name of the package; value -> version
+        """
         return self._run_meta.dependencies
 
     @property

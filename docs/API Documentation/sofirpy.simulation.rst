@@ -1,6 +1,13 @@
 sofirpy.simulation package
 ===========================
 
+The :ref:`UML diagram <uml_diagram>` illustrates the architecture of the simulation.
+
+.. _uml_diagram:
+
+.. image:: ../Images/uml_diagram_simulation.svg
+
+
 .. automodule:: sofirpy.simulation
     :members:
     :no-undoc-members:
