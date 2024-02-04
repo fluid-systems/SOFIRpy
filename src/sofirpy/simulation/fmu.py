@@ -21,15 +21,14 @@ GetterFunction = Callable[[list[int]], list[co.ParameterValue]]
 
 
 class Fmu(SimulationEntity):
-    """Class representing a fmu."""
+    """Class representing a fmu.
+
+    Args:
+        fmu_path (Path): path to the fmu
+        step_size (float): step size of the simulation
+    """
 
     def __init__(self, fmu_path: Path, name: str, step_size: float) -> None:
-        """Initialize Fmu object.
-
-        Args:
-            fmu_path (Path): path to the fmu
-            step_size (float): step size of the simulation
-        """
         self.fmu_path = fmu_path
         self.name = name
         self.step_size = step_size
@@ -73,7 +72,7 @@ class Fmu(SimulationEntity):
             guid=self.model_description.guid,
             unzipDirectory=unzip_dir,
             modelIdentifier=self.model_description.coSimulation.modelIdentifier,
-            instanceName="instance1",
+            instanceName=f"fmu_{self.name}",
         )
         self.setter_functions: dict[str, SetterFunction] = {
             "Boolean": self.fmu.setBoolean,
@@ -89,7 +88,10 @@ class Fmu(SimulationEntity):
         self.fmu.instantiate()
         self.fmu.setupExperiment()
         not_set_start_values = apply_start_values(
-            self.fmu, self.model_description, start_values, settable_in_instantiated
+            self.fmu,
+            self.model_description,
+            start_values,
+            settable_in_instantiated,
         )
         self.fmu.enterInitializationMode()
         not_set_start_values = apply_start_values(
@@ -101,12 +103,14 @@ class Fmu(SimulationEntity):
         if not_set_start_values:
             logging.warning(
                 f"The following start values for the FMU '{self.name}' "
-                f"can not be set:\n{not_set_start_values}"
+                f"can not be set:\n{not_set_start_values}",
             )
         self.fmu.exitInitializationMode()
 
     def set_parameter(
-        self, parameter_name: str, parameter_value: co.ParameterValue
+        self,
+        parameter_name: str,
+        parameter_value: co.ParameterValue,
     ) -> None:
         var_type = self.model_description_dict[parameter_name].type
         self.setter_functions[var_type](
@@ -122,11 +126,11 @@ class Fmu(SimulationEntity):
                 obtained
 
         Returns:
-            Union[int, float]: value of the parameter
+            ParameterValue: value of the parameter
         """
         var_type = self.model_description_dict[parameter_name].type
         value: co.ParameterValue = self.getter_functions[var_type](
-            [self.model_description_dict[parameter_name].valueReference]
+            [self.model_description_dict[parameter_name].valueReference],
         )[0]
         return value
 
@@ -137,7 +141,8 @@ class Fmu(SimulationEntity):
             time (float): current time
         """
         self.fmu.doStep(
-            currentCommunicationPoint=time, communicationStepSize=self.step_size
+            currentCommunicationPoint=time,
+            communicationStepSize=self.step_size,
         )
 
     def conclude_simulation(self) -> None:
@@ -156,3 +161,7 @@ class Fmu(SimulationEntity):
         """
         unit: str | None = self.model_description_dict[parameter_name].unit
         return unit
+
+    def get_dtype_of_parameter(self, parameter_name: str) -> type:
+        dtype: type = self.model_description_dict[parameter_name]._python_type
+        return dtype

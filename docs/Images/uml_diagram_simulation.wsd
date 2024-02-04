@@ -1,0 +1,68 @@
+@startuml simulation
+
+skin rose
+
+title Simulation Class Diagramm
+
+
+class Simulator {
+  +systems: dict[str, System]
+  +connections: list[Connections]
+  +parameters_to_log: list[SystemParameter]
+  +simulate(stop_time: float, step_size: float, logging_step_size: float) -> DataFrame
+
+}
+
+class Connection {
+    +input_point: SystemParameter
+    +output_point: SystemParameter
+}
+class SystemParameter {
+    system_name: str
+    name: str
+}
+class System {
+    simulation_entity: SimulationEntity
+    name: str
+}
+
+abstract class SimulationEntity {
+    +set_parameter(parameter_name: str, parameter_value: ParameterValue) -> None {abstract}
+    +get_parameter_value(parameter_name: str) -> ParameterValue {abstract}
+    +do_step(time: float) -> None {abstract}
+    +initialize(start_values: dict[str, ParameterValue]) -> None
+    +get_unit(parameter_name: str) -> str | None
+    +conclude_simulation() -> None
+}
+
+class Fmu {
+    +set_parameter(parameter_name: str, parameter_value: ParameterValue) -> None
+    +get_parameter_value(parameter_name: str) -> ParameterValue
+    +do_step(time: float) -> None
+}
+
+class CustomPythonModel {
+    +set_parameter(parameter_name: str, parameter_value: ParameterValue) -> None
+    +get_parameter_value(parameter_name: str) -> ParameterValue
+    +do_step(time: float) -> None
+}
+
+Simulator o-- "1..*" System: systems
+Simulator o-- "0..*" Connection: connections
+Simulator o-- "0..*" SystemParameter: parameters_to_log
+
+Connection *-- SystemParameter: input
+Connection *-- SystemParameter: output
+
+System --o "1" SimulationEntity
+SystemParameter -right-o "0..*" System
+
+Fmu --|> SimulationEntity
+CustomPythonModel --|> SimulationEntity
+
+SimulationEntity -[hidden]-> Fmu
+SimulationEntity -[hidden]-> CustomPythonModel
+
+Connection -[hidden]> SystemParameter
+
+@enduml

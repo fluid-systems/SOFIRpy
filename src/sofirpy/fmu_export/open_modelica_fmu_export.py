@@ -3,18 +3,26 @@ from __future__ import annotations
 
 from pathlib import Path
 from types import TracebackType
-from typing import Optional, Type, Union
+from typing import Final
 
 from OMPython import ModelicaSystem
+from typing_extensions import Self
 
 from sofirpy import utils
 from sofirpy.fmu_export.fmu_export import FmuExport, FmuExportError
 
 
 class OpenModelicaFmuExport(FmuExport):
-    """Object that performs the OpenModelica fmu export"""
+    """Object that performs the OpenModelica fmu export.
 
-    files_to_delete = [
+    Args:
+        model_path (Path): Path to the modelica model that should
+            be exported
+        model_name (str): Name of the model.
+        output_directory (Path | None, optional): Output directory for the fmu.
+    """
+
+    files_to_delete: Final[list[str]] = [
         ".c",
         ".exe",
         ".libs",
@@ -75,17 +83,11 @@ class OpenModelicaFmuExport(FmuExport):
     ]
 
     def __init__(
-        self, model_path: Path, model_name: str, output_directory: Optional[Path] = None
+        self,
+        model_path: Path,
+        model_name: str,
+        output_directory: Path | None = None,
     ) -> None:
-        """Initialize the OpenModelicaFmuExport object.
-
-        Args:
-            model_path (Path): Path to the modelica model that should
-                be exported
-            model_name (str): Name of the model.
-            output_directory (Optional[Path], optional): Output directory for the fmu.
-        """
-
         self._dump_directory = Path.cwd()
         fmu_path = self._dump_directory / f"{model_path.stem}.fmu"
         super().__init__(model_path, fmu_path, output_directory)
@@ -105,7 +107,8 @@ class OpenModelicaFmuExport(FmuExport):
             bool: True if export is successful else False
         """
         open_modelica = ModelicaSystem(
-            str(self.model_path).replace("\\", "//"), self.model_name
+            str(self.model_path).replace("\\", "//"),
+            self.model_name,
         )
         open_modelica.convertMo2Fmu()
 
@@ -113,28 +116,30 @@ class OpenModelicaFmuExport(FmuExport):
             return True
         return False
 
-    def __enter__(self) -> OpenModelicaFmuExport:
+    def __enter__(self) -> Self:
         return self
 
     def __exit__(
         self,
-        exc_type: Optional[Type[BaseException]],
-        exc_val: Optional[BaseException],
-        exc_tb: Optional[TracebackType],
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: TracebackType | None,
     ) -> None:
         utils.delete_paths(self._paths_to_delete)
 
 
 def export_open_modelica_model(
-    model_path: Union[Path, str], model_name: str, output_directory: Union[Path, str]
+    model_path: Path | str,
+    model_name: str,
+    output_directory: Path | str,
 ) -> Path:
     """Exports a modelica model as an fmu and moves the fmu to the output directory
 
     Args:
-        model_path (Union[Path, str]): Path to the modelica model that should be
+        model_path (Path | str): Path to the modelica model that should be
             exported.
         model_name (str): Name of the model.
-        output_directory (Union[Path, str]): Output directory for the fmu.
+        output_directory (Path | str): Output directory for the fmu.
 
     Returns:
         Path: Path to the exported FMU.
@@ -143,7 +148,9 @@ def export_open_modelica_model(
     _output_directory = utils.convert_str_to_path(output_directory, "output_directory")
 
     with OpenModelicaFmuExport(
-        _model_path, model_name, _output_directory
+        _model_path,
+        model_name,
+        _output_directory,
     ) as om_exporter:
         successful = om_exporter.export_fmu()
         if not successful:

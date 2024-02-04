@@ -3,9 +3,10 @@
 from __future__ import annotations
 
 import logging
-from dataclasses import asdict, dataclass, field
+from collections.abc import Iterator
+from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Callable, Iterable, Optional, Union
+from typing import Any, Callable
 
 import h5py
 from typing_extensions import Self
@@ -14,15 +15,14 @@ from sofirpy import utils
 
 
 class HDF5:
-    """Object representing a HDF5 file."""
+    """Object representing a HDF5 file.
 
-    def __init__(self, hdf5_path: Union[Path, str]) -> None:
-        """Initialize the HDF5 object.
+    Args:
+        hdf5_path (Path | str): Path to a hdf5 file. If it doesn't
+            exists it will be created.
+    """
 
-        Args:
-            hdf5_path (Union[Path, str]): Path to a hdf5 file. If it doesn't
-                exists it will be created.
-        """
+    def __init__(self, hdf5_path: Path | str) -> None:
         self.hdf5_path = hdf5_path  # type: ignore[assignment]
 
     @property
@@ -35,11 +35,11 @@ class HDF5:
         return self._hdf5_path
 
     @hdf5_path.setter
-    def hdf5_path(self, hdf5_path: Union[Path, str]) -> None:
+    def hdf5_path(self, hdf5_path: Path | str) -> None:
         """Set the path to a hdf5 file. If the path doesn't exist, the file is created.
 
         Args:
-            hdf5_path (Union[Path, str]): Path to a hdf5 file.
+            hdf5_path (Path | str): Path to a hdf5 file.
 
         Raises:
             TypeError: hdf5_path type was not 'Path'
@@ -52,19 +52,18 @@ class HDF5:
         if _hdf5_path.suffix not in hdf_suffixes:
             raise ValueError(
                 "Invalid path name, expected one of the following file extensions: "
-                f"{', '.join(hdf_suffixes)}"
+                f"{', '.join(hdf_suffixes)}",
             )
         if not _hdf5_path.exists():
-            # create_new = utils.get_user_input_for_creating_path(_hdf5_path)
-            # if not create_new:
-            #     raise FileNotFoundError(f"{_hdf5_path} doesn't exist.")
             _hdf5_path.touch()
             logging.info(f"hdf5 file at {_hdf5_path} created.")
 
         self._hdf5_path = _hdf5_path
 
     def create_group(
-        self, group_path: str, attributes: Optional[dict[str, Any]] = None
+        self,
+        group_path: str,
+        attributes: dict[str, Any] | None = None,
     ) -> None:
         """Creates a group in the hdf5 file.
 
@@ -81,6 +80,7 @@ class HDF5:
                 They will be created automatically. Example:
 
                 >>> group_path = "group2/subgroup1/subsubgroup1"
+            attributes: (dict[str, Any] | None): Attributes for the group. Default None.
 
         Raises:
             ValueError: If the group already exists.
@@ -97,16 +97,16 @@ class HDF5:
         self,
         data: Any,
         data_name: str,
-        group_path: Optional[str] = None,
-        attributes: Optional[dict[str, Any]] = None,
+        group_path: str | None = None,
+        attributes: dict[str, Any] | None = None,
     ) -> None:
         """Stores data in a hdf5 group. If the group doesn't exist it will be created.
 
         Args:
             data (Any): Data that should be stored.
             data_name (str): Name of the data.
-            group_path (Optional[str], optional): Path to the hdf5 group.
-            attributes (Optional[dict[str, Any]], optional): Data attributes dictionary
+            group_path (str | None, optional): Path to the hdf5 group.
+            attributes (dict[str, Any] | None, optional): Data attributes dictionary
                 with attribute names as keys and the attributes as values.
                 Defaults to None.
 
@@ -127,12 +127,13 @@ class HDF5:
                 data_path = f"{group_path}/{data_name}"
             if data_path in hdf5:
                 overwrite = utils.get_user_input_for_overwriting(
-                    data_path, "hdf5 dataset at"
+                    data_path,
+                    "hdf5 dataset at",
                 )
                 if not overwrite:
                     raise ValueError(
                         "Unable to create dataset, "
-                        f"dataset at {data_path} already exists."
+                        f"dataset at {data_path} already exists.",
                     )
                 del hdf5[data_path]
             dset = group.create_dataset(data_name, data=data)
@@ -141,64 +142,66 @@ class HDF5:
                     dset.attrs[name] = attr
 
     def append_attributes(
-        self, attributes: dict[str, Any], path: Optional[str] = None
+        self,
+        attributes: dict[str, Any],
+        path: str | None = None,
     ) -> None:
         """Append attributes to a hdf5 Dataset or Group.
 
         Args:
             attributes (dict[str, Any]): Attributes dictionary with attribute
                 names as keys and the attributes as values
-            path (Optional[str], optional): hdf5 path to the dataset or group.
+            path (str | None, optional): hdf5 path to the dataset or group.
         """
         with h5py.File(str(self.hdf5_path), "a") as hdf5:
-            hdf5_object: Union[h5py.Group, h5py.Dataset] = hdf5[path] if path else hdf5
+            hdf5_object: h5py.Group | h5py.Dataset = hdf5[path] if path else hdf5
             for name, attr in attributes.items():
                 hdf5_object.attrs[name] = attr
 
-    def delete_attribute(self, attribute_name: str, path: Optional[str] = None) -> None:
+    def delete_attribute(self, attribute_name: str, path: str | None = None) -> None:
         """Deletes a attribute of a hdf5 Dataset or Group.
 
         Args:
-            path (Optional[str], optional): hdf5 path to the dataset or group.
+            path (str | None, optional): hdf5 path to the dataset or group.
             attribute_name (str): Name of the attribute.
 
         Raises:
             KeyError: If the attribute does not exist.
         """
         with h5py.File(str(self.hdf5_path), "a") as hdf5:
-            hdf5_object: Union[h5py.Group, h5py.Dataset] = hdf5[path] if path else hdf5
-            if attribute_name not in hdf5_object.attrs.keys():
+            hdf5_object: h5py.Group | h5py.Dataset = hdf5[path] if path else hdf5
+            if attribute_name not in hdf5_object.attrs:
                 raise KeyError(
                     f"Attribute with name '{attribute_name}' "
-                    f"is not a attribute at '{path}'."
+                    f"is not a attribute at '{path}'.",
                 )
             del hdf5_object.attrs[attribute_name]
 
-    def read_attributes(self, path: Optional[str] = None) -> dict[str, Any]:
+    def read_attributes(self, path: str | None = None) -> dict[str, Any]:
         """Reads the attributes of a dataset or group.
 
         Args:
-            path (Optional[str]): Path to a hdf5 group or dataset. If None or empty
+            path (str | None): Path to a hdf5 group or dataset. If None or empty
                 string the attributes of the root will be returned.
 
         Returns:
             dict[str, Any]: Attributes of the given hdf5 group or dataset.
         """
         with h5py.File(str(self.hdf5_path), "a") as hdf5:
-            hdf5_object: Union[h5py.Group, h5py.Dataset] = hdf5[path] if path else hdf5
+            hdf5_object: h5py.Group | h5py.Dataset = hdf5[path] if path else hdf5
             return dict(hdf5_object.attrs)
 
     def read_data(
         self,
         data_name: str,
-        group_path: Optional[str] = None,
+        group_path: str | None = None,
         get_attributes: bool = False,
-    ) -> Union[Any, tuple[Any, dict[str, Any]]]:
+    ) -> Any | tuple[Any, dict[str, Any]]:
         """Reads the data of at a given data path.
 
         Args:
             data_name (str): Name of the data.
-            group_path (Optional[str], optional): Path to the hdf5 group.
+            group_path (str | None, optional): Path to the hdf5 group.
             get_attributes (bool, optional): If True attributes will
                 be returned as well. Defaults to False.
 
@@ -206,14 +209,11 @@ class HDF5:
             ValueError: If data path does not lead to a hdf5 Dataset.
 
         Returns:
-            Union[Any, tuple[Any, dict[str, Any]]]: Data and/or attributes of
+            Any | tuple[Any, dict[str, Any]]: Data and/or attributes of
             the Dataset.
         """
         with h5py.File(str(self.hdf5_path), "a") as hdf5:
-            if group_path:
-                data_path = f"{group_path}/{data_name}"
-            else:
-                data_path = data_name
+            data_path = f"{group_path}/{data_name}" if group_path else data_name
             dataset = hdf5.get(data_path)
 
             if not isinstance(dataset, h5py.Dataset):
@@ -243,11 +243,11 @@ class HDF5:
                 raise ValueError(f"'{group_path}' does not lead to a hdf5 Group.")
             del hdf5[group_path]
 
-    def delete_data(self, data_name: str, group_path: Optional[str] = None) -> None:
+    def delete_data(self, data_name: str, group_path: str | None = None) -> None:
         """Deletes a hdf5 Dataset.
 
         Args:
-            group_path (Optional[str], optional): Path to the hdf5 group the data is in.
+            group_path (str | None, optional): Path to the hdf5 group the data is in.
             data_name (str): Name of the data.
 
         Raises:
@@ -256,18 +256,13 @@ class HDF5:
                 Dataset.
         """
         with h5py.File(str(self.hdf5_path), "a") as hdf5:
-            if group_path:
-                data_path = f"{group_path}/{data_name}"
-            else:
-                data_path = data_name
+            data_path = f"{group_path}/{data_name}" if group_path else data_name
             data_object: h5py.Dataset = hdf5[data_path]
             if not isinstance(data_object, h5py.Dataset):
                 raise ValueError(f"'{data_path}' does not lead to a dataset.")
             del hdf5[data_path]
 
-    def read_entire_group_data(
-        self, group_path: Optional[str] = None
-    ) -> dict[str, Any]:
+    def read_entire_group_data(self, group_path: str | None = None) -> dict[str, Any]:
         """Reads all data inside a hdf5 group.
 
         The data will be returned in a nested dictionary representing the file
@@ -275,7 +270,7 @@ class HDF5:
         returned.
 
         Args:
-            group_path (Optional[str], optional): Path to a hdf5 group.
+            group_path (str | None, optional): Path to a hdf5 group.
                 Defaults to None.
 
         Raises:
@@ -286,9 +281,7 @@ class HDF5:
         """
         datasets: dict[str, Any] = {}
 
-        def append_dataset(
-            name: str, hdf5_object: Union[h5py.Group, h5py.Dataset]
-        ) -> None:
+        def append_dataset(name: str, hdf5_object: h5py.Group | h5py.Dataset) -> None:
             self._place(name, datasets, hdf5_object, mode="full")
 
         with h5py.File(str(self.hdf5_path), "a") as hdf5:
@@ -300,26 +293,25 @@ class HDF5:
         return datasets
 
     def read_hdf5_structure(
-        self, group_path: Optional[str] = None
-    ) -> Optional[dict[str, Any]]:
+        self,
+        group_path: str | None = None,
+    ) -> dict[str, Any] | None:
         """Reads the structure of a hdf5 group.
 
         The file structure is represented by a nested dictionary. If group_path
         is not given the structure of the whole hdf5 will be returned.
 
         Args:
-            group_path (Optional[str], optional): Path to the hdf5 group which
+            group_path ( str | None, optional): Path to the hdf5 group which
                 file structure should be returned. Defaults to None.
 
         Returns:
-            Optional[dict[str, Any]]: Returns a dictionary with the
+            dict[str, Any] | None: Returns a dictionary with the
             structure corresponding to the structure of the hdf5 group.
         """
         file_structure: dict[str, Any] = {}
 
-        def append_name(
-            name: str, hdf5_object: Union[h5py.Group, h5py.Dataset]
-        ) -> None:
+        def append_name(name: str, hdf5_object: h5py.Group | h5py.Dataset) -> None:
             self._place(name, file_structure, hdf5_object, mode="short")
 
         with h5py.File(str(self.hdf5_path), "a") as hdf5:
@@ -350,32 +342,33 @@ class HDF5:
 
     def _get_group_or_dataset_names(
         self,
-        group_path: Optional[str],
-        obj: Union[h5py.Group, h5py.Dataset],
-        filter_func: Optional[Callable[[str], bool]] = None,
+        group_path: str | None,
+        obj: h5py.Group | h5py.Dataset,
+        filter_func: Callable[[str], bool] | None = None,
     ) -> list[str]:
         with h5py.File(str(self.hdf5_path), "a") as hdf5:
             group: h5py.Group = hdf5[group_path] if group_path else hdf5
             if not isinstance(group, h5py.Group):
                 raise ValueError(f"'{group_path}' does not lead to a hdf5 Group.")
             if filter_func is None:
-                return [name for name in group.keys() if isinstance(group[name], obj)]
+                return [name for name in group if isinstance(group[name], obj)]
             return [
                 name
-                for name in group.keys()
+                for name in group
                 if isinstance(group[name], obj) and filter_func(group[name])
             ]
 
     def get_group_names(
         self,
-        group_path: Optional[str] = None,
-        filter_func: Optional[Callable[[str], bool]] = None,
+        group_path: str | None = None,
+        filter_func: Callable[[str], bool] | None = None,
     ) -> list[str]:
         """Get all group names inside a group:
 
         Args:
-            group_path (Optional[str], optional): Path to a hdf5 group.
+            group_path (str | None, optional): Path to a hdf5 group.
                 Defaults to None.
+            filter_func (Callable[[str], bool] | None, optional): Filter function.
 
         Returns:
             list[str]: List group names inside the given hdf5 group.
@@ -384,26 +377,27 @@ class HDF5:
 
     def get_dataset_names(
         self,
-        group_path: Optional[str] = None,
-        filter_func: Optional[Callable[[str], bool]] = None,
+        dataset_path: str | None = None,
+        filter_func: Callable[[str], bool] | None = None,
     ) -> list[str]:
         """Get all dataset names inside a group:
 
         Args:
-            group_path (Optional[str], optional): Path to a hdf5 group.
+            dataset_path (str | None, optional): Path to a hdf5 dataset.
                 Defaults to None.
+            filter_func (Callable[[str], bool] | None, optional): Filter function.
 
         Returns:
             list[str]: List dataset names inside the given hdf5 group.
         """
-        return self._get_group_or_dataset_names(group_path, h5py.Dataset, filter_func)
+        return self._get_group_or_dataset_names(dataset_path, h5py.Dataset, filter_func)
 
     def _place(
         self,
         name: str,
         _dict: dict[str, Any],
-        hdf5_object: Union[h5py.Group, h5py.Dataset],
-        mode: Optional[str] = None,
+        hdf5_object: h5py.Group | h5py.Dataset,
+        mode: str | None = None,
     ) -> dict[str, Any]:
         """Function that calls itself recursively to achieve the following.
         If the path to a dataset is "group1/subgroup1/data" it will convert this path
@@ -415,11 +409,14 @@ class HDF5:
             split_name = name.split("/", 1)
             base_name, ext_name = split_name
             _dict[base_name]["content"] = self._place(
-                ext_name, _dict[base_name]["content"], hdf5_object, mode
+                ext_name,
+                _dict[base_name]["content"],
+                hdf5_object,
+                mode,
             )
         else:
             if name not in _dict:
-                value: Union[None, str, dict[str, Any]] = {}
+                value: None | str | dict[str, Any] = {}
                 if isinstance(hdf5_object, h5py.Group):
                     _dict[name] = {
                         "type": "group",
@@ -499,7 +496,11 @@ class Dataset(HDF5Object):
 
     @classmethod
     def from_hdf5(
-        cls, hdf5: HDF5, name: str, parent: Group, read_data: bool = True
+        cls,
+        hdf5: HDF5,
+        name: str,
+        parent: Group,
+        read_data: bool = True,
     ) -> Self:
         data = None
         if read_data:
@@ -534,22 +535,32 @@ class Group(HDF5Object):
 
     @classmethod
     def from_hdf5(
-        cls, hdf5: HDF5, name: str, parent: Group | None = None, read_data: bool = True
+        cls,
+        hdf5: HDF5,
+        name: str,
+        parent: Group | None = None,
+        read_data: bool = True,
     ) -> Self:
         self = cls(name=name, parent=parent)
         for group_name in hdf5.get_group_names(self.path):
             self.groups._groups[group_name] = Group.from_hdf5(
-                hdf5, group_name, self, read_data
+                hdf5,
+                group_name,
+                self,
+                read_data,
             )
         for dataset_name in hdf5.get_dataset_names(self.path):
             self.datasets._datasets[dataset_name] = Dataset.from_hdf5(
-                hdf5, dataset_name, self, read_data
+                hdf5,
+                dataset_name,
+                self,
+                read_data,
             )
         self.attribute = Attribute.from_hdf5(hdf5, self) if read_data else None
         return self
 
     def to_hdf5(self, hdf5: HDF5, overwrite: bool = False) -> None:
-        if not self.path in hdf5:
+        if self.path not in hdf5:
             hdf5.create_group(self.path)
         self._attribute_to_hdf5(hdf5)
         self._groups_to_hdf5(hdf5)
@@ -628,8 +639,8 @@ class Groups:
             return self._groups[__name]
         raise AttributeError(f"No group with name '{__name}'")
 
-    def list(self) -> list[str]:
-        return list(self._groups.keys())
+    def __iter__(self) -> Iterator[str]:
+        yield from self._groups.keys()
 
 
 @dataclass
@@ -641,5 +652,5 @@ class Datasets:
             return self._datasets[__name]
         raise AttributeError(f"No dataset with name '{__name}'")
 
-    def list(self) -> list[str]:
-        return list(self._datasets.keys())
+    def __iter__(self) -> Iterator[str]:
+        yield from self._datasets.keys()

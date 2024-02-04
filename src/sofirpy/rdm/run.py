@@ -2,13 +2,14 @@
 
 from __future__ import annotations
 
+import enum
 import inspect
 import json
 import sys
 from dataclasses import asdict, dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import Any, ClassVar, Literal, Optional, TypedDict, cast
+from typing import Any, ClassVar, Optional, TypedDict, cast
 
 import pandas as pd
 import pydantic
@@ -22,7 +23,11 @@ from sofirpy import utils
 from sofirpy.simulation.simulation import simulate
 from sofirpy.simulation.simulation_entity import SimulationEntity
 
-ConfigKeyType = Literal["run_meta", "models", "simulation_config"]
+
+class ConfigKeyType(enum.Enum):
+    RUN_META = "run_meta"
+    MODELS = "models"
+    SIMULATION_CONFIG = "simulation_config"
 
 
 class ConfigDict(TypedDict):
@@ -52,16 +57,16 @@ class SimulationConfigDict(TypedDict):
 class Run:
     """Run object representing a simulation Run.
 
-    Run can be initiated from a config file or loaded from a hdf5 file. It provides
-    several methods for updating the configuration of the run. Runs can be saved to a
-    hdf5 file.
+    A Run can be initiated from a config file or loaded from a hdf5 file. It provides
+    several methods for updating the configuration of the run. A Run can be serialized
+    and stored inside a hdf5 file.
     """
 
     run_name: str
     _run_meta: RunMeta
     _models: Models
     _simulation_config: SimulationConfig
-    _results: Optional[Results] = None
+    _results: Results | None = None
 
     def __repr__(self) -> str:
         return (
@@ -165,6 +170,11 @@ class Run:
 
     @property
     def dependencies(self) -> dict[str, str]:
+        """Dependencies installed in the Python environment when the run is created.
+
+        Returns:
+            dict[str, str]: key -> name of the package; value -> version
+        """
         return self._run_meta.dependencies
 
     @property
@@ -259,7 +269,8 @@ class Run:
             target_directory (str | Path): Target directory.
         """
         target_directory = utils.convert_str_to_path(
-            target_directory, "target_directory"
+            target_directory,
+            "target_directory",
         )
         self._models.move_fmu(fmu_name, target_directory)
 
@@ -299,14 +310,14 @@ class Run:
         """
         self._models.remove_fmu(fmu_name)
 
-    def get_model_class(self, model_name: str) -> Optional[type[SimulationEntity]]:
+    def get_model_class(self, model_name: str) -> type[SimulationEntity] | None:
         """Get the instance of a python model.
 
         Args:
             model_name (str): Name of the model.
 
         Returns:
-            type[SimulationEntity]: Model instance.
+            type[SimulationEntity] | None: Model instance.
         """
         return self._models.python_models[model_name].model_class
 
@@ -322,7 +333,9 @@ class Run:
         return self._models.get_source_code_of_python_model(model_name)
 
     def create_file_from_source_code(
-        self, model_name: str, target_path: str | Path
+        self,
+        model_name: str,
+        target_path: str | Path,
     ) -> None:
         """Create a python file from the source code of a python model.
 
@@ -375,40 +388,43 @@ class Run:
         self._models.remove_python_model(model_name)
 
     @property
-    def start_values(self) -> Optional[co.StartValues]:
+    def start_values(self) -> co.StartValues | None:
         """Start values of the simulation.
 
         Returns:
-            Optional[StartValues]: Start values of the simulation.
+            co.StartValues | None: Start values of the simulation.
         """
         return self._models.start_values
 
     @start_values.setter
-    def start_values(self, start_values: Optional[co.StartValues]) -> None:
+    def start_values(self, start_values: co.StartValues | None) -> None:
         """Start values of the simulation.
 
         Args:
-            start_values (Optional[StartValues]): Start values of the simulation.
+            start_values (co.StartValues | None): Start values of the simulation.
         """
         if start_values is not None:
             utils.check_type(start_values, "start_values", dict)
         self._models.start_values = start_values
 
     def get_start_values_of_model(
-        self, model_name: str
-    ) -> Optional[dict[str, co.StartValue]]:
+        self,
+        model_name: str,
+    ) -> dict[str, co.StartValue] | None:
         """Get the start values of a model.
 
         Args:
             model_name (str): Name of the model.
 
         Returns:
-            Optional[dict[str, StartValue]]: Start values of the model.
+            dict[str, co.StartValue] | None: Start values of the model.
         """
         return self._models.get_start_values_of_model(model_name)
 
     def set_start_values_of_model(
-        self, model_name: str, start_values: dict[str, co.StartValue]
+        self,
+        model_name: str,
+        start_values: dict[str, co.StartValue],
     ) -> None:
         """Set the start values of a model.
 
@@ -428,7 +444,9 @@ class Run:
         self._models.remove_start_values_of_model(model_name)
 
     def get_start_value(
-        self, model_name: str, parameter_name: str
+        self,
+        model_name: str,
+        parameter_name: str,
     ) -> co.StartValue | None:
         """Get a start value from a model.
 
@@ -437,12 +455,15 @@ class Run:
             parameter_name (str): Name of the parameter inside the model.
 
         Returns:
-            Optional[StartValue]: Start value
+            StartValue | None: Start value
         """
         return self._models.get_start_value(model_name, parameter_name)
 
     def set_start_value(
-        self, model_name: str, parameter_name: str, value: co.StartValue
+        self,
+        model_name: str,
+        parameter_name: str,
+        value: co.StartValue,
     ) -> None:
         """Set a start value for a parameter inside a model.
 
@@ -467,7 +488,7 @@ class Run:
         """Connection configuration for the simulation.
 
         Returns:
-            Optional[ConnectionsConfig]: Connection configuration for the simulation.
+            ConnectionsConfig | None: Connection configuration for the simulation.
         """
         return self._models.connections_config
 
@@ -482,19 +503,21 @@ class Run:
         utils.check_type(connections, "connections", dict)
         self._models.connections_config = connections
 
-    def get_connections_of_model(self, model_name: str) -> Optional[co.Connections]:
+    def get_connections_of_model(self, model_name: str) -> co.Connections | None:
         """Get the connections of a model.
 
         Args:
             model_name (str): Name of the model.
 
         Returns:
-            Optional[Connections]: Connections of the model.
+            co.Connections | None: Connections of the model.
         """
         return self._models.get_connections_of_model(model_name)
 
     def set_connections_of_model(
-        self, model_name: str, connections: co.Connections
+        self,
+        model_name: str,
+        connections: co.Connections,
     ) -> None:
         """Set the connections of a model.
 
@@ -521,7 +544,7 @@ class Run:
             input_name (str): Name of the input parameter.
 
         Returns:
-            Optional[_Connection]: The connection of the input parameter.
+            _Connection | None: The connection of the input parameter.
         """
         return self._models.get_connection(model_name, input_name)
 
@@ -541,7 +564,9 @@ class Run:
         utils.check_type(parameter_name, "parameter_name", str)
         utils.check_type(connect_to_system, "connect_to_system", str)
         utils.check_type(
-            connect_to_external_parameter, "connect_to_external_parameter", str
+            connect_to_external_parameter,
+            "connect_to_external_parameter",
+            str,
         )
         self._models.set_connection(
             model_name,
@@ -566,7 +591,7 @@ class Run:
         """Parameters that are logged during the simulation.
 
         Returns:
-            Optional[ParametersToLog]: Parameters that are logged during the simulation.
+            ParametersToLog | None: Parameters that are logged during the simulation.
         """
         return self._models.parameters_to_log
 
@@ -575,7 +600,7 @@ class Run:
         """Parameters that are logged during the simulation.
 
         Args:
-            parameters_to_log (Optional[ParametersToLog]): Parameters that are logged
+            parameters_to_log (ParametersToLog | None): Parameters that are logged
                 during the simulation.
         """
         if parameters_to_log is not None:
@@ -589,12 +614,14 @@ class Run:
             model_name (str): Name of the model.
 
         Returns:
-            Optional[list[str]]: Parameters that are logged in the specified model.
+            list[str] | None: Parameters that are logged in the specified model.
         """
         return self._models.get_parameters_to_log_of_model(model_name)
 
     def set_parameters_to_log_of_model(
-        self, model_name: str, parameters_to_log: list[str]
+        self,
+        model_name: str,
+        parameters_to_log: list[str],
     ) -> None:
         """Set the parameter that are logged in the specified model.
 
@@ -653,7 +680,7 @@ class Run:
             AttributeError: No simulation was performed.
 
         Returns:
-            Optional[Units]: Units of the logged parameters.
+            Units | None: Units of the logged parameters.
         """
         if self._results is None:
             raise AttributeError("No simulation performed yet.")
@@ -683,7 +710,7 @@ class Run:
             keywords (list[str] | None, optional): Keywords describing the simulation.
                 Defaults to None.
             description (str, optional): Description of the run. Defaults to None.
-            fmu_paths (Optional[FmuPaths], optional):
+            fmu_paths (FmuPaths | None, optional):
                 Dictionary which defines which fmu should be simulated.
                 key -> name of the fmu; value -> path to the fmu
 
@@ -695,7 +722,7 @@ class Run:
                 Note: The name of the fmus can be chosen arbitrarily, but each name
                 in 'fmu_paths' and 'model_classes' must occur only once.
                 Defaults to None.
-            model_classes (Optional[ModelClasses], optional):
+            model_classes (ModelClasses | None, optional):
                 Dictionary which defines which Python Models should be simulated.
                 key -> name of the model; value -> Instance of th model. The class that
                 defines the model must inherit from the abstract class SimulationEntity
@@ -803,7 +830,8 @@ class Run:
         return cls(
             run_name=run_name,
             _run_meta=RunMeta.from_config(
-                description=description or "", keywords=keywords or []
+                description=description or "",
+                keywords=keywords or [],
             ),
             _models=Models.from_config(
                 fmu_paths=fmu_paths or {},
@@ -832,7 +860,7 @@ class Run:
         Args:
             run_name (str): Name of the run.
             config_file_path (Path | str): Path to the config file.
-            fmu_paths (Optional[FmuPaths], optional):
+            fmu_paths (FmuPaths | None, optional):
                 Dictionary which defines which fmu should be simulated.
                 key -> name of the fmu; value -> path to the fmu
 
@@ -844,7 +872,7 @@ class Run:
                 Note: The name of the fmus can be chosen arbitrarily, but each name
                 in 'fmu_paths' and 'model_classes' must occur only once.
                 Defaults to None.
-            model_classes (Optional[ModelClasses], optional):
+            model_classes (ModelClasses | None, optional):
                 Dictionary which defines which Python Models should be simulated.
                 key -> name of the model; value -> Instance of th model. The class that
                 defines the model must inherit from the abstract class SimulationEntity
@@ -862,10 +890,10 @@ class Run:
             Run: Run instance.
         """
         config_file_path = utils.convert_str_to_path(
-            config_file_path, "config_file_path"
+            config_file_path,
+            "config_file_path",
         )
-        with open(config_file_path, encoding="utf-8") as config_file:
-            config: ConfigDict = json.load(config_file)
+        config: ConfigDict = json.load(config_file_path.open(encoding="utf-8"))
 
         return cls(
             run_name=run_name,
@@ -944,7 +972,7 @@ class RunMeta:
     os: str
     dependencies: dict[str, str]
 
-    CONFIG_KEY: ClassVar[ConfigKeyType] = "run_meta"
+    CONFIG_KEY: ClassVar[ConfigKeyType] = ConfigKeyType.RUN_META
 
     @classmethod
     def from_config(cls, description: str, keywords: list[str]) -> Self:
@@ -962,10 +990,10 @@ class RunMeta:
 
     @classmethod
     def from_config_file(cls, config: ConfigDict) -> Self:
-        description = config[cls.CONFIG_KEY].get("description", "")
+        description = config[cls.CONFIG_KEY.value].get("description", "")
         utils.check_type(description, "description", str)
         assert isinstance(description, str)
-        keywords = config[cls.CONFIG_KEY].get("keywords", [])
+        keywords = config[cls.CONFIG_KEY.value].get("keywords", [])
         utils.check_type(keywords, "keywords", list)
         assert isinstance(keywords, list)
         return cls.from_config(
@@ -985,7 +1013,7 @@ class RunMeta:
             MetaConfigDict,
             {
                 field_name: getattr(self, field_name)
-                for field_name in MetaConfigDict.__annotations__.keys()
+                for field_name in MetaConfigDict.__annotations__
             },
         )
         return meta_config
@@ -998,13 +1026,13 @@ class RunMeta:
 class SimulationConfig:
     stop_time: float
     step_size: float
-    logging_step_size: Optional[float] = None
+    logging_step_size: Optional[float] = None  # noqa: UP007
 
-    CONFIG_KEY: ClassVar[ConfigKeyType] = "simulation_config"
+    CONFIG_KEY: ClassVar[ConfigKeyType] = ConfigKeyType.SIMULATION_CONFIG
 
     @classmethod
     def from_config_file(cls, config: ConfigDict) -> Self:
-        return cls(**config[cls.CONFIG_KEY])
+        return cls(**config[cls.CONFIG_KEY.value])
 
     def to_dict(self) -> SimulationConfigDict:
         return cast(SimulationConfigDict, asdict(self))
@@ -1023,7 +1051,7 @@ class Models:
     can_simulate_fmu: bool = True
     can_simulate_python_model: bool = True
 
-    CONFIG_KEY: ClassVar[ConfigKeyType] = "models"
+    CONFIG_KEY: ClassVar[ConfigKeyType] = ConfigKeyType.MODELS
 
     @classmethod
     def from_config(
@@ -1063,7 +1091,7 @@ class Models:
         fmu_paths: co.FmuPaths,
         model_classes: co.ModelClasses,
     ) -> Self:
-        model_config = cast(dict[str, ModelConfigDict], config[cls.CONFIG_KEY])
+        model_config = cast(dict[str, ModelConfigDict], config[cls.CONFIG_KEY.value])
         fmus = {
             name: Fmu(
                 name=name,
@@ -1084,7 +1112,7 @@ class Models:
 
     def change_model_name(self, prev_name: str, new_name: str) -> None:
         if prev_name not in self.models:
-            raise ValueError
+            raise KeyError(f"name {prev_name} not in models.")
         if prev_name in self.fmus:
             self.fmus[new_name] = self.fmus.pop(prev_name)
         if prev_name in self.python_models:
@@ -1125,12 +1153,15 @@ class Models:
             model.start_values = start_values.get(model_name)
 
     def get_start_values_of_model(
-        self, model_name: str
+        self,
+        model_name: str,
     ) -> dict[str, co.StartValue] | None:
         return self.models[model_name].start_values
 
     def set_start_values_of_model(
-        self, model_name: str, start_values: dict[str, co.StartValue]
+        self,
+        model_name: str,
+        start_values: dict[str, co.StartValue],
     ) -> None:
         self.models[model_name].start_values = start_values
 
@@ -1138,12 +1169,17 @@ class Models:
         self.models[model_name].start_values = None
 
     def get_start_value(
-        self, model_name: str, parameter_name: str
+        self,
+        model_name: str,
+        parameter_name: str,
     ) -> co.StartValue | None:
         return self.models[model_name].get_start_value(parameter_name)
 
     def set_start_value(
-        self, model_name: str, parameter_name: str, value: co.StartValue
+        self,
+        model_name: str,
+        parameter_name: str,
+        value: co.StartValue,
     ) -> None:
         self.models[model_name].set_start_value(parameter_name, value)
 
@@ -1161,18 +1197,21 @@ class Models:
 
     @connections_config.setter
     def connections_config(
-        self, connections_config: co.ConnectionsConfig | None
+        self,
+        connections_config: co.ConnectionsConfig | None,
     ) -> None:
         if connections_config is None:
             connections_config = {}
         for model_name, model in self.models.items():
             model.connections = connections_config.get(model_name)
 
-    def get_connections_of_model(self, model_name: str) -> Optional[co.Connections]:
+    def get_connections_of_model(self, model_name: str) -> co.Connections | None:
         return self.models[model_name].connections
 
     def set_connections_of_model(
-        self, model_name: str, connections: co.Connections
+        self,
+        model_name: str,
+        connections: co.Connections,
     ) -> None:
         self.models[model_name].connections = connections
 
@@ -1204,11 +1243,13 @@ class Models:
         for model_name, model in self.models.items():
             model.parameters_to_log = parameter_to_log.get(model_name)
 
-    def get_parameters_to_log_of_model(self, model_name: str) -> Optional[list[str]]:
+    def get_parameters_to_log_of_model(self, model_name: str) -> list[str] | None:
         return self.models[model_name].parameters_to_log
 
     def set_parameters_to_log_of_model(
-        self, model_name: str, parameters_to_log: list[str]
+        self,
+        model_name: str,
+        parameters_to_log: list[str],
     ) -> None:
         self.models[model_name].parameters_to_log = parameters_to_log
 
@@ -1302,7 +1343,7 @@ class Model:
         self.connections = [
             connection
             for connection in self.connections
-            if not connection[co.ConnectionKeys.INPUT_PARAMETER.value] == input_name
+            if connection[co.ConnectionKeys.INPUT_PARAMETER.value] != input_name
         ]
 
     def remove_connections_to_model(self, model_name: str) -> None:
@@ -1311,7 +1352,7 @@ class Model:
         self.connections = [
             connection
             for connection in self.connections
-            if not connection[co.ConnectionKeys.CONNECTED_SYSTEM.value] == model_name
+            if connection[co.ConnectionKeys.CONNECTED_SYSTEM.value] != model_name
         ]
 
     def update_connections(self, prev_name: str, new_name: str) -> None:
@@ -1336,7 +1377,7 @@ class Model:
             ModelConfigDict,
             {
                 field_name: self.__getattribute__(field_name)
-                for field_name in ModelConfigDict.__annotations__.keys()
+                for field_name in ModelConfigDict.__annotations__
                 if self.__getattribute__(field_name) is not None
             },
         )
@@ -1356,8 +1397,8 @@ class Fmu(Model):
 
 @dataclass
 class PythonModel(Model):
-    code: Optional[str] = None
-    model_class: Optional[type[SimulationEntity]] = None
+    code: str | None = None
+    model_class: type[SimulationEntity] | None = None
 
     def get_source_code(self) -> str:
         return self.read_code() if self.code is None else self.code
@@ -1365,15 +1406,17 @@ class PythonModel(Model):
     def read_code(self) -> str:
         if self.model_class is None:
             raise ValueError(
-                f"source code for model_class '{self.name}' is not available."
+                f"source code for model_class '{self.name}' is not available.",
             )
         return inspect.getsource(self.model_class)
 
     def create_file_from_source_code(self, target_path: Path) -> None:
         if not target_path.suffix.lower() == ".py":
-            raise ValueError()
+            raise ValueError(
+                f"Suffix of target path was {target_path.suffix}; expected 'py'",
+            )
         if not target_path.exists():
             target_path.touch()
         if not target_path.is_file():
-            raise ValueError()
-        target_path.open("w").write(self.get_source_code())
+            raise FileNotFoundError(f"'{target_path!s}' is not a file.")
+        target_path.write_text(self.get_source_code(), encoding="utf-8")

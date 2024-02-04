@@ -12,7 +12,9 @@ class SimulationEntity(ABC):
 
     @abstractmethod
     def set_parameter(
-        self, parameter_name: str, parameter_value: co.ParameterValue
+        self,
+        parameter_name: str,
+        parameter_value: co.ParameterValue,
     ) -> None:
         """Set the value of a parameter.
 
@@ -44,6 +46,7 @@ class SimulationEntity(ABC):
 
     def initialize(self, start_values: dict[str, co.StartValue]) -> None:
         """Initialize the model"""
+        return None
 
     def get_unit(self, parameter_name: str) -> str | None:
         """Return the unit of a parameter.
@@ -54,6 +57,19 @@ class SimulationEntity(ABC):
         Returns:
             str | None: Unit of the parameter.
         """
+        return None
 
     def conclude_simulation(self) -> None:
         """Conclude the simulation."""
+        return None
+
+    def get_dtype_of_parameter(self, parameter_name: str) -> type:
+        """Return the data type of a parameter.
+
+        Args:
+            parameter_name (str): Name of the parameter.
+
+        Returns:
+            type: Data type of the parameter.
+        """
+        return float

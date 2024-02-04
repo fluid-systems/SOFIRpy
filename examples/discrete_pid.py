@@ -1,4 +1,4 @@
-from typing import Optional
+from __future__ import annotations
 
 from sofirpy import SimulationEntity
 from sofirpy.common import StartValues
@@ -7,7 +7,7 @@ from sofirpy.common import StartValues
 class PID(SimulationEntity):
     """Simple implementation of a discrete pid controller"""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.parameters = {
             "sampling_rate": 1e-3,
             "K_p": 1,
@@ -20,14 +20,15 @@ class PID(SimulationEntity):
         self.inputs = {"speed": 0}
         self.outputs = {"u": 0}
         self.units = {"u": "V"}
+        self.dtypes = {"u": float}
 
-    def compute_error(self):
+    def _compute_error(self) -> None:
         self.error[2] = self.error[1]
         self.error[1] = self.error[0]
         self.error[0] = self.parameters["set_point"] - self.inputs["speed"]
 
     def do_step(self, _):  # mandatory method
-        self.compute_error()
+        self._compute_error()
         u = (
             self.outputs["u"]
             + self.d_0 * self.error[0]
@@ -53,7 +54,7 @@ class PID(SimulationEntity):
     def initialize(
         self, start_values
     ) -> None:  # start values passed to simulation function are passed to this method
-        self.apply_start_values(start_values)
+        self._apply_start_values(start_values)
         K_p = self.parameters["K_p"]
         K_i = self.parameters["K_i"]
         K_d = self.parameters["K_d"]
@@ -65,9 +66,12 @@ class PID(SimulationEntity):
         self.u_max = self.parameters["u_max"]
         self.u_min = self.parameters["u_min"]
 
-    def apply_start_values(self, start_values: StartValues) -> None:
+    def _apply_start_values(self, start_values: StartValues) -> None:
         for name, value in start_values.items():
             self.parameters[name] = value
 
-    def get_unit(self, parameter_name: str) -> Optional[None]:
+    def get_unit(self, parameter_name: str) -> str | None:
         return self.units.get(parameter_name)
+
+    def get_dtype_of_parameter(self, parameter_name: str) -> type:
+        return self.dtypes.get(parameter_name, float)

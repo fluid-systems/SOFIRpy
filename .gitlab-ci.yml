@@ -1,6 +1,3 @@
-# include:
-#   - remote: 'https://gitlab.com/yesolutions/gitlab-ci-templates/raw/main/templates/pre-commit-autofix.yaml'
-
 image: python:3.9.14-bullseye
 
 variables:
@@ -25,6 +22,12 @@ stages:
     - source venv/bin/activate
     - pip install -e ".[test, doc, dev]"
 
+linting:
+  extends: .venv_setup
+  stage: Static Analysis
+  script:
+    - ruff check src
+
 type_checking:
   extends: .venv_setup
   stage: Static Analysis
@@ -34,6 +37,10 @@ type_checking:
 test:
   extends: .venv_setup
   stage: Test
+  image: python:${PY_VERSION}
+  parallel:
+    matrix:
+      - PY_VERSION: ["3.9", "3.10", "3.11", "3.12"]
   script:
     - pytest --cov=src/ --junitxml=report.xml --snapshot-warn-unused
   coverage: '/(?i)total.*? (100(?:\.0+)?\%|[1-9]?\d(?:\.\d+)?\%)$/'

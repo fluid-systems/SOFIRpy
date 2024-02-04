@@ -26,20 +26,23 @@ class RunMeta(Deserialize):
         assert run_group.attribute is not None
         assert run_group.attribute.attributes is not None
         dependencies = json.loads(
-            run_group.get_dataset(config.RunDatasetName.DEPENDENCIES.value).data
+            run_group.get_dataset(config.RunDatasetName.DEPENDENCIES.value).data,
         )
         return rdm_run.RunMeta(
-            **run_group.attribute.attributes, dependencies=dependencies
+            **run_group.attribute.attributes,
+            dependencies=dependencies,
         )
 
 
 class SimulationConfig(Deserialize):
     @staticmethod
     def deserialize(
-        run_group: h5.Group, *args: Any, **kwargs: Any
+        run_group: h5.Group,
+        *args: Any,
+        **kwargs: Any,
     ) -> rdm_run.SimulationConfig:
         simulation_results_group = run_group.get_group(
-            config.RunGroupName.SIMULATION_RESULTS.value
+            config.RunGroupName.SIMULATION_RESULTS.value,
         )
         assert simulation_results_group.attribute is not None
         assert simulation_results_group.attribute.attributes is not None
@@ -66,7 +69,7 @@ class Results(Deserialize):
     @staticmethod
     def deserialize(run_group: h5.Group, *args: Any, **kwargs: Any) -> rdm_run.Results:
         simulation_results_group = run_group.get_group(
-            config.RunGroupName.SIMULATION_RESULTS.value
+            config.RunGroupName.SIMULATION_RESULTS.value,
         )
         time_series = Deserializer.time_series.deserialize(
             run_group,
@@ -163,7 +166,7 @@ class Models(Deserialize):
     ) -> rdm_run.Models:
         hdf5: h5.HDF5 = kwargs["hdf5"]
         fmu_models_group = run_group.get_group(
-            config.RunGroupName.get_fmu_models_path()
+            config.RunGroupName.get_fmu_models_path(),
         )
         fmus: dict[str, rdm_run.Fmu] = {}
         for name, group in fmu_models_group.groups._groups.items():
@@ -179,7 +182,7 @@ class Models(Deserialize):
             parameters_to_log = Deserializer.parameters_to_log.deserialize(
                 run_group,
                 data=group.get_dataset(
-                    config.RunDatasetName.PARAMETERS_TO_LOG.value
+                    config.RunDatasetName.PARAMETERS_TO_LOG.value,
                 ).data,
             )
             reference = Deserializer.fmu_reference.deserialize(
@@ -189,15 +192,15 @@ class Models(Deserialize):
             fmu_content = Deserializer.fmu_content.deserialize(
                 run_group,
                 data=hdf5.read_data(
-                    reference, config.ModelStorageGroupName.get_fmu_path()
+                    reference,
+                    config.ModelStorageGroupName.get_fmu_path(),
                 ),
             )
             tmp_dir = Path(tempfile.mkdtemp())
             fmu_path = tmp_dir / f"{name}.fmu"
             fmu_path.touch()
             assert fmu_content is not None
-            with open(fmu_path, "wb") as fmu_file:
-                fmu_file.write(fmu_content)
+            fmu_path.write_bytes(fmu_content)
             fmus[name] = rdm_run.Fmu(
                 name,
                 connections=connections[config.RunDatasetName.CONNECTIONS.value],
@@ -208,7 +211,7 @@ class Models(Deserialize):
                 fmu_path=fmu_path,
             )
         python_models_group = run_group.get_group(
-            config.RunGroupName.get_python_models_path()
+            config.RunGroupName.get_python_models_path(),
         )
         python_models: dict[str, rdm_run.PythonModel] = {}
         for name, group in python_models_group.groups._groups.items():
@@ -224,19 +227,19 @@ class Models(Deserialize):
             parameters_to_log = Deserializer.parameters_to_log.deserialize(
                 run_group,
                 data=group.get_dataset(
-                    config.RunDatasetName.PARAMETERS_TO_LOG.value
+                    config.RunDatasetName.PARAMETERS_TO_LOG.value,
                 ).data,
             )
             class_reference = Deserializer.class_reference.deserialize(
                 run_group,
                 data=group.get_dataset(
-                    config.RunDatasetName.REFERENCE_CLASS.value
+                    config.RunDatasetName.REFERENCE_CLASS.value,
                 ).data,
             )
             source_code_reference = Deserializer.source_code_reference.deserialize(
                 run_group,
                 data=group.get_dataset(
-                    config.RunDatasetName.REFERENCE_SOURCE_CODE.value
+                    config.RunDatasetName.REFERENCE_SOURCE_CODE.value,
                 ).data,
             )
             source_code = Deserializer.source_code_storage.deserialize(
@@ -249,7 +252,8 @@ class Models(Deserialize):
             model_class = Deserializer.class_storage.deserialize(
                 run_group,
                 data=hdf5.read_data(
-                    class_reference, config.ModelStorageGroupName.get_classes_path()
+                    class_reference,
+                    config.ModelStorageGroupName.get_classes_path(),
                 ),
             )
             python_models[name] = rdm_run.PythonModel(

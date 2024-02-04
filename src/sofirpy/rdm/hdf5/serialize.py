@@ -93,7 +93,7 @@ class FmuReference(DatasetSerializer):
     @staticmethod
     def serialize(run: rdm_run.Run, *args: Any, **kwargs: Any) -> Any:
         fmu_path = run.get_fmu_path(kwargs["fmu_name"])
-        fmu_content = fmu_path.open("rb").read()
+        fmu_content = fmu_path.read_bytes()
         return hashlib.sha256(fmu_content).hexdigest()
 
 
@@ -101,7 +101,7 @@ class FmuStorage(DatasetSerializer):
     @staticmethod
     def serialize(run: rdm_run.Run, *args: Any, **kwargs: Any) -> Any:
         fmu_path = run.get_fmu_path(kwargs["fmu_name"])
-        return np.void(fmu_path.open("rb").read())
+        return np.void(fmu_path.read_bytes())
 
 
 class PythonModelClassReference(DatasetSerializer):
