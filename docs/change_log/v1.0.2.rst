@@ -1,0 +1,2 @@
+This release includes a bug fix for Python versions 3.11 and 3.12, addressing an issue
+that prevented the storage of runs to HDF5 files.
