@@ -5,9 +5,9 @@ from __future__ import annotations
 from collections.abc import Mapping
 from enum import Enum
 from pathlib import Path
-from typing import Optional, TypedDict, Union
+from typing import Optional, Union
 
-from typing_extensions import TypeAlias
+from typing_extensions import TypeAlias, TypedDict
 
 import sofirpy.simulation.simulation_entity as simulation_entity
 
