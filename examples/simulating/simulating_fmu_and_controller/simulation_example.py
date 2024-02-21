@@ -3,6 +3,7 @@ import sys
 from pathlib import Path
 
 from sofirpy import plot_results, simulate
+from sofirpy.common import Connection
 
 sys.path.append(os.path.join(os.path.dirname(__file__), "../../"))
 
@@ -17,18 +18,18 @@ elif sys.platform == "darwin":
 
 connections_config = {
     "DC_Motor": [
-        {
-            "parameter_name": "u",
-            "connect_to_system": "pid",
-            "connect_to_external_parameter": "u",
-        }
+        Connection(
+            parameter_name="u",
+            connect_to_system="pid",
+            connect_to_external_parameter="u",
+        )
     ],
     "pid": [
-        {
-            "parameter_name": "speed",
-            "connect_to_system": "DC_Motor",
-            "connect_to_external_parameter": "y",
-        }
+        Connection(
+            parameter_name="speed",
+            connect_to_system="DC_Motor",
+            connect_to_external_parameter="y",
+        ),
     ],
 }
 
