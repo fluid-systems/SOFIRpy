@@ -1442,11 +1442,3 @@ class PythonModel(Model):
         if not target_path.is_file():
             raise FileNotFoundError(f"'{target_path!s}' is not a file.")
         target_path.write_text(self.get_source_code(), encoding="utf-8")
-
-
-def _validate_config_file(config: Any) -> None:
-    utils.check_type(config, "config", dict)
-    for key in ConfigKeyType:
-        if key.value not in config:
-            raise KeyError(f"key '{key.value}' not in config.")
-        utils.check_type(config[key.value], f"value to key {key.value}", dict)
