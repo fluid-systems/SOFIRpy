@@ -89,10 +89,38 @@ ignore_missing_imports = true
 [tool.ruff]
 line-length = 88
 select = [
-    "E", "F", "I", "N", "UP", "YTT", "BLE", "B", "A", "COM", "C4", "T10", "FA",
-    "ISC", "ICN", "PIE", "PYI", "RSE", "RET505", "RET506", "RET507", "RET508", "SIM",
-    "PTH", "ERA", "PD", "PGH", "FLY", "NPY", "PERF", "RUF"
-    ]
+    "E",
+    "F",
+    "I",
+    "N",
+    "UP",
+    "YTT",
+    "BLE",
+    "B",
+    "A",
+    "COM",
+    "C4",
+    "T10",
+    "FA",
+    "ISC",
+    "ICN",
+    "PIE",
+    "PYI",
+    "RSE",
+    "RET505",
+    "RET506",
+    "RET507",
+    "RET508",
+    "SIM",
+    "PTH",
+    "ERA",
+    "PD",
+    "PGH",
+    "FLY",
+    "NPY",
+    "PERF",
+    "RUF",
+]
 ignore = ["COM812", "ISC001", "E501"]
 target-version = "py39"
 
