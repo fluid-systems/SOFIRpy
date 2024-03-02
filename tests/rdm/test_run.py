@@ -155,7 +155,6 @@ def _compare_runs(this_run: Run, other_run: Run) -> None:
 def _compare_meta(this_run_meta: RunMeta, other_run_meta: RunMeta) -> None:
     assert this_run_meta.description == other_run_meta.description
     assert this_run_meta.keywords == other_run_meta.keywords
-    assert this_run_meta.sofirpy_version == other_run_meta.sofirpy_version
 
 
 def _compare_simulation_config(

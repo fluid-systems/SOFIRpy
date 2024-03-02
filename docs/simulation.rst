@@ -89,6 +89,7 @@ Example:
         def __init__(self):
             self.parameters = {"parameter1": 0, "parameter2": 0}
             self.units = {"parameter1": "m", "parameter2": "V"}
+            self.parameter_dtypes = {"parameter1": float, "parameter2": int}
 
         def do_step(self, time):  # mandatory method
             self.parameter["parameter1"] += time/100
@@ -111,6 +112,9 @@ Example:
 
         def conclude_simulation(self): # optional
             print("Concluded simulation!")
+
+        def get_dtype_of_parameter(self, parameter_name): # optional
+            return self.parameter_dtypes[parameter_name]
 
     # simulate one python model called foo
     model_classes = {"foo": Foo} # we pass the class not the instance!
@@ -193,7 +197,9 @@ corresponding class.
 parameters_to_log
 ^^^^^^^^^^^^^^^^^^
 
-Define which parameters should be logged during the simulation.
+Define which parameters should be logged during the simulation. If the parameter has a
+different dtype than float, the dtype needs to be returned in the method
+:py:meth:`SimulationEntity.get_dtype_of_parameter <sofirpy.simulation.simulation_entity.SimulationEntity.get_dtype_of_parameter>`.
 
 .. code-block:: python
 

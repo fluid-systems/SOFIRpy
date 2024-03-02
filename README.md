@@ -2,9 +2,9 @@
 [![Latest Release](https://git.rwth-aachen.de/sofirpy/sofirpy/-/badges/release.svg)]()
 [![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![pipeline status](https://git.rwth-aachen.de/sofirpy/sofirpy/badges/development/pipeline.svg)](https://git.rwth-aachen.de/sofirpy/sofirpy/-/commits/development)
+[![pipeline status](https://git.rwth-aachen.de/sofirpy/sofirpy/badges/master/pipeline.svg)](https://git.rwth-aachen.de/sofirpy/sofirpy/-/commits/master)
 [![Documentation Status](https://readthedocs.org/projects/sofirpy/badge/?version=latest)](https://sofirpy.readthedocs.io/en/latest/?badge=latest)
-[![coverage](https://git.rwth-aachen.de/sofirpy/sofirpy/badges/development/coverage.svg)]()
+[![coverage](https://git.rwth-aachen.de/sofirpy/sofirpy/badges/master/coverage.svg)]()
 
 
 Co-**S**imulation **O**f **F**unctional Mock-up Units (FMU) with **I**ntegrated
