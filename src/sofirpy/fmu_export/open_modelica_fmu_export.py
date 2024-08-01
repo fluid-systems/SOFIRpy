@@ -112,9 +112,7 @@ class OpenModelicaFmuExport(FmuExport):
         )
         open_modelica.convertMo2Fmu()
 
-        if self.fmu_path.exists():
-            return True
-        return False
+        return self.fmu_path.exists()
 
     def __enter__(self) -> Self:
         return self

@@ -243,9 +243,7 @@ class DymolaFmuExport(FmuExport):
         with subprocess.Popen(cmd) as process:
             process.wait()
 
-        if self.fmu_path.exists():
-            return True
-        return False
+        return self.fmu_path.exists()
 
     def write_mos_script(
         self,
