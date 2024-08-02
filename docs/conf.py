@@ -19,7 +19,7 @@ import sofirpy
 # -- Project information -----------------------------------------------------
 
 project = "SOFIRpy"
-copyright = "2023, Daniele Inturri"
+copyright = "2024, Daniele Inturri"
 author = sofirpy.__author__
 version = sofirpy.__version__
 release = version
@@ -50,4 +50,14 @@ exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 # s
-html_theme = "sphinx_rtd_theme"
+html_theme = "pydata_sphinx_theme"
+html_theme_options = {
+    "icon_links": [
+        {
+            "name": "GitHub",
+            "url": "https://github.com/dansge7/SOFIRpy",
+            "icon": "fa-brands fa-github",
+            "type": "fontawesome",
+        },
+    ]
+}
