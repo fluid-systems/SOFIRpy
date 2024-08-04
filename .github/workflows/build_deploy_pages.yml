@@ -1,5 +1,5 @@
 
-name: docs
+name: Documentation
 
 on: [push]
 
