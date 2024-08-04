@@ -59,5 +59,5 @@ html_theme_options = {
             "icon": "fa-brands fa-github",
             "type": "fontawesome",
         },
-    ]
+    ],
 }

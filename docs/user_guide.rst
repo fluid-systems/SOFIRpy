@@ -1,3 +1,6 @@
+
+.. _user_guide:
+
 User Guide
 ==========
 
@@ -22,7 +25,7 @@ The package provides functionalities to:
 .. toctree::
    :maxdepth: 1
    :hidden:
-   :caption: More
+   :caption: Usage
 
    fmu_export
    simulation

@@ -1,3 +1,6 @@
+
+.. _contribution:
+
 Contributions
 =============
 

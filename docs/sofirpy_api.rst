@@ -1,9 +1,15 @@
+
+.. _sofirpy_api:
+
+API Documentation
 =================
-API documentation
-=================
+
+Subpackages
+-----------
 
 .. toctree::
-   :maxdepth: 1
-   :hidden:
+    :maxdepth: 1
 
-   API Documentation <API Documentation/sofirpy>
+    API Documentation/sofirpy.fmu_export
+    API Documentation/sofirpy.simulation
+    API Documentation/sofirpy.rdm

@@ -2,7 +2,7 @@
 .. _fmu_export:
 
 FMU export
-============
+==========
 
 SOFIRpy allows you to export models from OpenModelica or Dymola to FMUs, although the
 model export with Dymola has more features to offer. Parameters can be imported and
