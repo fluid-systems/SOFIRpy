@@ -157,7 +157,7 @@ class Fmu(SimulationEntity):
             parameter_name (str): Name of the variable.
 
         Returns:
-            str: The unit of the variable.
+            str | None: The unit of the variable.
         """
         unit: str | None = self.model_description_dict[parameter_name].unit
         return unit
