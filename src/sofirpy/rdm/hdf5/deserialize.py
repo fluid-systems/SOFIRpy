@@ -16,8 +16,7 @@ import sofirpy.rdm.run as rdm_run
 
 class Deserialize(Protocol):
     @staticmethod
-    def deserialize(run_group: h5.Group, *args: Any, **kwargs: Any) -> Any:
-        ...
+    def deserialize(run_group: h5.Group, *args: Any, **kwargs: Any) -> Any: ...
 
 
 class RunMeta(Deserialize):

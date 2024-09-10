@@ -16,14 +16,12 @@ import sofirpy.rdm.run as rdm_run
 
 class DatasetSerializer(Protocol):
     @staticmethod
-    def serialize(run: rdm_run.Run, *args: Any, **kwargs: Any) -> Any:
-        ...
+    def serialize(run: rdm_run.Run, *args: Any, **kwargs: Any) -> Any: ...
 
 
 class AttributeSerializer(Protocol):
     @staticmethod
-    def serialize(run: rdm_run.Run) -> dict[str, Any]:
-        ...
+    def serialize(run: rdm_run.Run) -> dict[str, Any]: ...
 
 
 class RunMeta(AttributeSerializer):
@@ -152,18 +150,18 @@ class Serializer:
     parameters_to_log_serializer: type[DatasetSerializer] = ParametersToLog
     fmu_reference_serializer: type[DatasetSerializer] = FmuReference
     fmu_storage_serializer: type[DatasetSerializer] = FmuStorage
-    python_model_class_reference_serializer: type[
-        DatasetSerializer
-    ] = PythonModelClassReference
-    python_model_class_storage_serializer: type[
-        DatasetSerializer
-    ] = PythonModelClassStorage
-    python_model_source_code_reference_serializer: type[
-        DatasetSerializer
-    ] = PythonModelSourceCodeReference
-    python_model_source_code_storage_serializer: type[
-        DatasetSerializer
-    ] = PythonModelSourceCodeStorage
+    python_model_class_reference_serializer: type[DatasetSerializer] = (
+        PythonModelClassReference
+    )
+    python_model_class_storage_serializer: type[DatasetSerializer] = (
+        PythonModelClassStorage
+    )
+    python_model_source_code_reference_serializer: type[DatasetSerializer] = (
+        PythonModelSourceCodeReference
+    )
+    python_model_source_code_storage_serializer: type[DatasetSerializer] = (
+        PythonModelSourceCodeStorage
+    )
 
     @classmethod
     def use_start_value_serializer(cls, serializer: type[DatasetSerializer]) -> None:
