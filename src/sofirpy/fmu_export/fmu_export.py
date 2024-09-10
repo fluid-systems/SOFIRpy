@@ -1,4 +1,5 @@
 """This module contains the base class for a fmu export."""
+
 from __future__ import annotations
 
 from pathlib import Path

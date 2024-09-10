@@ -1,4 +1,5 @@
 """This module allows to export a Dymola model as a fmu."""
+
 from __future__ import annotations
 
 import re

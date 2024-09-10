@@ -1,4 +1,5 @@
 """This module allows to export a OpenModelica model as a fmu."""
+
 from __future__ import annotations
 
 from pathlib import Path

@@ -1,4 +1,5 @@
 """This modules defines how a run is serialized."""
+
 from __future__ import annotations
 
 import hashlib
