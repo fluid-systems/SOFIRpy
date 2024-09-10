@@ -253,7 +253,7 @@ class Simulator:
 
         return units
 
-    def get_dtypes_of_logged_parameters(self) -> np.dtypes.VoidDType:
+    def get_dtypes_of_logged_parameters(self) -> npt.DTypeLike:
         """Get the dtypes of the logged parameters.
 
         Returns:
