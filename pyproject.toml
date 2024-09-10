@@ -82,6 +82,9 @@ ignore_missing_imports = true
 
 [tool.ruff]
 line-length = 88
+target-version = "py39"
+
+[tool.ruff.lint]
 select = [
     "E",
     "F",
@@ -115,8 +118,8 @@ select = [
     "PERF",
     "RUF",
 ]
+
 ignore = ["COM812", "ISC001", "E501"]
-target-version = "py39"
 
 [tool.isort]
 atomic = true
