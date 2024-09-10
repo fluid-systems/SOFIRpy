@@ -37,7 +37,7 @@ requires-python = ">=3.9"
 test = [
     "pytest>=7.1.2",
     "pytest-cov>=3.0.0",
-    "mypy>=1.5.1",
+    "mypy>=1.11.2",
     "pandas-stubs>=1.4.3.220822",
     "syrupy>=4.5.0",
     "types-setuptools>=68.2.0.0",
@@ -63,6 +63,7 @@ sofirpy = ["py.typed"]
 [tool.mypy]
 strict = true
 show_error_codes = true
+python_version = "3.9"
 [[tool.mypy.overrides]]
 module = [
     "cloudpickle",
