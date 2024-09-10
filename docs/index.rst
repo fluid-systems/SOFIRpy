@@ -34,7 +34,7 @@ Easy-to-use functionalities for storing and reading simulation data and meta dat
    user_guide
    sofirpy_api
    release_notes
-   contribution
+   contributing
 
 
 Indices and tables
