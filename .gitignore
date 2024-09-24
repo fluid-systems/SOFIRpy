@@ -157,3 +157,4 @@ cython_debug/
 
 temp.py
 t.py
+.python-version
