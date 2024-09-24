@@ -154,7 +154,7 @@ class HDF5:
             path (str | None, optional): hdf5 path to the dataset or group.
         """
         with h5py.File(str(self.hdf5_path), "a") as hdf5:
-            hdf5_object: h5py.Group | h5py.Dataset = hdf5[path] if path else hdf5
+            hdf5_object = hdf5[path] if path else hdf5
             for name, attr in attributes.items():
                 hdf5_object.attrs[name] = attr
 
@@ -238,7 +238,7 @@ class HDF5:
             ValueError: If the group_path does not lead to hdf5 Group.
         """
         with h5py.File(str(self.hdf5_path), "a") as hdf5:
-            group: h5py.Group = hdf5[group_path] if group_path else hdf5
+            group = hdf5[group_path] if group_path else hdf5
             if not isinstance(group, h5py.Group):
                 raise ValueError(f"'{group_path}' does not lead to a hdf5 Group.")
             del hdf5[group_path]
@@ -257,7 +257,7 @@ class HDF5:
         """
         with h5py.File(str(self.hdf5_path), "a") as hdf5:
             data_path = f"{group_path}/{data_name}" if group_path else data_name
-            data_object: h5py.Dataset = hdf5[data_path]
+            data_object = hdf5[data_path]
             if not isinstance(data_object, h5py.Dataset):
                 raise ValueError(f"'{data_path}' does not lead to a dataset.")
             del hdf5[data_path]
@@ -285,7 +285,7 @@ class HDF5:
             self._place(name, datasets, hdf5_object, mode="full")
 
         with h5py.File(str(self.hdf5_path), "a") as hdf5:
-            group: h5py.Dataset = hdf5[group_path] if group_path else hdf5
+            group = hdf5[group_path] if group_path else hdf5
             if not isinstance(group, h5py.Group):
                 raise ValueError(f"'{group_path}' does not lead to a hdf5 Group.")
             group.visititems(append_dataset)
@@ -343,11 +343,11 @@ class HDF5:
     def _get_group_or_dataset_names(
         self,
         group_path: str | None,
-        obj: h5py.Group | h5py.Dataset,
+        obj: type[h5py.Group | h5py.Dataset],
         filter_func: Callable[[str], bool] | None = None,
     ) -> list[str]:
         with h5py.File(str(self.hdf5_path), "a") as hdf5:
-            group: h5py.Group = hdf5[group_path] if group_path else hdf5
+            group = hdf5[group_path] if group_path else hdf5
             if not isinstance(group, h5py.Group):
                 raise ValueError(f"'{group_path}' does not lead to a hdf5 Group.")
             if filter_func is None:

@@ -253,7 +253,7 @@ class Simulator:
 
         return units
 
-    def get_dtypes_of_logged_parameters(self) -> np.dtypes.VoidDType:
+    def get_dtypes_of_logged_parameters(self) -> npt.DTypeLike:
         """Get the dtypes of the logged parameters.
 
         Returns:
@@ -281,8 +281,7 @@ def simulate(
     logging_step_size: float | None = ...,
     *,
     get_units: Literal[True],
-) -> tuple[pd.DataFrame, co.Units]:
-    ...
+) -> tuple[pd.DataFrame, co.Units]: ...
 
 
 @overload
@@ -297,8 +296,7 @@ def simulate(
     logging_step_size: float | None = ...,
     *,
     get_units: Literal[False],
-) -> pd.DataFrame:
-    ...
+) -> pd.DataFrame: ...
 
 
 @overload
@@ -311,8 +309,7 @@ def simulate(
     start_values: co.StartValues | None = ...,
     parameters_to_log: co.ParametersToLog | None = ...,
     logging_step_size: float | None = ...,
-) -> pd.DataFrame:
-    ...
+) -> pd.DataFrame: ...
 
 
 def simulate(

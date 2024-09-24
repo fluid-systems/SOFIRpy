@@ -9,11 +9,11 @@ import sys
 from dataclasses import asdict, dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import Any, ClassVar, Optional, TypedDict, cast
+from typing import Any, ClassVar, Optional, cast
 
 import pandas as pd
 import pydantic
-from typing_extensions import NotRequired, Self
+from typing_extensions import NotRequired, Self, TypedDict
 
 import sofirpy
 import sofirpy.common as co
@@ -28,6 +28,35 @@ class ConfigKeyType(enum.Enum):
     RUN_META = "run_meta"
     MODELS = "models"
     SIMULATION_CONFIG = "simulation_config"
+
+
+class Config(pydantic.BaseModel):
+    run_meta: _RunMetaConfig
+    models: dict[str, _ModelsConfig]
+    simulation_config: _SimulationConfig
+
+    @classmethod
+    def from_file(cls, file_path: Path) -> Config:
+        return cls(**json.loads(file_path.read_text(encoding="utf-8")))
+
+
+class _RunMetaConfig(pydantic.BaseModel):
+    description: str = pydantic.Field(default="")
+    keywords: list[str] = pydantic.Field(default_factory=list)
+
+
+class _ModelsConfig(pydantic.BaseModel):
+    model_config = pydantic.ConfigDict(extra="forbid")
+    start_values: Optional[dict[str, co.StartValue]] = None  # noqa: UP007
+    connections: Optional[co.Connections] = None  # noqa: UP007
+    parameters_to_log: Optional[list[str]] = None  # noqa: UP007
+
+
+class _SimulationConfig(pydantic.BaseModel):
+    model_config = pydantic.ConfigDict(extra="forbid")
+    stop_time: float
+    step_size: float
+    logging_step_size: Optional[float] = None  # noqa: UP007
 
 
 class ConfigDict(TypedDict):
@@ -893,7 +922,7 @@ class Run:
             config_file_path,
             "config_file_path",
         )
-        config: ConfigDict = json.load(config_file_path.open(encoding="utf-8"))
+        config = Config.from_file(config_file_path)
 
         return cls(
             run_name=run_name,
@@ -989,17 +1018,8 @@ class RunMeta:
         )
 
     @classmethod
-    def from_config_file(cls, config: ConfigDict) -> Self:
-        description = config[cls.CONFIG_KEY.value].get("description", "")
-        utils.check_type(description, "description", str)
-        assert isinstance(description, str)
-        keywords = config[cls.CONFIG_KEY.value].get("keywords", [])
-        utils.check_type(keywords, "keywords", list)
-        assert isinstance(keywords, list)
-        return cls.from_config(
-            description=description,
-            keywords=keywords,
-        )
+    def from_config_file(cls, config: Config) -> Self:
+        return cls.from_config(**dict(config.run_meta))
 
     def update(self) -> None:
         self.sofirpy_version = sofirpy.__version__
@@ -1031,8 +1051,8 @@ class SimulationConfig:
     CONFIG_KEY: ClassVar[ConfigKeyType] = ConfigKeyType.SIMULATION_CONFIG
 
     @classmethod
-    def from_config_file(cls, config: ConfigDict) -> Self:
-        return cls(**config[cls.CONFIG_KEY.value])
+    def from_config_file(cls, config: Config) -> Self:
+        return cls(**dict(config.simulation_config))
 
     def to_dict(self) -> SimulationConfigDict:
         return cast(SimulationConfigDict, asdict(self))
@@ -1087,21 +1107,23 @@ class Models:
     @classmethod
     def from_config_file(
         cls,
-        config: ConfigDict,
+        config: Config,
         fmu_paths: co.FmuPaths,
         model_classes: co.ModelClasses,
     ) -> Self:
-        model_config = cast(dict[str, ModelConfigDict], config[cls.CONFIG_KEY.value])
+        model_config = config.models
         fmus = {
             name: Fmu(
                 name=name,
                 fmu_path=utils.convert_str_to_path(path, "fmu_path"),
-                **model_config[name],
+                **dict(model_config[name]),
             )
             for name, path in fmu_paths.items()
         }
         python_models = {
-            name: PythonModel(name=name, model_class=model_class, **model_config[name])
+            name: PythonModel(
+                name=name, model_class=model_class, **dict(model_config[name])
+            )
             for name, model_class in model_classes.items()
         }
         return cls(fmus=fmus, python_models=python_models)

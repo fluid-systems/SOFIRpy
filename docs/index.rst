@@ -27,19 +27,14 @@ complex control strategies can be implemented.
 Easy-to-use functionalities for storing and reading simulation data and meta data.
 
 
-Table of Contents
-==================
 .. toctree::
    :maxdepth: 1
+   :hidden:
 
-   installation
-   getting_started
-   fmu_export
-   simulation
-   rdm
+   user_guide
+   sofirpy_api
    release_notes
-   API Documentation <API Documentation/sofirpy>
-   contribution
+   contributing
 
 
 Indices and tables
