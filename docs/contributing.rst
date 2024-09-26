@@ -31,8 +31,7 @@ Contributing
 Software developers, whether part of the core team or external contributors, are
 expected to adhere to best practices for documenting and testing new code. Those
 interested in contributing should fork the repository and submit a pull request via
-GitHub. Pull requests can be made to the development branch only. All pull requests
-will be reviewed by the core development team.
+GitHub. All pull requests will be reviewed by the core development team.
 
 Setting up the project locally:
 
