@@ -42,7 +42,7 @@ Setting up the project locally:
 
 .. code-block:: bash
 
-   git clone https://github.com/<yourusername>/sofirpy.git
+   git clone https://github.com/fluid-systems/SOFIRpy.git
 
 
 3. Navigate to the project directory

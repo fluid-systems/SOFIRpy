@@ -1,7 +1,7 @@
  # SOFIRpy
 [![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![pipeline status](https://github.com/dansge7/SOFIRpy/actions/workflows/tests.yml/badge.svg)](https://github.com/dansge7/SOFIRpy/actions/workflows/testing.yml)
+[![pipeline status](https://github.com/fluid-systems/SOFIRpy/actions/workflows/tests.yml/badge.svg)](https://github.com/fluid-systems/SOFIRpy/actions/workflows/testing.yml)
 
 
 Co-**S**imulation **O**f **F**unctional Mock-up Units (FMU) with **I**ntegrated
@@ -21,4 +21,4 @@ $ pip install sofirpy
 The documentation can be found [here](https://fluid-systems.github.io/SOFIRpy).
 
 ## Examples
-Multiple examples can be found [here](https://github.com/dansge7/SOFIRpy/tree/master/examples).
+Multiple examples can be found [here](https://github.com/fluid-systems/SOFIRpy/tree/master/examples).

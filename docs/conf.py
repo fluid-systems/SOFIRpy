@@ -55,7 +55,7 @@ html_theme_options = {
     "icon_links": [
         {
             "name": "GitHub",
-            "url": "https://github.com/dansge7/SOFIRpy",
+            "url": "https://github.com/fluid-systems/SOFIRpy",
             "icon": "fa-brands fa-github",
             "type": "fontawesome",
         },
