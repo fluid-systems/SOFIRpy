@@ -56,7 +56,7 @@ class RunToHDF5:
             config.HDF5FileMetaKey.INITIALIZATION_DATE.value: datetime.now().strftime(
                 "%d-%b-%Y %H:%M:%S",
             ),
-            config.HDF5FileMetaKey.CREATED_WITH_SOFIRPY.value: "https://sofirpy.readthedocs.io",
+            config.HDF5FileMetaKey.CREATED_WITH_SOFIRPY.value: "https://fluid-systems.github.io/SOFIRpy/",
             config.HDF5FileMetaKey.SOFIRPY_VERSION.value: sofirpy.__version__,
         }
 
