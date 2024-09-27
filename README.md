@@ -1,8 +1,8 @@
  # SOFIRpy
 [![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![pipeline status](https://github.com/fluid-systems/SOFIRpy/actions/workflows/tests.yml/badge.svg)](https://github.com/fluid-systems/SOFIRpy/actions/workflows/testing.yml)
-
+[![Tests](https://github.com/fluid-systems/SOFIRpy/actions/workflows/tests.yml/badge.svg)](https://github.com/fluid-systems/SOFIRpy/actions/workflows/testing.yml)
+[![Documentation](https://github.com/fluid-systems/SOFIRpy/actions/workflows/build_deploy_pages.yml/badge.svg)](https://fluid-systems.github.io/SOFIRpy/)
 
 Co-**S**imulation **O**f **F**unctional Mock-up Units (FMU) with **I**ntegrated
 **R**esearch Data Management (SOFIRpy) is a python package that lets you
