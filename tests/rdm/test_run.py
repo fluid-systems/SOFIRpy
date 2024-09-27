@@ -6,7 +6,7 @@ from pathlib import Path
 
 import numpy as np
 import pytest
-from syrupy import SnapshotAssertion
+from syrupy.assertion import SnapshotAssertion
 from syrupy.data import SnapshotCollection
 from syrupy.extensions.single_file import SingleFileSnapshotExtension
 from syrupy.location import PyTestLocation
@@ -30,6 +30,7 @@ from sofirpy.rdm.run import (
     Results,
     RunMeta,
     SimulationConfig,
+    SimulationConfigDict,
 )
 
 
@@ -204,7 +205,11 @@ def compare_model(this_run_model: Model, other_run_model: Model) -> None:
     assert this_run_model.parameters_to_log == other_run_model.parameters_to_log
 
 
-def _compare_results(this_run_results: Results, other_run_results: Results) -> None:
+def _compare_results(
+    this_run_results: Results | None, other_run_results: Results | None
+) -> None:
+    assert this_run_results is not None
+    assert other_run_results is not None
     assert np.isclose(
         this_run_results.time_series.to_numpy(),
         other_run_results.time_series.to_numpy(),
@@ -230,8 +235,8 @@ def _compare_meta_config(
 
 
 def _compare_simulation_config_dict(
-    this_simulation_config: SimulationConfig,
-    other_simulation_config: SimulationConfig,
+    this_simulation_config: SimulationConfigDict,
+    other_simulation_config: SimulationConfigDict,
 ) -> None:
     assert float(other_simulation_config["step_size"]) == pytest.approx(
         float(this_simulation_config["step_size"])
@@ -239,6 +244,11 @@ def _compare_simulation_config_dict(
     assert float(other_simulation_config["stop_time"]) == pytest.approx(
         float(this_simulation_config["stop_time"])
     )
+    if (
+        "logging_step_size" not in other_simulation_config
+        or "logging_step_size" not in this_simulation_config
+    ):
+        return
     if not this_simulation_config["logging_step_size"]:
         assert (
             this_simulation_config["logging_step_size"]
