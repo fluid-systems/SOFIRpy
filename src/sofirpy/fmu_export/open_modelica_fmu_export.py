@@ -111,8 +111,10 @@ class OpenModelicaFmuExport(FmuExport):
             str(self.model_path).replace("\\", "//"),
             self.model_name,
         )
-        open_modelica.convertMo2Fmu()
-
+        _fmu_path = open_modelica.convertMo2Fmu()
+        if not isinstance(_fmu_path, str):
+            return False
+        utils.move_file(Path(_fmu_path), self.fmu_path)
         return self.fmu_path.exists()
 
     def __enter__(self) -> Self:
