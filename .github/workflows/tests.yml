@@ -37,9 +37,13 @@ jobs:
         mypy src/sofirpy
     - name: Test with pytest
       run: |
-        pytest --cov=src/ --junitxml=--junitxml=junit/test-results-${{ matrix.python-version }}.xml --snapshot-warn-unused
+        pytest --cov=src/ --cov-report=xml --junitxml=--junitxml=junit/test-results-${{ matrix.python-version }}.xml --snapshot-warn-unused
     - name: Upload pytest test results
       uses: actions/upload-artifact@v4
       with:
         name: pytest-results-${{ matrix.python-version }}
         path: junit/test-results-${{ matrix.python-version }}.xml
+    - name: Upload results to Codecov
+      uses: codecov/codecov-action@v4
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
