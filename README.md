@@ -3,6 +3,7 @@
 [![PyPI - Version](https://img.shields.io/pypi/v/sofirpy?label=Latest%20Release)](https://pypi.org/project/sofirpy/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Tests](https://github.com/fluid-systems/SOFIRpy/actions/workflows/tests.yml/badge.svg)](https://github.com/fluid-systems/SOFIRpy/actions/workflows/testing.yml)
+[![codecov](https://codecov.io/gh/fluid-systems/SOFIRpy/graph/badge.svg?token=M27RHN06DS)](https://codecov.io/gh/fluid-systems/SOFIRpy)
 [![Documentation](https://github.com/fluid-systems/SOFIRpy/actions/workflows/build_deploy_pages.yml/badge.svg)](https://fluid-systems.github.io/SOFIRpy/)
 
 Co-**S**imulation **O**f **F**unctional Mock-up Units (FMU) with **I**ntegrated
