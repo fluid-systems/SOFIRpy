@@ -231,3 +231,15 @@ def get_dependencies_of_current_env() -> dict[str, str]:
     """
     installed_packages = distributions()
     return {package.metadata["Name"]: package.version for package in installed_packages}
+
+
+def parse_version(version: str) -> tuple[int, ...]:
+    """Parse a version string.
+
+    Args:
+        version (str): version string
+
+    Returns:
+        tuple[int,...]: version as tuple
+    """
+    return tuple(int(i) for i in version.split("."))

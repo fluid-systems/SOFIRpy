@@ -6,8 +6,6 @@ import logging
 import sys
 from pathlib import Path
 
-from pkg_resources import parse_version
-
 import sofirpy
 import sofirpy.rdm.hdf5.deserialize as deserialize
 import sofirpy.rdm.hdf5.hdf5 as h5
@@ -59,7 +57,9 @@ def _check_compatibility(run_meta: rdm_run.RunMeta) -> None:
             f"Run was created with python version '{run_meta.python_version}'."
             f"This is python version '{sys.version}'.",
         )
-    is_later_release = parse_version(run_meta.sofirpy_version) <= parse_version(
+    is_later_release = utils.parse_version(
+        run_meta.sofirpy_version
+    ) <= utils.parse_version(
         sofirpy.__version__,
     )
     if not is_later_release:
