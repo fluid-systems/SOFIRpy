@@ -37,7 +37,7 @@ class SimulationEntity(ABC):
         """
 
     @abstractmethod
-    def do_step(self, time: float) -> None:
+    def do_step(self, time: float, step_size: float) -> None:
         """Perform a simulation step.
 
         Args:
