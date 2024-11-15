@@ -37,7 +37,7 @@ requires-python = ">=3.9"
 test = [
     "pytest>=7.1.2",
     "pytest-cov>=3.0.0",
-    "mypy>=1.11.2",
+    "mypy>=1.13.0",
     "pandas-stubs>=1.4.3.220822",
     "syrupy>=4.5.0",
     "types-setuptools>=68.2.0.0",
@@ -61,25 +61,13 @@ where = ["src"]
 sofirpy = ["py.typed"]
 
 [tool.mypy]
+plugins = [
+  "pydantic.mypy"
+]
 strict = true
 show_error_codes = true
 python_version = "3.9"
-[[tool.mypy.overrides]]
-module = [
-    "cloudpickle",
-    "fmpy",
-    "fmpy.fmi2",
-    "fmpy.simulation",
-    "h5py",
-    "matplotlib",
-    "matplotlib.axes",
-    "matplotlib.pyplot",
-    "matplotlib.colors",
-    "matplotlib.figure",
-    "matplotlib.table",
-    "OMPython",
-]
-ignore_missing_imports = true
+disable_error_code = ["import-untyped"]
 
 [tool.ruff]
 line-length = 88
