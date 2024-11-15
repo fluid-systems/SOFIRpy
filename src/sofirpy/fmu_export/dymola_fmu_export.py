@@ -12,6 +12,7 @@ from typing import Final, Literal, Union
 
 from typing_extensions import Self, TypeAlias
 
+import sofirpy.common as co
 from sofirpy import utils
 from sofirpy.fmu_export.fmu_export import FmuExport, FmuExportError
 
@@ -400,11 +401,11 @@ class DymolaFmuExport(FmuExport):
 
 def export_dymola_model(
     *,
-    dymola_exe_path: Path | str,
-    model_path: Path | str,
+    dymola_exe_path: co.FilePath,
+    model_path: co.FilePath,
     model_name: str,
     fmu_name: str | None = None,
-    output_directory: Path | str | None = None,
+    output_directory: co.FilePath | None = None,
     parameters: dict[str, ParameterValue] | None = None,
     model_modifiers: list[str] | None = None,
     packages: list[str | Path] | None = None,
@@ -418,15 +419,15 @@ def export_dymola_model(
     """Export a dymola model as a fmu.
 
     Args:
-        dymola_exe_path (Path | str):  Path to the dymola executable.
-        model_path (Path | str): Path to the dymola model that should be
+        dymola_exe_path (co.FilePath):  Path to the dymola executable.
+        model_path (co.FilePath): Path to the dymola model that should be
             exported.
         model_name (str): Name of the model that should be exported. If the
             model that should be exported is inside a package, separate the
             package name and the model name with a '.'.
         fmu_name (str | None, optional): Name the exported fmu should have. If not
             specified the fmu will have the same name as the model. Defaults to None.
-        output_directory (Path | str): Output directory for the fmu, the log and
+        output_directory (co.FilePath): Output directory for the fmu, the log and
             the mos script. Defaults to None.
         parameters (dict[str, ParameterValue], optional):
             Dictionary of parameter names and values.

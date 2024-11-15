@@ -8,9 +8,11 @@
     },
     "models": {
         "DC_Motor": {
-            "start_values": {
-                "inertia.J": 2,
-                "damper.phi_rel.start": 1
+            "init_config": {
+                "start_values": {
+                    "inertia.J": 2,
+                    "damper.phi_rel.start": 1
+                }
             },
             "connections": [
                 {
@@ -24,14 +26,16 @@
             ]
         },
         "pid": {
-            "start_values": {
-                "sampling_rate": 1e-3,
-                "K_p": 3,
-                "K_i": 20,
-                "K_d": 0.1,
-                "set_point": 100,
-                "u_max": 100,
-                "u_min": 0
+            "init_config": {
+                "start_values": {
+                    "sampling_rate": 1e-3,
+                    "K_p": 3,
+                    "K_i": 20,
+                    "K_d": 0.1,
+                    "set_point": 100,
+                    "u_max": 100,
+                    "u_min": 0
+                }
             },
             "connections": [
                 {

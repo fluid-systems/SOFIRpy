@@ -4,20 +4,17 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
-from numbers import Real
 from pathlib import Path
-from typing import Literal, overload
+from typing import Any, Literal, overload
 
 import numpy as np
 import numpy.typing as npt
 import pandas as pd
 from tqdm import tqdm
-from typing_extensions import Self
 
 import sofirpy.common as co
-from sofirpy import utils
-from sofirpy.simulation.config import SimulationConfig
-from sofirpy.simulation.fmu import Fmu
+from sofirpy.simulation.config import BaseSimulationConfig, ExtendedSimulationConfig
+from sofirpy.simulation.fmu import Fmu, FmuInitConfig
 from sofirpy.simulation.simulation_entity import SimulationEntity
 
 
@@ -62,37 +59,35 @@ class Connection:
     output_point: SystemParameter
 
 
-@dataclass
 class BaseSimulator:
     time: float
     step: int
     systems: dict[str, System]
     connections: list[Connection]
-    _parameters_to_log: list[SystemParameter]
 
-    @classmethod
-    def from_config(
-        cls,
+    def __init__(
+        self,
         fmu_paths: co.FmuPaths | None = None,
-        model_classes: co.ModelClasses | None = None,
+        model_classes: co.SimulationEntityMapping | None = None,
         connections_config: co.ConnectionsConfig | None = None,
-        start_values: co.StartValues | None = None,
-        parameters_to_log: co.ParametersToLog | None = None,
-    ) -> Self:
-        config = SimulationConfig(
+        init_configs: co.InitConfigs | None = None,
+    ) -> None:
+        config = BaseSimulationConfig(
             fmu_paths=fmu_paths or {},
-            model_classes=model_classes or {},
+            custom_model_classes=model_classes or {},
             connections=connections_config or {},
-            start_values=start_values or {},
-            parameters_to_log=parameters_to_log or {},
+            init_configs=init_configs or {},
         )
-        fmus = init_fmus(config.fmu_paths, step_size, config.start_values)
-        models = init_models(model_classes, start_values)
-        connections = init_connections(connections_config)
-        _parameters_to_log = init_parameter_list(parameters_to_log)
-        return cls()
+        config.init_configs, fmu_classes = _extract_fmu_init_configs(
+            config.fmu_paths, config.init_configs
+        )
+        simulation_entity_mapping = fmu_classes | config.custom_model_classes
+        self.systems = init_systems(simulation_entity_mapping, config.init_configs)
+        self.connections = init_connections(config.connections)
+        self.time = 0
+        self.step = 0
 
-    def do_step(self, time: float) -> None:
+    def do_step(self, time: float, step_size: float) -> None:
         """Perform a calculation in all systems.
 
         Args:
@@ -100,7 +95,7 @@ class BaseSimulator:
             step_size (float): step size of the simulation
         """
         for system in self.systems.values():
-            system.simulation_entity.do_step(time)
+            system.simulation_entity.do_step(time, step_size)
 
     def set_systems_inputs(self) -> None:
         """Set inputs for all systems."""
@@ -142,34 +137,42 @@ class BaseSimulator:
         system = self.systems[system_name]
         system.simulation_entity.set_parameter(parameter_name, value)
 
+    def conclude_simulation(self) -> None:
+        """Conclude the simulation for all simulation entities."""
+        for system in self.systems.values():
+            system.simulation_entity.conclude_simulation()
 
-class Simulator:
-    """Object that performs the simulation.
 
-    Args:
-        systems (list[System]): list of systems which are to be simulated
-        connections (list[Connection]): list of connections between the
-                systems
-        parameters_to_log (list[SystemParameter]): List of Parameters that should
-            be logged.
-    """
+class Simulator(BaseSimulator):
+    """Object that performs the simulation."""
 
     def __init__(
         self,
-        systems: dict[str, System],
-        connections: list[Connection],
-        parameters_to_log: list[SystemParameter],
+        stop_time: float,
+        step_size: float,
+        logging_step_size: float | None = None,
+        fmu_paths: co.FmuPaths | None = None,
+        model_classes: co.SimulationEntityMapping | None = None,
+        connections_config: co.ConnectionsConfig | None = None,
+        init_configs: co.InitConfigs | None = None,
+        parameters_to_log: co.ParametersToLog | None = None,
     ) -> None:
-        self.systems = systems
-        self.connections = connections
-        self.parameters_to_log = parameters_to_log
+        super().__init__(fmu_paths, model_classes, connections_config, init_configs)
+        extended_simulation_config = ExtendedSimulationConfig(
+            system_names=set(self.systems),
+            stop_time=stop_time,
+            step_size=step_size,
+            logging_step_size=logging_step_size or step_size,
+            parameters_to_log=parameters_to_log or {},
+        )
+        self.parameters_to_log = init_parameter_list(parameters_to_log or {})
+        self.stop_time = extended_simulation_config.stop_time
+        self.step_size = extended_simulation_config.step_size
+        self.logging_step_size = extended_simulation_config.logging_step_size
+        self.start_time = extended_simulation_config.start_time
 
     def simulate(
         self,
-        stop_time: float,
-        step_size: float,
-        logging_step_size: float,
-        start_time: float = 0.0,
     ) -> pd.DataFrame:
         """Simulate the systems.
 
@@ -205,20 +208,20 @@ class Simulator:
 
         7. The numpy results object is converted to a pandas DataFrame.
 
-        Args:
-            stop_time (float): stop time for the simulation
-            step_size (float): step size for the simulation
-            logging_step_size(float): logging step size for the simulation
-            start_time (float, optional): start time of the simulation.
-                Defaults to 0.0.
-
         Returns:
             pd.DataFrame: result DataFrame with times series of logged
             parameters
         """
-        time_series = self.compute_time_array(stop_time, step_size, start_time)
-        number_log_steps = int(stop_time / logging_step_size) + 1
-        logging_multiple = round(logging_step_size / step_size)
+        logging.info(f"Simulation stop time set to {self.stop_time} seconds.")
+        logging.info(f"Simulation step size set to {self.step_size} seconds.")
+        logging.info(
+            f"Simulation logging step size set to {self.logging_step_size} seconds."
+        )
+        time_series = self.compute_time_array(
+            self.stop_time, self.step_size, self.start_time
+        )
+        number_log_steps = int(self.stop_time / self.logging_step_size) + 1
+        logging_multiple = round(self.logging_step_size / self.step_size)
         dtypes = self.get_dtypes_of_logged_parameters()
         # self.results is a structured numpy array
         self.results = np.zeros(number_log_steps, dtype=dtypes)
@@ -228,7 +231,7 @@ class Simulator:
         self.log_values(time=0, log_step=0)
         log_step = 1
         for time_step, time in enumerate(tqdm(time_series[:-1])):
-            self.do_step(time)
+            self.do_step(time, self.step_size)
             self.set_systems_inputs()
             if ((time_step + 1) % logging_multiple) == 0:
                 self.log_values(time_series[time_step + 1], log_step)
@@ -262,30 +265,6 @@ class Simulator:
             return time_series[:-1]
         return time_series
 
-    def set_systems_inputs(self) -> None:
-        """Set inputs for all systems."""
-        for connection in self.connections:
-            input_system_name = connection.input_point.system_name
-            input_system = self.systems[input_system_name]
-            input_name = connection.input_point.name
-            output_system_name = connection.output_point.system_name
-            output_system = self.systems[output_system_name]
-            output_name = connection.output_point.name
-            input_value = output_system.simulation_entity.get_parameter_value(
-                output_name,
-            )
-            input_system.simulation_entity.set_parameter(input_name, input_value)
-
-    def do_step(self, time: float) -> None:
-        """Perform a calculation in all systems.
-
-        Args:
-            time (float): current simulation time
-            step_size (float): step size of the simulation
-        """
-        for system in self.systems.values():
-            system.simulation_entity.do_step(time)
-
     def log_values(self, time: float, log_step: int) -> None:
         """Log parameter values that are set to be logged.
 
@@ -301,11 +280,6 @@ class Simulator:
             parameter_name = parameter.name
             value = system.simulation_entity.get_parameter_value(parameter_name)
             self.results[log_step][i] = value
-
-    def conclude_simulation(self) -> None:
-        """Conclude the simulation for all simulation entities."""
-        for system in self.systems.values():
-            system.simulation_entity.conclude_simulation()
 
     def convert_to_data_frame(self, results: npt.NDArray[np.void]) -> pd.DataFrame:
         """Covert result numpy array to DataFrame.
@@ -359,7 +333,7 @@ def simulate(
     fmu_paths: co.FmuPaths | None = ...,
     model_classes: co.ModelClasses | None = ...,
     connections_config: co.ConnectionsConfig | None = ...,
-    start_values: co.StartValues | None = ...,
+    init_configs: co.InitConfigs | None = ...,
     parameters_to_log: co.ParametersToLog | None = ...,
     logging_step_size: float | None = ...,
     *,
@@ -374,7 +348,7 @@ def simulate(
     fmu_paths: co.FmuPaths | None = ...,
     model_classes: co.ModelClasses | None = ...,
     connections_config: co.ConnectionsConfig | None = ...,
-    start_values: co.StartValues | None = ...,
+    init_configs: co.InitConfigs | None = ...,
     parameters_to_log: co.ParametersToLog | None = ...,
     logging_step_size: float | None = ...,
     *,
@@ -389,7 +363,7 @@ def simulate(
     fmu_paths: co.FmuPaths | None = ...,
     model_classes: co.ModelClasses | None = ...,
     connections_config: co.ConnectionsConfig | None = ...,
-    start_values: co.StartValues | None = ...,
+    init_configs: co.InitConfigs | None = ...,
     parameters_to_log: co.ParametersToLog | None = ...,
     logging_step_size: float | None = ...,
 ) -> pd.DataFrame: ...
@@ -401,7 +375,7 @@ def simulate(
     fmu_paths: co.FmuPaths | None = None,
     model_classes: co.ModelClasses | None = None,
     connections_config: co.ConnectionsConfig | None = None,
-    start_values: co.StartValues | None = None,
+    init_configs: co.InitConfigs | None = None,
     parameters_to_log: co.ParametersToLog | None = None,
     logging_step_size: float | None = None,
     get_units: bool = False,
@@ -485,21 +459,22 @@ def simulate(
             ... }
 
             Defaults to None.
-        start_values (StartValues | None, optional): Dictionary which defines start
-            values for the systems. For Fmus the unit can also be specified as a string.
-            key -> name of the system;
-            value -> dictionary (key -> name of the parameter; value -> start value)
+        init_configs (co.InitConfigs | None, optional): Dictionary which defines initial
+            configurations for the systems. Fmus can only have the key 'start_values'
+            for specifying the start values. key -> name of the system;
+            value -> dictionary (key -> config name; value -> config value)
 
-            >>> start_values = {
+            >>> init_configs = {
             ...     "<name of system 1>":
             ...     {
-            ...         "<name of parameter 1>": <start value>,
-            ...         "<name of parameter 2>", (<start value>, unit e.g 'kg.m2')
+            ...         "<name of config 1>": <config value 1>,
+            ...         "<name of config 2>", <config value 2>
             ...     },
-            ...     "<name of system 2>":
+            ...     "<name of fmu 1>":
             ...     {
-            ...         "<name of parameter 1>": <start value>,
-            ...         "<name of parameter 2>": <start value>
+            ...         "start_values": {
+            ...             "<name of parameter 1>": (<start value>, unit e.g 'kg.m2'),
+            ...             "<name of parameter 2>": <start value>
             ...     }
             ... }
 
@@ -530,15 +505,6 @@ def simulate(
         get_units (bool, optional): Determines whether the units of
             the logged parameter should be returned. Defaults to False.
 
-    Raises:
-        TypeError: start_time type was invalid
-        TypeError: step_size type was invalid
-        TypeError: fmu_paths type was invalid
-        TypeError: model_classes type was invalid
-        ValueError: fmu_paths and model_classes were 'None'
-        ValueError: start_time value was invalid
-        ValueError: step_size value was invalid
-
     Returns:
         pd.DataFrame | tuple[pd.DataFrame, co.Units]:
             Result DataFrame with times series of logged parameters, units of
@@ -549,44 +515,18 @@ def simulate(
         level=logging.INFO,
         force=True,
     )
-    _validate_input(
-        stop_time,
-        step_size,
-        fmu_paths,
-        model_classes,
-        connections_config,
-        parameters_to_log,
-        logging_step_size,
-        start_values,
+
+    simulator = Simulator(
+        fmu_paths=fmu_paths,
+        model_classes=model_classes,
+        connections_config=connections_config,
+        init_configs=init_configs,
+        parameters_to_log=parameters_to_log,
+        stop_time=stop_time,
+        step_size=step_size,
+        logging_step_size=logging_step_size,
     )
-
-    stop_time = float(stop_time)
-    step_size = float(step_size)
-
-    logging.info(f"Simulation stop time set to {stop_time} seconds.")
-    logging.info(f"Simulation step size set to {step_size} seconds.")
-
-    logging_step_size = float(logging_step_size or step_size)
-
-    logging.info(f"Simulation logging step size set to {logging_step_size} seconds.")
-
-    connections_config = connections_config or {}
-    fmu_paths = fmu_paths or {}
-    model_classes = model_classes or {}
-    start_values = start_values or {}
-    parameters_to_log = parameters_to_log or {}
-
-    start_values = start_values.copy()  # copy because dict will be modified in fmu.py
-
-    fmus = init_fmus(fmu_paths, step_size, start_values)
-
-    models = init_models(model_classes, start_values)
-
-    connections = init_connections(connections_config)
-    _parameters_to_log = init_parameter_list(parameters_to_log)
-
-    simulator = Simulator({**fmus, **models}, connections, _parameters_to_log)
-    results = simulator.simulate(stop_time, step_size, logging_step_size)
+    results = simulator.simulate()
 
     if get_units:
         units = simulator.get_units()
@@ -595,62 +535,17 @@ def simulate(
     return results
 
 
-def init_fmus(
-    fmu_paths: co.FmuPaths,
-    step_size: float,
-    start_values: co.StartValues,
+def init_systems(
+    simulation_entity_mapping: co.SimulationEntityMapping, init_configs: co.InitConfigs
 ) -> dict[str, System]:
-    """Initialize fmus as a System object and store them in a dictionary.
-
-    Args:
-        fmu_paths (FmuPaths): Dictionary which defines which fmu should be simulated.
-            key -> name of the fmu; value -> path to the fmu
-        step_size (float): step size of the simulation
-        start_values (StartValues): Dictionary which defines start values for the
-            systems.
-
-    Returns:
-        dict[str, System]: key -> fmu name; value -> System instance
-    """
-    fmus: dict[str, System] = {}
-    for fmu_name, _fmu_path in fmu_paths.items():
-        fmu_path: Path = utils.convert_str_to_path(_fmu_path, "fmu_path")
-        fmu = Fmu(fmu_path, fmu_name, step_size)
-        _start_values = start_values.get(fmu_name) or {}
-        fmu.initialize(start_values=_start_values)
-        system = System(fmu, fmu_name)
-        fmus[fmu_name] = system
-        logging.info(f"FMU '{fmu_name}' initialized.")
-
-    return fmus
-
-
-def init_models(
-    model_classes: co.ModelClasses,
-    start_values: co.StartValues,
-) -> dict[str, System]:
-    """Initialize python models as a System object and store them in a dictionary.
-
-    Args:
-        model_classes (ModelClasses): Dictionary which defines which Python Models
-            should be simulated.
-        start_values (StartValues): Dictionary which defines start values for the
-            systems.
-
-    Returns:
-        dict[str, System]: key -> python model name; value -> System instance
-    """
-
-    models: dict[str, System] = {}
-    for model_name, model_class in model_classes.items():
-        _start_values = start_values.get(model_name) or {}
-        model_instance = model_class()
-        model_instance.initialize(_start_values)
-        system = System(model_instance, model_name)
-        models[model_name] = system
-        logging.info(f"Python Model '{model_name}' initialized.")
-
-    return models
+    systems: dict[str, System] = {}
+    for system_name, simulation_entity_class in simulation_entity_mapping.items():
+        init_config = init_configs.get(system_name, {})
+        system_instance = simulation_entity_class(init_config)
+        system = System(system_instance, system_name)
+        systems[system_name] = system
+        logging.info(f"System '{system_name}' initialized.")
+    return systems
 
 
 def init_connections(connections_config: co.ConnectionsConfig) -> list[Connection]:
@@ -707,35 +602,17 @@ def init_parameter_list(parameters_to_log: co.ParametersToLog) -> list[SystemPar
     return log
 
 
-def _validate_input(
-    stop_time: float,
-    step_size: float,
-    logging_step_size: float | None,
-) -> None:
-    utils.check_type(stop_time, "stop_time", Real)
-    utils.check_type(step_size, "step_size", Real)
-
-    if stop_time <= 0:
-        raise ValueError(f"'stop_time' is {stop_time}; expected > 0")
-
-    if step_size <= 0 or step_size >= stop_time:
-        raise ValueError(f"'step_size' is {step_size}; expected (0, {stop_time})")
-
-    if logging_step_size is not None:
-        _validate_logging_step_size(logging_step_size, step_size)
-
-
-def _check_key_exists(key: str, connection: co.Connection, system_name: str) -> None:
-    if key not in connection:
-        raise KeyError(
-            f"missing key '{key}' in connections specified for system '{system_name}'",
-        )
-
-
-def _validate_logging_step_size(logging_step_size: float, step_size: float) -> None:
-    utils.check_type(logging_step_size, "logging_step_size", Real)
-
-    if not round(logging_step_size / step_size, 10).is_integer():
-        raise ValueError(
-            "'logging_step_size' must be a multiple of the chosen 'step_size'",
-        )
+def _extract_fmu_init_configs(
+    fmu_paths: dict[str, Path],
+    init_config: co.InitConfig,
+) -> tuple[dict[str, Any], co.SimulationEntityMapping]:
+    fmu_classes: co.SimulationEntityMapping = {}
+    for fmu_name, fmu_path in fmu_paths.items():
+        fmu_init_config: dict[str, Any] = init_config.get(fmu_name, {})
+        init_config[fmu_name] = FmuInitConfig(
+            fmu_path=fmu_path,
+            name=fmu_name,
+            start_values=fmu_init_config.get(co.StartValueConfigLabel, {}),
+        ).model_dump()
+        fmu_classes[fmu_name] = Fmu
+    return init_config, fmu_classes

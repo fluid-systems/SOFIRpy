@@ -11,6 +11,7 @@ from typing import Any, Callable
 import h5py
 from typing_extensions import Self
 
+import sofirpy.common as co
 from sofirpy import utils
 
 
@@ -18,11 +19,11 @@ class HDF5:
     """Object representing a HDF5 file.
 
     Args:
-        hdf5_path (Path | str): Path to a hdf5 file. If it doesn't
+        hdf5_path (co.FilePath): Path to a hdf5 file. If it doesn't
             exists it will be created.
     """
 
-    def __init__(self, hdf5_path: Path | str) -> None:
+    def __init__(self, hdf5_path: co.FilePath) -> None:
         self.hdf5_path = hdf5_path  # type: ignore[assignment]
 
     @property
@@ -35,11 +36,11 @@ class HDF5:
         return self._hdf5_path
 
     @hdf5_path.setter
-    def hdf5_path(self, hdf5_path: Path | str) -> None:
+    def hdf5_path(self, hdf5_path: co.FilePath) -> None:
         """Set the path to a hdf5 file. If the path doesn't exist, the file is created.
 
         Args:
-            hdf5_path (Path | str): Path to a hdf5 file.
+            hdf5_path (co.FilePath): Path to a hdf5 file.
 
         Raises:
             TypeError: hdf5_path type was not 'Path'

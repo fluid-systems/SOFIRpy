@@ -74,11 +74,11 @@ class Connections(DatasetSerializer):
         return json.dumps({"connections": model.connections or []})
 
 
-class StartValues(DatasetSerializer):
+class InitConfig(DatasetSerializer):
     @staticmethod
     def serialize(run: rdm_run.Run, *args: Any, **kwargs: Any) -> Any:
         model = run.models[kwargs["model_name"]]
-        return json.dumps({"start_values": model.start_values or {}})
+        return json.dumps({"init_config": model.init_config or {}})
 
 
 class ParametersToLog(DatasetSerializer):
@@ -146,7 +146,7 @@ class Serializer:
     dependencies_serializer: type[DatasetSerializer] = Dependencies
     time_series_serializer: type[DatasetSerializer] = TimeSeries
     connections_serializer: type[DatasetSerializer] = Connections
-    start_values_serializer: type[DatasetSerializer] = StartValues
+    init_config_serializer: type[DatasetSerializer] = InitConfig
     parameters_to_log_serializer: type[DatasetSerializer] = ParametersToLog
     fmu_reference_serializer: type[DatasetSerializer] = FmuReference
     fmu_storage_serializer: type[DatasetSerializer] = FmuStorage
@@ -164,5 +164,5 @@ class Serializer:
     )
 
     @classmethod
-    def use_start_value_serializer(cls, serializer: type[DatasetSerializer]) -> None:
-        cls.start_values_serializer = serializer
+    def use_init_config_serializer(cls, serializer: type[DatasetSerializer]) -> None:
+        cls.init_config_serializer = serializer

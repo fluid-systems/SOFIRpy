@@ -159,8 +159,8 @@ class RunToHDF5:
                 )
                 .append_dataset(
                     h5.Dataset(
-                        name=config.RunDatasetName.START_VALUES.value,
-                        data=self.serializer.start_values_serializer.serialize(
+                        name=config.RunDatasetName.INIT_CONFIG.value,
+                        data=self.serializer.init_config_serializer.serialize(
                             self.run,
                             model_name=fmu_name,
                         ),
@@ -225,8 +225,8 @@ class RunToHDF5:
                 )
                 .append_dataset(
                     h5.Dataset(
-                        name=config.RunDatasetName.START_VALUES.value,
-                        data=self.serializer.start_values_serializer.serialize(
+                        name=config.RunDatasetName.INIT_CONFIG.value,
+                        data=self.serializer.init_config_serializer.serialize(
                             self.run,
                             model_name=python_model_name,
                         ),

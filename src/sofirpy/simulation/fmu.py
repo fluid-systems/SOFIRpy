@@ -6,6 +6,7 @@ import logging
 from pathlib import Path
 from typing import Callable
 
+import pydantic
 from fmpy import extract, read_model_description
 from fmpy.fmi2 import FMU2Slave
 from fmpy.simulation import (
@@ -21,18 +22,27 @@ SetterFunction = Callable[[list[int], list[co.ParameterValue]], None]
 GetterFunction = Callable[[list[int]], list[co.ParameterValue]]
 
 
+class FmuInitConfig(pydantic.BaseModel):
+    fmu_path: Path
+    name: str
+    start_values: dict[str, co.StartValue] = pydantic.Field(
+        default_factory=dict, alias=co.StartValueConfigLabel
+    )
+
+
 class Fmu(SimulationEntity):
     """Class representing a fmu.
 
     Args:
         fmu_path (Path): path to the fmu
-        step_size (float): step size of the simulation
     """
 
-    def __init__(self, fmu_path: Path, name: str, step_size: float) -> None:
-        self.fmu_path = fmu_path
-        self.name = name
-        self.step_size = step_size
+    def __init__(self, init_config: co.InitConfig) -> None:
+        _init_config = FmuInitConfig(**init_config)
+        self.fmu_path = _init_config.fmu_path
+        self.name = _init_config.name
+        self.start_values = _init_config.start_values
+        self.initialize()
 
     @property
     def fmu_path(self) -> Path:
@@ -57,7 +67,7 @@ class Fmu(SimulationEntity):
             raise FileNotFoundError(f"The path '{fmu_path}' does not exist")
         self._fmu_path = fmu_path
 
-    def initialize(self, start_values: dict[str, co.StartValue]) -> None:
+    def initialize(self) -> None:
         """Initialize the fmu.
 
         Args:
@@ -91,7 +101,7 @@ class Fmu(SimulationEntity):
         not_set_start_values = apply_start_values(
             self.fmu,
             self.model_description,
-            start_values,
+            self.start_values,
             settable_in_instantiated,
         )
         self.fmu.enterInitializationMode()
@@ -135,15 +145,16 @@ class Fmu(SimulationEntity):
         )[0]
         return value
 
-    def do_step(self, time: float) -> None:
+    def do_step(self, time: float, step_size: float) -> None:
         """Perform a simulation step.
 
         Args:
             time (float): current time
+            step_size (float): simulation step size
         """
         self.fmu.doStep(
             currentCommunicationPoint=time,
-            communicationStepSize=self.step_size,
+            communicationStepSize=step_size,
         )
 
     def conclude_simulation(self) -> None:

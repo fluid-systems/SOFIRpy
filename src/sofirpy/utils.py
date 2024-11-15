@@ -2,10 +2,13 @@
 
 from __future__ import annotations
 
+import os
 import shutil
 from importlib.metadata import distributions
 from pathlib import Path
 from typing import Any
+
+import sofirpy.common as co
 
 
 def delete_file_or_directory(
@@ -136,13 +139,13 @@ def copy_file(source_path: Path, target_path: Path) -> None:
 
 
 def get_user_input_for_overwriting(
-    target_path: Path | str,
+    target_path: co.FilePath,
     typ: str = "path",
 ) -> bool:
     """Get user input for overwriting a path.
 
     Args:
-        target_path (Path | str): Path that should be overwritten.
+        target_path (co.FilePath): Path that should be overwritten.
         typ (str, optional): Name of the path. Defaults to "path".
 
     Returns:
@@ -186,11 +189,11 @@ def rename_file(file_path: Path, new_name: str) -> Path:
     return file_path.rename(target_path)
 
 
-def convert_str_to_path(path: str | Path, variable_name: str) -> Path:
+def convert_str_to_path(path: co.FilePath, variable_name: str) -> Path:
     """Convert a str to a Path object.
 
     Args:
-        path (Path | str): Path.
+        path (co.FilePath): Path.
         variable_name (str): Name of the variable.
 
     Raises:
@@ -199,7 +202,7 @@ def convert_str_to_path(path: str | Path, variable_name: str) -> Path:
     Returns:
         Path: Path object
     """
-    check_type(path, variable_name, (Path, str))
+    check_type(path, variable_name, (os.PathLike, str))
     return path if isinstance(path, Path) else Path(path)
 
 

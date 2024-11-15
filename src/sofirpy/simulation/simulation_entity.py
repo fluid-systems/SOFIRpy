@@ -11,6 +11,10 @@ class SimulationEntity(ABC):
     """Abstract object representing a simulation entity."""
 
     @abstractmethod
+    def __init__(self, init_config: co.InitConfig) -> None:
+        pass
+
+    @abstractmethod
     def set_parameter(
         self,
         parameter_name: str,
@@ -42,11 +46,8 @@ class SimulationEntity(ABC):
 
         Args:
             time (float): current simulation time
+            step_size (float): simulation step_size
         """
-
-    def initialize(self, start_values: dict[str, co.StartValue]) -> None:
-        """Initialize the model"""
-        return None
 
     def get_unit(self, parameter_name: str) -> str | None:
         """Return the unit of a parameter.

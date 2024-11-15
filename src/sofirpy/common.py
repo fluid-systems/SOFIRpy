@@ -2,10 +2,9 @@
 
 from __future__ import annotations
 
-from collections.abc import Mapping
+import os
 from enum import Enum
-from pathlib import Path
-from typing import Optional, Union
+from typing import Any, Literal, Optional, Union
 
 from typing_extensions import TypeAlias, TypedDict
 
@@ -29,12 +28,18 @@ class Connection(TypedDict):
 Connections: TypeAlias = list[Connection]
 ConnectionsConfig: TypeAlias = dict[str, Connections]
 
-FmuPaths: TypeAlias = Mapping[str, Union[str, Path]]
-ModelClasses: TypeAlias = Mapping[str, type[simulation_entity.SimulationEntity]]
+FilePath: TypeAlias = Union[str, os.PathLike[Any]]
+FmuPaths: TypeAlias = dict[str, FilePath]
+
+InitConfig: TypeAlias = dict[str, Any]
+InitConfigs: TypeAlias = dict[str, InitConfig]
+SimulationEntityMapping = dict[str, type[simulation_entity.SimulationEntity]]
+ModelClasses: TypeAlias = SimulationEntityMapping
 
 ParametersToLog: TypeAlias = dict[str, list[str]]
 ParameterValue: TypeAlias = Union[bool, float, int, str, object]
 
+StartValueConfigLabel: Literal["start_values"] = "start_values"
 StartValue: TypeAlias = Union[ParameterValue, tuple[ParameterValue, str]]
 StartValues: TypeAlias = dict[str, dict[str, StartValue]]
 

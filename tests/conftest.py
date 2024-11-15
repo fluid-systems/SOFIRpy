@@ -2,10 +2,11 @@ from __future__ import annotations
 
 import sys
 from pathlib import Path
+from typing import Any
 
 import pytest
 
-from sofirpy.common import FmuPaths, ModelClasses, StartValues
+from sofirpy.common import FmuPaths, InitConfig, InitConfigs, ModelClasses
 from sofirpy.simulation.simulation_entity import SimulationEntity
 
 
@@ -24,7 +25,7 @@ def fmu_paths() -> FmuPaths:
 class PID(SimulationEntity):
     """Simple implementation of a discrete pid controller"""
 
-    def __init__(self):
+    def __init__(self, init_config: InitConfig):
         self.parameters = {
             "step_size": 1e-3,
             "K_p": 1,
@@ -36,6 +37,7 @@ class PID(SimulationEntity):
         }  # TODO change step_size to Abtastrate
         self.inputs = {"speed": 0}
         self.outputs = {"u": 0}
+        self.initialize(init_config)
 
     def compute_error(self):
         self.error[2] = self.error[1]
@@ -67,8 +69,8 @@ class PID(SimulationEntity):
     def get_parameter_value(self, output_name):
         return self.outputs[output_name]
 
-    def initialize(self, start_values) -> None:
-        self.apply_start_values(start_values)
+    def initialize(self, init_config) -> None:
+        self.apply_start_values(init_config["start_values"])
         K_p = self.parameters["K_p"]
         K_i = self.parameters["K_i"]
         K_d = self.parameters["K_d"]
@@ -80,22 +82,24 @@ class PID(SimulationEntity):
         self.u_max = self.parameters["u_max"]
         self.u_min = self.parameters["u_min"]
 
-    def apply_start_values(self, start_values: StartValues) -> None:
+    def apply_start_values(self, start_values: dict[str, Any]) -> None:
         for name, value in start_values.items():
             self.parameters[name] = value
 
 
 @pytest.fixture
-def start_values() -> StartValues:
+def init_configs() -> InitConfigs:
     return {
         "pid": {
-            "step_size": 1e-3,
-            "K_p": 3,
-            "K_i": 20,
-            "K_d": 0.1,
-            "set_point": 100,
-            "u_max": 100,
-            "u_min": 0,
+            "start_values": {
+                "step_size": 1e-3,
+                "K_p": 3,
+                "K_i": 20,
+                "K_d": 0.1,
+                "set_point": 100,
+                "u_max": 100,
+                "u_min": 0,
+            }
         }
     }
 

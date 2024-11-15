@@ -7,15 +7,11 @@ import pytest
 from sofirpy.common import (
     ConnectionsConfig,
     FmuPaths,
+    InitConfigs,
     ModelClasses,
     ParametersToLog,
-    StartValues,
 )
-from sofirpy.simulation.simulation import (
-    _validate_input,
-    _validate_parameters_to_log,
-    simulate,
-)
+from sofirpy.simulation.simulation import simulate
 
 
 @pytest.fixture
@@ -57,7 +53,7 @@ def test_simulation(
     connections_config: ConnectionsConfig,
     fmu_paths: FmuPaths,
     model_classes: ModelClasses,
-    start_values: StartValues,
+    init_configs: InitConfigs,
     result_path: Path,
     parameters_to_log: ParametersToLog,
 ) -> None:
@@ -67,7 +63,7 @@ def test_simulation(
         fmu_paths=fmu_paths,
         model_classes=model_classes,
         connections_config=connections_config,
-        start_values=start_values,
+        init_configs=init_configs,
         parameters_to_log=parameters_to_log,
         get_units=True,
     )
@@ -86,7 +82,7 @@ def test_simulate_with_no_parameters_to_log(
     connections_config: ConnectionsConfig,
     fmu_paths: FmuPaths,
     model_classes: ModelClasses,
-    start_values: StartValues,
+    init_configs: InitConfigs,
     result_path: Path,
 ) -> None:
     results = simulate(
@@ -94,7 +90,7 @@ def test_simulate_with_no_parameters_to_log(
         step_size=1e-3,
         fmu_paths=fmu_paths,
         model_classes=model_classes,
-        start_values=start_values,
+        init_configs=init_configs,
         connections_config=connections_config,
     )
 
@@ -109,7 +105,7 @@ def test_simulate_with_bigger_log_step_size(
     connections_config: ConnectionsConfig,
     fmu_paths: FmuPaths,
     model_classes: ModelClasses,
-    start_values: StartValues,
+    init_configs: InitConfigs,
     result_path: Path,
     parameters_to_log: ParametersToLog,
     logging_step_size: float,
@@ -120,7 +116,7 @@ def test_simulate_with_bigger_log_step_size(
         step_size=step_size,
         fmu_paths=fmu_paths,
         model_classes=model_classes,
-        start_values=start_values,
+        init_configs=init_configs,
         connections_config=connections_config,
         parameters_to_log=parameters_to_log,
         logging_step_size=logging_step_size,
@@ -132,27 +128,3 @@ def test_simulate_with_bigger_log_step_size(
     assert np.isclose(
         results, test_results[:: int(logging_step_size / step_size)], atol=1e-6
     ).all()
-
-
-def test_validate_input_duplicate_name_value_error(
-    fmu_paths: FmuPaths, model_classes: ModelClasses
-) -> None:
-    fmu_paths[list(model_classes.keys())[0]] = ""
-    with pytest.raises(ValueError, match="Duplicate names in system infos."):
-        _validate_input(1, 0.1, fmu_paths, model_classes, None, None, None, None)
-
-
-def test_validate_parameters_to_log_raises_type_error(
-    parameters_to_log: ParametersToLog, system_names: list[str]
-) -> None:
-    parameters_to_log["DC_Motor"] = "var"
-    with pytest.raises(TypeError):
-        _validate_parameters_to_log(parameters_to_log, system_names)
-
-
-def test_validate_parameters_to_log_raises_value_error(
-    parameters_to_log: ParametersToLog, system_names: list[str]
-) -> None:
-    system_names.pop(0)
-    with pytest.raises(ValueError):
-        _validate_parameters_to_log(parameters_to_log, system_names)

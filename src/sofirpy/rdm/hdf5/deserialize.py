@@ -96,7 +96,7 @@ class Connections(Deserialize):
         return json.loads(data)
 
 
-class StartValues(Deserialize):
+class InitConfig(Deserialize):
     @staticmethod
     def deserialize(run_group: h5.Group, *args: Any, **kwargs: Any) -> Any:
         data = kwargs.get("data")
@@ -173,9 +173,9 @@ class Models(Deserialize):
                 run_group,
                 data=group.get_dataset(config.RunDatasetName.CONNECTIONS.value).data,
             )
-            start_values = Deserializer.start_values.deserialize(
+            init_config = Deserializer.init_config.deserialize(
                 run_group,
-                data=group.get_dataset(config.RunDatasetName.START_VALUES.value).data,
+                data=group.get_dataset(config.RunDatasetName.INIT_CONFIG.value).data,
             )
 
             parameters_to_log = Deserializer.parameters_to_log.deserialize(
@@ -203,7 +203,7 @@ class Models(Deserialize):
             fmus[name] = rdm_run.Fmu(
                 name,
                 connections=connections[config.RunDatasetName.CONNECTIONS.value],
-                start_values=start_values[config.RunDatasetName.START_VALUES.value],
+                init_config=init_config[config.RunDatasetName.INIT_CONFIG.value],
                 parameters_to_log=parameters_to_log[
                     config.RunDatasetName.PARAMETERS_TO_LOG.value
                 ],
@@ -218,9 +218,9 @@ class Models(Deserialize):
                 run_group,
                 data=group.get_dataset(config.RunDatasetName.CONNECTIONS.value).data,
             )
-            start_values = Deserializer.start_values.deserialize(
+            init_config = Deserializer.init_config.deserialize(
                 run_group,
-                data=group.get_dataset(config.RunDatasetName.START_VALUES.value).data,
+                data=group.get_dataset(config.RunDatasetName.INIT_CONFIG.value).data,
             )
 
             parameters_to_log = Deserializer.parameters_to_log.deserialize(
@@ -258,7 +258,7 @@ class Models(Deserialize):
             python_models[name] = rdm_run.PythonModel(
                 name,
                 connections=connections[config.RunDatasetName.CONNECTIONS.value],
-                start_values=start_values[config.RunDatasetName.START_VALUES.value],
+                init_config=init_config[config.RunDatasetName.INIT_CONFIG.value],
                 parameters_to_log=parameters_to_log[
                     config.RunDatasetName.PARAMETERS_TO_LOG.value
                 ],
@@ -279,7 +279,7 @@ class Deserializer:
     results: type[Deserialize] = Results
     models: type[Deserialize] = Models
     connections: type[Deserialize] = Connections
-    start_values: type[Deserialize] = StartValues
+    init_config: type[Deserialize] = InitConfig
     parameters_to_log: type[Deserialize] = ParametersToLog
     fmu_reference: type[Deserialize] = FmuReference
     fmu_content: type[Deserialize] = FmuContent
@@ -289,5 +289,5 @@ class Deserializer:
     source_code_storage: type[Deserialize] = SourceCodeStorage
 
     @classmethod
-    def use_start_values_deserializer(cls, deserializer: type[Deserialize]) -> None:
-        cls.start_values = deserializer
+    def use_init_config_deserializer(cls, deserializer: type[Deserialize]) -> None:
+        cls.init_config = deserializer
