@@ -2,19 +2,19 @@ import os
 import sys
 from pathlib import Path
 
-from sofirpy import plot_results, simulate
+from sofirpy import BaseSimulator
 from sofirpy.common import Connection
 
-sys.path.append(os.path.join(os.path.dirname(__file__), "../../"))
+sys.path.append(os.path.join(os.path.dirname(__file__), "../"))
 
 from discrete_pid import PID  # custom implemented pid controller
 
 if sys.platform == "win32":
-    fmu_path = Path(__file__).parent.parent.parent / "DC_Motor.fmu"
+    fmu_path = Path(__file__).parent.parent / "DC_Motor.fmu"
 elif sys.platform == "linux":
-    fmu_path = Path(__file__).parent.parent.parent / "DC_Motor_linux.fmu"
+    fmu_path = Path(__file__).parent.parent / "DC_Motor_linux.fmu"
 elif sys.platform == "darwin":
-    fmu_path = Path(__file__).parent.parent.parent / "DC_Motor_mac.fmu"
+    fmu_path = Path(__file__).parent.parent / "DC_Motor_mac.fmu"
 
 connections_config = {
     "DC_Motor": [
@@ -38,10 +38,6 @@ fmu_paths = {"DC_Motor": str(fmu_path)}
 
 model_classes = {"pid": PID}
 
-parameters_to_log = {
-    "DC_Motor": ["y", "MotorTorque.tau", "inertia.J", "dC_PermanentMagnet.Jr"],
-    "pid": ["u"],
-}
 
 init_configs = {
     "DC_Motor": {"start_values": {"inertia.J": 2, "damper.phi_rel.start": (1, "deg")}},
@@ -58,23 +54,17 @@ init_configs = {
     },
 }
 
-results, units = simulate(
-    stop_time=10,
-    step_size=1e-3,
+simulator = BaseSimulator(
     fmu_paths=fmu_paths,
     model_classes=model_classes,
-    connections_config=connections_config,
     init_configs=init_configs,
-    parameters_to_log=parameters_to_log,
-    logging_step_size=1e-3,
-    get_units=True,
+    connections_config=connections_config,
 )
 
-ax, fig = plot_results(
-    results,
-    "time",
-    "DC_Motor.y",
-    x_label="time in s",
-    y_label="speed in rad/s",
-    title="Speed over Time",
-)
+stop_time = 100
+step_size = 1
+while simulator.time < stop_time:
+    simulator.do_step(simulator.time, step_size)
+    simulator.set_systems_inputs()
+    simulator.time += step_size
+simulator.conclude_simulation()
