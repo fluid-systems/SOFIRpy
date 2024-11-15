@@ -2,7 +2,7 @@
 
 __author__ = "Daniele Inturri"
 __email__ = "daniele.inturri@stud.tu-darmstadt.de"
-__version__ = "1.0.2"
+__version__ = "2.0.0"
 
 __all__ = [
     "export_dymola_model",
@@ -11,6 +11,7 @@ __all__ = [
     "HDF5",
     "SimulationEntity",
     "simulate",
+    "BaseSimulator",
     "plot_results",
 ]
 
@@ -19,5 +20,5 @@ from .fmu_export.open_modelica_fmu_export import export_open_modelica_model
 from .rdm.hdf5.hdf5 import HDF5
 from .rdm.run import Run
 from .simulation.plot import plot_results
-from .simulation.simulation import simulate
+from .simulation.simulation import BaseSimulator, simulate
 from .simulation.simulation_entity import SimulationEntity
