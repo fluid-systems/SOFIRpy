@@ -47,7 +47,7 @@ class PID(SimulationEntity):
     def set_input(self, input_name, input_value):
         self.parameters[input_name] = input_value
 
-    def do_step(self, _):
+    def do_step(self, time, time_step):
         self.compute_error()
         u = (
             self.outputs["u"]

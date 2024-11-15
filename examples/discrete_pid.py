@@ -30,7 +30,7 @@ class PID(SimulationEntity):
         self.error[1] = self.error[0]
         self.error[0] = self.parameters["set_point"] - self.inputs["speed"]
 
-    def do_step(self, _):  # mandatory method
+    def do_step(self, time: float, time_step: float):  # mandatory method
         self._compute_error()
         u = (
             self.outputs["u"]
