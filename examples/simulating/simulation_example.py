@@ -5,16 +5,16 @@ from pathlib import Path
 from sofirpy import plot_results, simulate
 from sofirpy.common import Connection
 
-sys.path.append(os.path.join(os.path.dirname(__file__), "../../"))
+sys.path.append(os.path.join(os.path.dirname(__file__), "../"))
 
 from discrete_pid import PID  # custom implemented pid controller
 
 if sys.platform == "win32":
-    fmu_path = Path(__file__).parent.parent.parent / "DC_Motor.fmu"
+    fmu_path = Path(__file__).parent.parent / "DC_Motor.fmu"
 elif sys.platform == "linux":
-    fmu_path = Path(__file__).parent.parent.parent / "DC_Motor_linux.fmu"
+    fmu_path = Path(__file__).parent.parent / "DC_Motor_linux.fmu"
 elif sys.platform == "darwin":
-    fmu_path = Path(__file__).parent.parent.parent / "DC_Motor_mac.fmu"
+    fmu_path = Path(__file__).parent.parent / "DC_Motor_mac.fmu"
 
 connections_config = {
     "DC_Motor": [
@@ -43,16 +43,18 @@ parameters_to_log = {
     "pid": ["u"],
 }
 
-start_values = {
-    "DC_Motor": {"inertia.J": 2, "damper.phi_rel.start": (1, "deg")},
+init_configs = {
+    "DC_Motor": {"start_values": {"inertia.J": 2, "damper.phi_rel.start": (1, "deg")}},
     "pid": {
-        "step_size": 1e-3,
-        "K_p": 3,
-        "K_i": 20,
-        "K_d": 0.1,
-        "set_point": 100,
-        "u_max": 100,
-        "u_min": 0,
+        "start_values": {
+            "step_size": 1e-3,
+            "K_p": 3,
+            "K_i": 20,
+            "K_d": 0.1,
+            "set_point": 100,
+            "u_max": 100,
+            "u_min": 0,
+        },
     },
 }
 
@@ -62,7 +64,7 @@ results, units = simulate(
     fmu_paths=fmu_paths,
     model_classes=model_classes,
     connections_config=connections_config,
-    start_values=start_values,
+    init_configs=init_configs,
     parameters_to_log=parameters_to_log,
     logging_step_size=1e-3,
     get_units=True,

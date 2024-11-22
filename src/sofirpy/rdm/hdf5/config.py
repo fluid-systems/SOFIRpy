@@ -59,7 +59,7 @@ class RunGroupName(str, Enum):
 class RunDatasetName(Enum):
     CONFIG = "config"
     DEPENDENCIES = "dependencies"
-    START_VALUES = "start_values"
+    INIT_CONFIG = "init_config"
     CONNECTIONS = "connections"
     PARAMETERS_TO_LOG = "parameters_to_log"
     FMU_REFERENCE = "reference"

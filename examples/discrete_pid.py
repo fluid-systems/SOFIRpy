@@ -1,13 +1,15 @@
 from __future__ import annotations
 
+from typing import Any
+
+import sofirpy.common as co
 from sofirpy import SimulationEntity
-from sofirpy.common import StartValues
 
 
 class PID(SimulationEntity):
     """Simple implementation of a discrete pid controller"""
 
-    def __init__(self) -> None:
+    def __init__(self, init_config: co.InitConfig) -> None:
         self.parameters = {
             "sampling_rate": 1e-3,
             "K_p": 1,
@@ -21,13 +23,14 @@ class PID(SimulationEntity):
         self.outputs = {"u": 0}
         self.units = {"u": "V"}
         self.dtypes = {"u": float}
+        self.initialize(init_config)
 
     def _compute_error(self) -> None:
         self.error[2] = self.error[1]
         self.error[1] = self.error[0]
         self.error[0] = self.parameters["set_point"] - self.inputs["speed"]
 
-    def do_step(self, _):  # mandatory method
+    def do_step(self, time: float, time_step: float):  # mandatory method
         self._compute_error()
         u = (
             self.outputs["u"]
@@ -51,10 +54,8 @@ class PID(SimulationEntity):
     def get_parameter_value(self, output_name):  # mandatory method
         return self.outputs[output_name]
 
-    def initialize(
-        self, start_values
-    ) -> None:  # start values passed to simulation function are passed to this method
-        self._apply_start_values(start_values)
+    def initialize(self, init_config: dict[str, Any]) -> None:
+        self._apply_start_values(init_config["start_values"])
         K_p = self.parameters["K_p"]
         K_i = self.parameters["K_i"]
         K_d = self.parameters["K_d"]
@@ -66,7 +67,7 @@ class PID(SimulationEntity):
         self.u_max = self.parameters["u_max"]
         self.u_min = self.parameters["u_min"]
 
-    def _apply_start_values(self, start_values: StartValues) -> None:
+    def _apply_start_values(self, start_values: dict[str, Any]) -> None:
         for name, value in start_values.items():
             self.parameters[name] = value
 

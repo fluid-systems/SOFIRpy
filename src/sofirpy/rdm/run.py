@@ -47,7 +47,7 @@ class _RunMetaConfig(pydantic.BaseModel):
 
 class _ModelsConfig(pydantic.BaseModel):
     model_config = pydantic.ConfigDict(extra="forbid")
-    start_values: Optional[dict[str, co.StartValue]] = None  # noqa: UP007
+    init_config: Optional[co.InitConfig] = None  # noqa: UP007
     connections: Optional[co.Connections] = None  # noqa: UP007
     parameters_to_log: Optional[list[str]] = None  # noqa: UP007
 
@@ -71,7 +71,7 @@ class MetaConfigDict(TypedDict):
 
 
 class ModelConfigDict(TypedDict):
-    start_values: NotRequired[dict[str, co.StartValue]]
+    init_config: NotRequired[co.InitConfig]
     connections: NotRequired[co.Connections]
     parameters_to_log: NotRequired[list[str]]
 
@@ -306,27 +306,27 @@ class Run:
     def add_fmu(
         self,
         fmu_name: str,
-        fmu_path: Path | str,
+        fmu_path: co.FilePath,
         connections: list[co.Connection] | None = None,
-        start_values: dict[str, co.StartValue] | None = None,
+        init_config: co.InitConfig | None = None,
         parameters_to_log: list[str] | None = None,
     ) -> None:
         """Add a fmu.
 
         Args:
             fmu_name (str): Name of the fmu.
-            fmu_path (Path | str): Path to the fmu.
+            fmu_path (co.FilePath): Path to the fmu.
             connections (list[_Connection] | None, optional): Connection config for the
                 fmu. Defaults to None.
-            start_values (StartValues | None, optional): Start value for the fmu.
-                Defaults to None.
+            init_config (co.InitConfig | None, optional): Initial configuration for the
+                fmu. Defaults to None.
             parameters_to_log (list[str] | None, optional): Parameters of the fmu that
                 should be logged . Defaults to None.
         """
         self._models.fmus[fmu_name] = Fmu(
             name=fmu_name,
             connections=connections,
-            start_values=start_values,
+            init_config=init_config,
             parameters_to_log=parameters_to_log,
             fmu_path=utils.convert_str_to_path(fmu_path, "fmu_path"),
         )
@@ -380,7 +380,7 @@ class Run:
         model_name: str,
         model_class: type[SimulationEntity],
         connections: list[co.Connection] | None = None,
-        start_values: dict[str, co.StartValue] | None = None,
+        init_config: co.InitConfig | None = None,
         parameters_to_log: list[str] | None = None,
     ) -> None:
         """Add a python model.
@@ -390,8 +390,8 @@ class Run:
             model_class (type[SimulationEntity]): Model class.
             connections (list[_Connection] | None, optional): Connection config for the
                 python model. Defaults to None.
-            start_values (StartValues | None, optional): Start value for the python
-                model. Defaults to None.
+            init_config (StartValues | None, optional): Initial configuration for the
+                python model. Defaults to None.
             parameters_to_log (list[str] | None, optional): Parameters of the python
                 model that should be logged . Defaults to None.
 
@@ -403,7 +403,7 @@ class Run:
         self._models.python_models[model_name] = PythonModel(
             name=model_name,
             connections=connections,
-            start_values=start_values,
+            init_config=init_config,
             parameters_to_log=parameters_to_log,
             model_class=model_class,
         )
@@ -417,100 +417,60 @@ class Run:
         self._models.remove_python_model(model_name)
 
     @property
-    def start_values(self) -> co.StartValues | None:
-        """Start values of the simulation.
+    def init_configs(self) -> co.InitConfigs | None:
+        """Initial configuration for models.
 
         Returns:
-            co.StartValues | None: Start values of the simulation.
+            co.InitConfigs | None: Initial configuration for models.
         """
-        return self._models.start_values
+        return self._models.init_configs
 
-    @start_values.setter
-    def start_values(self, start_values: co.StartValues | None) -> None:
-        """Start values of the simulation.
+    @init_configs.setter
+    def init_configs(self, init_configs: co.InitConfigs | None) -> None:
+        """Initial configuration for models.
 
         Args:
-            start_values (co.StartValues | None): Start values of the simulation.
+            init_configs (co.InitConfigs | None): Initial configuration for models.
         """
-        if start_values is not None:
-            utils.check_type(start_values, "start_values", dict)
-        self._models.start_values = start_values
+        if init_configs is not None:
+            utils.check_type(init_configs, "init_configs", dict)
+        self._models.init_configs = init_configs
 
-    def get_start_values_of_model(
+    def get_init_config_of_model(
         self,
         model_name: str,
-    ) -> dict[str, co.StartValue] | None:
-        """Get the start values of a model.
+    ) -> co.InitConfig | None:
+        """Get the initial configuration of a model.
 
         Args:
             model_name (str): Name of the model.
 
         Returns:
-            dict[str, co.StartValue] | None: Start values of the model.
+            co.InitConfig | None: Initial configuration of the model.
         """
-        return self._models.get_start_values_of_model(model_name)
+        return self._models.get_init_config_of_model(model_name)
 
-    def set_start_values_of_model(
+    def set_init_config_of_model(
         self,
         model_name: str,
-        start_values: dict[str, co.StartValue],
+        init_config: co.InitConfig,
     ) -> None:
-        """Set the start values of a model.
+        """Set the initial configuration of a model.
 
         Args:
             model_name (str): Name of the model.
-            start_values (dict[str, StartValue]): Start values for the model.
+            init_config (co.InitConfig): Initial configuration for the model.
         """
-        utils.check_type(start_values, "start_values", dict)
-        self._models.set_start_values_of_model(model_name, start_values)
+        utils.check_type(init_config, "init_config", dict)
+        self._models.set_init_config_of_model(model_name, init_config)
 
-    def remove_start_values_of_model(self, model_name: str) -> None:
-        """Remove all start values of a model.
+    def remove_init_config_of_model(self, model_name: str) -> None:
+        """Remove all initial configurations of a model.
 
         Args:
             model_name (str): Name of the model.
         """
-        self._models.remove_start_values_of_model(model_name)
-
-    def get_start_value(
-        self,
-        model_name: str,
-        parameter_name: str,
-    ) -> co.StartValue | None:
-        """Get a start value from a model.
-
-        Args:
-            model_name (str): Name of the model.
-            parameter_name (str): Name of the parameter inside the model.
-
-        Returns:
-            StartValue | None: Start value
-        """
-        return self._models.get_start_value(model_name, parameter_name)
-
-    def set_start_value(
-        self,
-        model_name: str,
-        parameter_name: str,
-        value: co.StartValue,
-    ) -> None:
-        """Set a start value for a parameter inside a model.
-
-        Args:
-            model_name (str): Name of the model.
-            parameter_name (str): Name of the parameter.
-            value (StartValue): Start value.
-        """
-        self._models.set_start_value(model_name, parameter_name, value)
-
-    def remove_start_value(self, model_name: str, parameter_name: str) -> None:
-        """Remove the start value of parameter inside a model.
-
-        Args:
-            model_name (str): Name of the model.
-            parameter_name (str): Name of the parameter.
-        """
-        self._models.remove_start_value(model_name, parameter_name)
+        self._models.remove_init_config_of_model(model_name)
 
     @property
     def connections(self) -> co.ConnectionsConfig | None:
@@ -726,7 +686,7 @@ class Run:
         fmu_paths: co.FmuPaths | None = None,
         model_classes: co.ModelClasses | None = None,
         connections_config: co.ConnectionsConfig | None = None,
-        start_values: co.StartValues | None = None,
+        init_configs: co.InitConfigs | None = None,
         parameters_to_log: co.ParametersToLog | None = None,
         logging_step_size: float | None = None,
     ) -> Self:
@@ -810,21 +770,23 @@ class Run:
                 ... }
 
                 Defaults to None.
-            start_values (StartValues | None, optional): Dictionary which defines start
-                values for the systems. For Fmus the unit can also be specified as a string.
+            init_configs (co.InitConfigs | None, optional): Dictionary which defines
+                initial configurations for the systems. Fmus can only have the key
+                'start_values' for specifying the start values.
                 key -> name of the system;
-                value -> dictionary (key -> name of the parameter; value -> start value)
+                value -> dictionary (key -> config name; value -> config value)
 
-                >>> start_values = {
+                >>> init_configs = {
                 ...     "<name of system 1>":
                 ...     {
-                ...         "<name of parameter 1>": <start value>,
-                ...         "<name of parameter 2>", (<start value>, unit e.g 'kg.m2')
+                ...         "<name of config 1>": <config value 1>,
+                ...         "<name of config 2>", <config value 2>
                 ...     },
-                ...     "<name of system 2>":
+                ...     "<name of fmu 1>":
                 ...     {
-                ...         "<name of parameter 1>": <start value>,
-                ...         "<name of parameter 2>": <start value>
+                ...         "start_values": {
+                ...             "<name of parameter 1>": (<start value>, unit e.g 'kg.m2'),
+                ...             "<name of parameter 2>": <start value>
                 ...     }
                 ... }
 
@@ -866,7 +828,7 @@ class Run:
                 fmu_paths=fmu_paths or {},
                 model_classes=model_classes or {},
                 connections_config=connections_config or {},
-                start_values=start_values or {},
+                init_configs=init_configs or {},
                 parameters_to_log=parameters_to_log or {},
             ),
             _simulation_config=SimulationConfig(
@@ -888,7 +850,7 @@ class Run:
 
         Args:
             run_name (str): Name of the run.
-            config_file_path (Path | str): Path to the config file.
+            config_file_path (co.FilePath): Path to the config file.
             fmu_paths (FmuPaths | None, optional):
                 Dictionary which defines which fmu should be simulated.
                 key -> name of the fmu; value -> path to the fmu
@@ -936,12 +898,12 @@ class Run:
         )
 
     @classmethod
-    def from_hdf5(cls, run_name: str, hdf5_path: Path | str) -> Run:
+    def from_hdf5(cls, run_name: str, hdf5_path: co.FilePath) -> Run:
         """Load a run from a hdf5 file.
 
         Args:
             run_name (str): Name of the run.
-            hdf5_path (Path | str): Path to the hdf5 file.
+            hdf5_path (co.FilePath): Path to the hdf5 file.
 
         Returns:
             Run: Run instance.
@@ -975,11 +937,11 @@ class Run:
         """Updates the meta data of a run."""
         self._run_meta.update()
 
-    def to_hdf5(self, hdf5_path: Path | str) -> None:
+    def to_hdf5(self, hdf5_path: co.FilePath) -> None:
         """Store the run inside a hdf5 file.
 
         Args:
-            hdf5_path (Path | str): Path to the hdf5 file.
+            hdf5_path (co.FilePath): Path to the hdf5 file.
         """
         hdf5_path = utils.convert_str_to_path(hdf5_path, "hdf5_path")
         sofirpy.rdm.hdf5.run_to_hdf5.RunToHDF5.store(run=self, hdf5_path=hdf5_path)
@@ -1079,7 +1041,7 @@ class Models:
         fmu_paths: co.FmuPaths,
         model_classes: co.ModelClasses,
         connections_config: co.ConnectionsConfig,
-        start_values: co.StartValues,
+        init_configs: co.InitConfigs,
         parameters_to_log: co.ParametersToLog,
     ) -> Self:
         fmus = {
@@ -1087,7 +1049,7 @@ class Models:
                 name=name,
                 fmu_path=utils.convert_str_to_path(path, "fmu_path"),
                 connections=connections_config.get(name),
-                start_values=start_values.get(name),
+                init_config=init_configs.get(name),
                 parameters_to_log=parameters_to_log.get(name),
             )
             for name, path in fmu_paths.items()
@@ -1097,7 +1059,7 @@ class Models:
                 name=name,
                 model_class=model_class,
                 connections=connections_config.get(name),
-                start_values=start_values.get(name),
+                init_config=init_configs.get(name),
                 parameters_to_log=parameters_to_log.get(name),
             )
             for name, model_class in model_classes.items()
@@ -1159,54 +1121,36 @@ class Models:
             model.remove_connections_to_model(model_name)
 
     @property
-    def start_values(self) -> co.StartValues | None:
-        start_values = {
-            name: model.start_values
+    def init_configs(self) -> co.InitConfigs | None:
+        init_configs = {
+            name: model.init_config
             for name, model in self.models.items()
-            if model.start_values
+            if model.init_config
         }
-        return start_values or None
+        return init_configs or None
 
-    @start_values.setter
-    def start_values(self, start_values: co.StartValues | None) -> None:
-        if start_values is None:
-            start_values = {}
+    @init_configs.setter
+    def init_configs(self, init_configs: co.InitConfigs | None) -> None:
+        if init_configs is None:
+            init_configs = {}
         for model_name, model in self.models.items():
-            model.start_values = start_values.get(model_name)
+            model.init_config = init_configs.get(model_name)
 
-    def get_start_values_of_model(
+    def get_init_config_of_model(
         self,
         model_name: str,
     ) -> dict[str, co.StartValue] | None:
-        return self.models[model_name].start_values
+        return self.models[model_name].init_config
 
-    def set_start_values_of_model(
+    def set_init_config_of_model(
         self,
         model_name: str,
-        start_values: dict[str, co.StartValue],
+        init_config: co.InitConfig,
     ) -> None:
-        self.models[model_name].start_values = start_values
+        self.models[model_name].init_config = init_config
 
-    def remove_start_values_of_model(self, model_name: str) -> None:
-        self.models[model_name].start_values = None
-
-    def get_start_value(
-        self,
-        model_name: str,
-        parameter_name: str,
-    ) -> co.StartValue | None:
-        return self.models[model_name].get_start_value(parameter_name)
-
-    def set_start_value(
-        self,
-        model_name: str,
-        parameter_name: str,
-        value: co.StartValue,
-    ) -> None:
-        self.models[model_name].set_start_value(parameter_name, value)
-
-    def remove_start_value(self, model_name: str, parameter_name: str) -> None:
-        self.models[model_name].remove_start_value(parameter_name)
+    def remove_init_config_of_model(self, model_name: str) -> None:
+        self.models[model_name].init_config = None
 
     @property
     def connections_config(self) -> co.ConnectionsConfig | None:
@@ -1313,7 +1257,7 @@ class Models:
 
     def get_simulation_args(self) -> dict[str, Any]:
         return {
-            "start_values": self.start_values,
+            "init_configs": self.init_configs,
             "connections_config": self.connections_config,
             "parameters_to_log": self.parameters_to_log,
             "fmu_paths": self.fmu_paths,
@@ -1325,26 +1269,11 @@ class Models:
 class Model:
     name: str
     connections: co.Connections | None
-    start_values: dict[str, co.StartValue] | None
+    init_config: dict[str, Any] | None
     parameters_to_log: list[str] | None
 
     class Config:
         arbitrary_types_allowed = True
-
-    def get_start_value(self, parameter_name: str) -> co.StartValue | None:
-        if self.start_values is None:
-            return None
-        return self.start_values.get(parameter_name)
-
-    def set_start_value(self, parameter_name: str, value: co.StartValue) -> None:
-        if self.start_values is None:
-            self.start_values = {}
-        self.start_values[parameter_name] = value
-
-    def remove_start_value(self, parameter_name: str) -> None:
-        if self.start_values is None:
-            return
-        del self.start_values[parameter_name]
 
     def get_connection(self, input_name: str) -> co.Connection | None:
         if self.connections is None:

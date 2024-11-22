@@ -9,6 +9,7 @@ from typing import Final
 from OMPython import ModelicaSystem
 from typing_extensions import Self
 
+import sofirpy.common as co
 from sofirpy import utils
 from sofirpy.fmu_export.fmu_export import FmuExport, FmuExportError
 
@@ -130,17 +131,17 @@ class OpenModelicaFmuExport(FmuExport):
 
 
 def export_open_modelica_model(
-    model_path: Path | str,
+    model_path: co.FilePath,
     model_name: str,
-    output_directory: Path | str,
+    output_directory: co.FilePath,
 ) -> Path:
     """Exports a modelica model as an fmu and moves the fmu to the output directory
 
     Args:
-        model_path (Path | str): Path to the modelica model that should be
+        model_path (co.FilePath): Path to the modelica model that should be
             exported.
         model_name (str): Name of the model.
-        output_directory (Path | str): Output directory for the fmu.
+        output_directory (co.FilePath): Output directory for the fmu.
 
     Returns:
         Path: Path to the exported FMU.

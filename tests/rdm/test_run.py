@@ -201,7 +201,7 @@ def _compare_python_model(
 def compare_model(this_run_model: Model, other_run_model: Model) -> None:
     assert this_run_model.name == other_run_model.name
     assert this_run_model.connections == other_run_model.connections
-    assert this_run_model.start_values == other_run_model.start_values
+    assert this_run_model.init_config == other_run_model.init_config
     assert this_run_model.parameters_to_log == other_run_model.parameters_to_log
 
 
