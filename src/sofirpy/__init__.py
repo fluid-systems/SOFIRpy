@@ -5,14 +5,14 @@ __email__ = "daniele.inturri@stud.tu-darmstadt.de"
 __version__ = "2.0.0"
 
 __all__ = [
+    "HDF5",
+    "BaseSimulator",
+    "Run",
+    "SimulationEntity",
     "export_dymola_model",
     "export_open_modelica_model",
-    "Run",
-    "HDF5",
-    "SimulationEntity",
-    "simulate",
-    "BaseSimulator",
     "plot_results",
+    "simulate",
 ]
 
 from .fmu_export.dymola_fmu_export import export_dymola_model

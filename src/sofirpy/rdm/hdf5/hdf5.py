@@ -635,7 +635,7 @@ class Group(HDF5Object):
 class Groups:
     _groups: dict[str, Group] = field(default_factory=dict)
 
-    def __getattr__(self, __name: str) -> Any:
+    def __getattr__(self, /, __name: str) -> Any:
         if __name in self._groups:
             return self._groups[__name]
         raise AttributeError(f"No group with name '{__name}'")
@@ -648,7 +648,7 @@ class Groups:
 class Datasets:
     _datasets: dict[str, Dataset] = field(default_factory=dict)
 
-    def __getattr__(self, __name: str) -> Any:
+    def __getattr__(self, /, __name: str) -> Any:
         if __name in self._datasets:
             return self._datasets[__name]
         raise AttributeError(f"No dataset with name '{__name}'")
