@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+import re
 import shutil
 from importlib.metadata import distributions
 from pathlib import Path
@@ -236,13 +237,24 @@ def get_dependencies_of_current_env() -> dict[str, str]:
     return {package.metadata["Name"]: package.version for package in installed_packages}
 
 
-def parse_version(version: str) -> tuple[int, ...]:
+def parse_version(version: str) -> tuple[int, int, int, str, int]:
     """Parse a version string.
 
     Args:
         version (str): version string
 
     Returns:
-        tuple[int,...]: version as tuple
+        tuple[int, int, int, str, int]: version as tuple
     """
-    return tuple(int(i) for i in version.split("."))
+    match = re.match(r"(\d+)\.(\d+)\.(\d+)([a-z]*)(\d*)", version)
+    if not match:
+        raise ValueError(f"Invalid version format: {version}")
+
+    major, minor, patch, pre_release, pre_release_num = match.groups()
+    return (
+        int(major),
+        int(minor),
+        int(patch),
+        pre_release or "",
+        int(pre_release_num) if pre_release_num else 0,
+    )
