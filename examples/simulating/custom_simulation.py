@@ -53,12 +53,17 @@ init_configs = {
         },
     },
 }
+parameters_to_log = {
+    "DC_Motor": ["y", "MotorTorque.tau", "inertia.J", "dC_PermanentMagnet.Jr"],
+    "pid": ["u"],
+}
 
 simulator = BaseSimulator(
     fmu_paths=fmu_paths,
     model_classes=model_classes,
     init_configs=init_configs,
     connections_config=connections_config,
+    parameters_to_log=parameters_to_log,
 )
 
 stop_time = 100
@@ -66,5 +71,6 @@ step_size = 1
 while simulator.time < stop_time:
     simulator.do_step(simulator.time, step_size)
     simulator.set_systems_inputs()
+    simulator.record()
     simulator.time += step_size
 simulator.conclude_simulation()

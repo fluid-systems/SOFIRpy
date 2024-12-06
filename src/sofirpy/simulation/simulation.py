@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import logging
-from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Literal, overload
 
@@ -13,70 +12,28 @@ import pandas as pd
 from tqdm import tqdm
 
 import sofirpy.common as co
+from sofirpy.simulation.components import Connection, System, SystemParameter
 from sofirpy.simulation.config import BaseSimulationConfig, ExtendedSimulationConfig
 from sofirpy.simulation.fmu import Fmu, FmuInitConfig
-from sofirpy.simulation.simulation_entity import SimulationEntity
-
-
-@dataclass(frozen=True)
-class System:
-    """System object representing a simulation entity.
-
-    Args:
-            simulation_entity (SimulationEntity): fmu or python model
-            name (str): name of the system
-    """
-
-    simulation_entity: SimulationEntity
-    name: str
-
-
-@dataclass(frozen=True)
-class SystemParameter:
-    """SystemParameter object representing a parameter in a system.
-
-    Args:
-            system (str): Name of the corresponding system
-            name (str): name of the parameter
-    """
-
-    system_name: str
-    name: str
-
-
-@dataclass(frozen=True)
-class Connection:
-    """Representing a connection between two systems.
-
-    Args:
-        input_point (SystemParameter): SystemParameter object that
-            represents an input of a system
-        output_point (SystemParameter): SystemParameter object that
-            represents an output of a system
-    """
-
-    input_point: SystemParameter
-    output_point: SystemParameter
+from sofirpy.simulation.recorder import BaseRecorder
 
 
 class BaseSimulator:
-    time: float
-    step: int
-    systems: dict[str, System]
-    connections: list[Connection]
-
     def __init__(
         self,
         fmu_paths: co.FmuPaths | None = None,
         model_classes: co.SimulationEntityMapping | None = None,
         connections_config: co.ConnectionsConfig | None = None,
         init_configs: co.InitConfigs | None = None,
+        parameters_to_log: co.ParametersToLog | None = None,
+        recorder: type[BaseRecorder] | None = None,
     ) -> None:
         config = BaseSimulationConfig(
             fmu_paths=fmu_paths or {},
             custom_model_classes=model_classes or {},
             connections=connections_config or {},
             init_configs=init_configs or {},
+            parameters_to_log=parameters_to_log or {},
         )
         config.init_configs, fmu_classes = _extract_fmu_init_configs(
             config.fmu_paths, config.init_configs
@@ -84,6 +41,9 @@ class BaseSimulator:
         simulation_entity_mapping = fmu_classes | config.custom_model_classes
         self.systems = init_systems(simulation_entity_mapping, config.init_configs)
         self.connections = init_connections(config.connections)
+        self.parameters_to_log = init_parameter_list(config.parameters_to_log or {})
+        recorder_class = recorder or BaseRecorder
+        self.recorder = recorder_class(self.systems, self.parameters_to_log)
         self.time = 0
         self.step = 0
 
@@ -137,6 +97,14 @@ class BaseSimulator:
         system = self.systems[system_name]
         system.simulation_entity.set_parameter(parameter_name, value)
 
+    def record(self) -> None:
+        """Record the values of the parameters that are set to be logged."""
+        for parameter in self.parameters_to_log:
+            system_name = parameter.system_name
+            parameter_name = parameter.name
+            value = self.get_parameter(system_name, parameter_name)
+            self.recorder.record(parameter, value)
+
     def conclude_simulation(self) -> None:
         """Conclude the simulation for all simulation entities."""
         for system in self.systems.values():
@@ -157,15 +125,19 @@ class Simulator(BaseSimulator):
         init_configs: co.InitConfigs | None = None,
         parameters_to_log: co.ParametersToLog | None = None,
     ) -> None:
-        super().__init__(fmu_paths, model_classes, connections_config, init_configs)
+        super().__init__(
+            fmu_paths,
+            model_classes,
+            connections_config,
+            init_configs,
+            parameters_to_log=parameters_to_log,
+        )
         extended_simulation_config = ExtendedSimulationConfig(
             system_names=set(self.systems),
             stop_time=stop_time,
             step_size=step_size,
             logging_step_size=logging_step_size or step_size,
-            parameters_to_log=parameters_to_log or {},
         )
-        self.parameters_to_log = init_parameter_list(parameters_to_log or {})
         self.stop_time = extended_simulation_config.stop_time
         self.step_size = extended_simulation_config.step_size
         self.logging_step_size = extended_simulation_config.logging_step_size

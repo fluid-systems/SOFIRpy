@@ -11,6 +11,7 @@ class BaseSimulationConfig(pydantic.BaseModel):
     custom_model_classes: co.SimulationEntityMapping
     connections: co.ConnectionsConfig
     init_configs: co.InitConfigs
+    parameters_to_log: co.ParametersToLog
 
     @property
     def system_names(self) -> set[str]:
@@ -67,15 +68,6 @@ class BaseSimulationConfig(pydantic.BaseModel):
                 )
         return self
 
-
-class ExtendedSimulationConfig(pydantic.BaseModel):
-    system_names: set[str]
-    stop_time: float = pydantic.Field(ge=0.0)
-    step_size: float = pydantic.Field(gt=0.0)
-    logging_step_size: float = pydantic.Field(gt=0.0)
-    start_time: float = 0.0
-    parameters_to_log: co.ParametersToLog
-
     @pydantic.model_validator(mode="after")
     def check_system_in_parameters_to_log_exists(self) -> Self:
         for system_name in self.parameters_to_log:
@@ -84,6 +76,14 @@ class ExtendedSimulationConfig(pydantic.BaseModel):
                     f"System {system_name!r} in parameters_to_log does not exist."
                 )
         return self
+
+
+class ExtendedSimulationConfig(pydantic.BaseModel):
+    system_names: set[str]
+    stop_time: float = pydantic.Field(ge=0.0)
+    step_size: float = pydantic.Field(gt=0.0)
+    logging_step_size: float = pydantic.Field(gt=0.0)
+    start_time: float = 0.0
 
     @pydantic.model_validator(mode="after")
     def check_logging_step_size_is_multiple_of_step_size(self) -> Self:
