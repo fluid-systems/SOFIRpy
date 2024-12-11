@@ -101,6 +101,9 @@ class BaseSimulator:
         """Record the values of the parameters that are set to be logged."""
         self.recorder.record(self.time)
 
+    def get_results_as_pandas_df(self) -> pd.DataFrame:
+        return self.recorder.to_pandas()
+
     def conclude_simulation(self) -> None:
         """Conclude the simulation for all simulation entities."""
         for system in self.systems.values():
