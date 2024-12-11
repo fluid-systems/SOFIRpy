@@ -2,7 +2,7 @@
 
 __author__ = "Daniele Inturri"
 __email__ = "daniele.inturri@stud.tu-darmstadt.de"
-__version__ = "2.0.0a1"
+__version__ = "2.0.0a2"
 
 __all__ = [
     "HDF5",
