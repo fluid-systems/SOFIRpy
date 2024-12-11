@@ -42,9 +42,8 @@ class BaseSimulator:
         self.systems = init_systems(simulation_entity_mapping, config.init_configs)
         self.connections = init_connections(config.connections)
         self.parameters_to_log = init_parameter_list(config.parameters_to_log or {})
-        self.recorder = (
-            recorder(self.systems, self.parameters_to_log) if recorder else None
-        )
+        recorder = recorder or BaseRecorder
+        self.recorder = recorder(self.systems, self.parameters_to_log)
         self.time = 0
         self.step = 0
 
@@ -100,13 +99,7 @@ class BaseSimulator:
 
     def record(self) -> None:
         """Record the values of the parameters that are set to be logged."""
-        if self.recorder is None:
-            return
-        for parameter in self.parameters_to_log:
-            system_name = parameter.system_name
-            parameter_name = parameter.name
-            value = self.get_parameter(system_name, parameter_name)
-            self.recorder.record(parameter, value)
+        self.recorder.record(self.time)
 
     def conclude_simulation(self) -> None:
         """Conclude the simulation for all simulation entities."""

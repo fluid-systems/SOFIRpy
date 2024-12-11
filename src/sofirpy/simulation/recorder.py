@@ -17,16 +17,39 @@ class BaseRecorder:
         self.log = self._init_log()
 
     def get_full_name(self, system_name: str, parameter_name: str) -> str:
+        """Return the full name of a parameter.
+
+        Args:
+            system_name (str): Name of the system
+            parameter_name (str): Name of the parameter
+
+        Returns:
+            str: Full name of the parameter
+        """
         return f"{system_name}.{parameter_name}"
 
-    def record(
-        self, system_parameter: SystemParameter, value: co.ParameterValue
-    ) -> None:
-        self.log[self._get_full_name_from_system_parameter(system_parameter)].append(
-            value
-        )
+    def record(self, time: float) -> None:
+        """Record specified parameters of the systems.
+
+        Args:
+            time (float): Current simulation time
+        """
+        self.log["time"].append(time)
+        for system_parameter in self.system_parameters:
+            value = self.systems[
+                system_parameter.system_name
+            ].simulation_entity.get_parameter_value(system_parameter.name)
+            self.log[
+                self._get_full_name_from_system_parameter(system_parameter)
+            ].append(value)
 
     def get_dtypes(self) -> dict[str, type[Any]]:
+        """Get the dtypes of the parameters to be logged.
+
+        Returns:
+            dict[str, type[Any]]: Dtypes of the parameters to be logged.
+            key -> full parameter name; value -> dtype
+        """
         dtypes = {}
         dtypes["time"] = float
         for system_parameter in self.system_parameters:
@@ -37,6 +60,11 @@ class BaseRecorder:
         return dtypes
 
     def to_pandas(self) -> pd.DataFrame:
+        """Convert the logged data to a pandas DataFrame.
+
+        Returns:
+            pd.DataFrame: Logged data as a pandas DataFrame
+        """
         dtypes = self.get_dtypes()
         return pd.DataFrame(self.log, dtype=dtypes)
 
