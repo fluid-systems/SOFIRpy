@@ -47,8 +47,8 @@ class BaseSimulator:
         self.systems = init_systems(simulation_entity_mapping, config.init_configs)
         self.connections = init_connections(config.connections)
         self.parameters_to_log = init_parameter_list(config.parameters_to_log or {})
-        recorder = recorder or VariableSizeRecorder
-        self.recorder = recorder(self.parameters_to_log, self.systems, recorder_config)
+        _recorder = recorder or VariableSizeRecorder
+        self.recorder = _recorder(self.parameters_to_log, self.systems, recorder_config)
         self.time = 0
         self.step = 0
 
