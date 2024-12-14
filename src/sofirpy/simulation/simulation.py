@@ -15,7 +15,11 @@ import sofirpy.common as co
 from sofirpy.simulation.components import Connection, System, SystemParameter
 from sofirpy.simulation.config import BaseSimulationConfig, ExtendedSimulationConfig
 from sofirpy.simulation.fmu import Fmu, FmuInitConfig
-from sofirpy.simulation.recorder import BaseRecorder, FixedSizedRecorder
+from sofirpy.simulation.recorder import (
+    BaseRecorder,
+    FixedSizedRecorder,
+    VariableSizeRecorder,
+)
 
 
 class BaseSimulator:
@@ -43,11 +47,8 @@ class BaseSimulator:
         self.systems = init_systems(simulation_entity_mapping, config.init_configs)
         self.connections = init_connections(config.connections)
         self.parameters_to_log = init_parameter_list(config.parameters_to_log or {})
-        self.recorder = (
-            recorder(self.systems, self.parameters_to_log, recorder_config)
-            if recorder is not None
-            else recorder
-        )
+        recorder = recorder or VariableSizeRecorder
+        self.recorder = recorder(self.parameters_to_log, self.systems, recorder_config)
         self.time = 0
         self.step = 0
 
@@ -100,17 +101,6 @@ class BaseSimulator:
         """
         system = self.systems[system_name]
         system.simulation_entity.set_parameter(parameter_name, value)
-
-    def record(self) -> None:
-        """Record the values of the parameters that are set to be logged."""
-        if self.recorder is None:
-            raise ValueError
-        self.recorder.record(self.time)
-
-    def get_results_as_pandas_df(self) -> pd.DataFrame:
-        if self.recorder is None:
-            raise ValueError
-        return self.recorder.to_pandas()
 
     def conclude_simulation(self) -> None:
         """Conclude the simulation for all simulation entities."""
