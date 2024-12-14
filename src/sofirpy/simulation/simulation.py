@@ -15,7 +15,7 @@ import sofirpy.common as co
 from sofirpy.simulation.components import Connection, System, SystemParameter
 from sofirpy.simulation.config import BaseSimulationConfig, ExtendedSimulationConfig
 from sofirpy.simulation.fmu import Fmu, FmuInitConfig
-from sofirpy.simulation.recorder import BaseRecorder
+from sofirpy.simulation.recorder import BaseRecorder, FixedSizedRecorder
 
 
 class BaseSimulator:
@@ -27,6 +27,7 @@ class BaseSimulator:
         init_configs: co.InitConfigs | None = None,
         parameters_to_log: co.ParametersToLog | None = None,
         recorder: type[BaseRecorder] | None = None,
+        recorder_config: dict[str, Any] | None = None,
     ) -> None:
         config = BaseSimulationConfig(
             fmu_paths=fmu_paths or {},
@@ -42,8 +43,11 @@ class BaseSimulator:
         self.systems = init_systems(simulation_entity_mapping, config.init_configs)
         self.connections = init_connections(config.connections)
         self.parameters_to_log = init_parameter_list(config.parameters_to_log or {})
-        recorder = recorder or BaseRecorder
-        self.recorder = recorder(self.systems, self.parameters_to_log)
+        self.recorder = (
+            recorder(self.systems, self.parameters_to_log, recorder_config)
+            if recorder is not None
+            else recorder
+        )
         self.time = 0
         self.step = 0
 
@@ -99,9 +103,13 @@ class BaseSimulator:
 
     def record(self) -> None:
         """Record the values of the parameters that are set to be logged."""
+        if self.recorder is None:
+            raise ValueError
         self.recorder.record(self.time)
 
     def get_results_as_pandas_df(self) -> pd.DataFrame:
+        if self.recorder is None:
+            raise ValueError
         return self.recorder.to_pandas()
 
     def conclude_simulation(self) -> None:
@@ -124,13 +132,6 @@ class Simulator(BaseSimulator):
         init_configs: co.InitConfigs | None = None,
         parameters_to_log: co.ParametersToLog | None = None,
     ) -> None:
-        super().__init__(
-            fmu_paths,
-            model_classes,
-            connections_config,
-            init_configs,
-            parameters_to_log=parameters_to_log,
-        )
         extended_simulation_config = ExtendedSimulationConfig(
             system_names=set(self.systems),
             stop_time=stop_time,
@@ -141,6 +142,19 @@ class Simulator(BaseSimulator):
         self.step_size = extended_simulation_config.step_size
         self.logging_step_size = extended_simulation_config.logging_step_size
         self.start_time = extended_simulation_config.start_time
+        super().__init__(
+            fmu_paths,
+            model_classes,
+            connections_config,
+            init_configs,
+            parameters_to_log=parameters_to_log,
+            recorder=FixedSizedRecorder,
+            recorder_config={
+                "stop_time": self.stop_time,
+                "step_size": self.step_size,
+                "logging_step_size": self.logging_step_size,
+            },
+        )
 
     def simulate(
         self,
@@ -191,29 +205,20 @@ class Simulator(BaseSimulator):
         time_series = self.compute_time_array(
             self.stop_time, self.step_size, self.start_time
         )
-        number_log_steps = int(self.stop_time / self.logging_step_size) + 1
-        logging_multiple = round(self.logging_step_size / self.step_size)
-        dtypes = self.get_dtypes_of_logged_parameters()
-        # self.results is a structured numpy array
-        self.results = np.zeros(number_log_steps, dtype=dtypes)
-
         logging.info("Starting simulation.")
 
-        self.log_values(time=0, log_step=0)
-        log_step = 1
+        self.recorder.record(time=0, time_step=0)
         for time_step, time in enumerate(tqdm(time_series[:-1])):
             self.do_step(time, self.step_size)
             self.set_systems_inputs()
-            if ((time_step + 1) % logging_multiple) == 0:
-                self.log_values(time_series[time_step + 1], log_step)
-                log_step += 1
+            self.recorder.record(time, time_step)
 
         logging.info("Simulation done.")
         logging.info("Concluding simulation.")
         self.conclude_simulation()
         logging.info("Simulation concluded.")
 
-        return self.convert_to_data_frame(self.results)
+        return self.recorder.to_pandas()
 
     def compute_time_array(
         self,
@@ -236,34 +241,6 @@ class Simulator(BaseSimulator):
             return time_series[:-1]
         return time_series
 
-    def log_values(self, time: float, log_step: int) -> None:
-        """Log parameter values that are set to be logged.
-
-        Args:
-            time (float): current simulation time
-            log_step (int): current time step
-        """
-        self.results[log_step][0] = time
-
-        for i, parameter in enumerate(self.parameters_to_log, start=1):
-            system_name = parameter.system_name
-            system = self.systems[system_name]
-            parameter_name = parameter.name
-            value = system.simulation_entity.get_parameter_value(parameter_name)
-            self.results[log_step][i] = value
-
-    def convert_to_data_frame(self, results: npt.NDArray[np.void]) -> pd.DataFrame:
-        """Covert result numpy array to DataFrame.
-
-        Args:
-            results (npt.NDArray[np.void]): Results of the simulation.
-
-        Returns:
-            pd.DataFrame: Results as DataFrame. Columns are named as follows:
-            '<system_name>.<parameter_name>'.
-        """
-        return pd.DataFrame(results)
-
     def get_units(self) -> co.Units:
         """Get a dictionary with units of all logged parameters.
 
@@ -280,21 +257,6 @@ class Simulator(BaseSimulator):
             units[f"{system.name}.{parameter_name}"] = unit
 
         return units
-
-    def get_dtypes_of_logged_parameters(self) -> npt.DTypeLike:
-        """Get the dtypes of the logged parameters.
-
-        Returns:
-            np.dtypes.VoidDType: dtypes of the logged parameters
-        """
-        dtypes: list[tuple[str, type]] = [("time", np.float64)]
-        for parameter in self.parameters_to_log:
-            system_name = parameter.system_name
-            system = self.systems[system_name]
-            parameter_name = parameter.name
-            dtype = system.simulation_entity.get_dtype_of_parameter(parameter_name)
-            dtypes.append((f"{system.name}.{parameter_name}", dtype))
-        return np.dtype(dtypes)
 
 
 @overload
