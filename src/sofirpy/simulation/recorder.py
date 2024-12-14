@@ -68,9 +68,12 @@ class BaseRecorder(ABC):
 
 class VariableSizeRecorder(BaseRecorder):
     def __init__(
-        self, parameters_to_log: list[SystemParameter], systems: dict[str, System]
+        self,
+        parameters_to_log: list[SystemParameter],
+        systems: dict[str, System],
+        recorder_config: dict[str, Any] | None = None,
     ) -> None:
-        super().__init__(parameters_to_log, systems)
+        super().__init__(parameters_to_log, systems, recorder_config)
         self.log = self._init_log()
 
     def _init_log(self) -> dict[str, list[co.ParameterValue]]:
@@ -82,7 +85,7 @@ class VariableSizeRecorder(BaseRecorder):
             ] = []
         return log
 
-    def record(self, time: float, time_step: int) -> None:
+    def record(self, time: float, time_step: int = 0) -> None:
         """Record specified parameters of the systems.
 
         Args:
