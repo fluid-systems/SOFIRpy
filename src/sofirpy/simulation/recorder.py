@@ -85,7 +85,7 @@ class VariableSizeRecorder(BaseRecorder):
             ] = []
         return log
 
-    def record(self, time: float, time_step: int = 0) -> None:
+    def record(self, time: float, _: int = 0) -> None:
         """Record specified parameters of the systems.
 
         Args:
