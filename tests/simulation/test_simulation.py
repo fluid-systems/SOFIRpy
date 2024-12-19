@@ -11,7 +11,7 @@ from sofirpy.common import (
     ModelClasses,
     ParametersToLog,
 )
-from sofirpy.simulation.simulation import simulate
+from sofirpy.simulation.simulation import BaseSimulator, VariableSizeRecorder, simulate
 
 
 @pytest.fixture
@@ -128,3 +128,44 @@ def test_simulate_with_bigger_log_step_size(
     assert np.isclose(
         results, test_results[:: int(logging_step_size / step_size)], atol=1e-6
     ).all()
+
+
+def test_custom_simulation_loop_with_variable_logger(
+    connections_config: ConnectionsConfig,
+    fmu_paths: FmuPaths,
+    model_classes: ModelClasses,
+    init_configs: InitConfigs,
+    result_path: Path,
+    parameters_to_log: ParametersToLog,
+) -> None:
+    simulator = BaseSimulator(
+        fmu_paths=fmu_paths,
+        model_classes=model_classes,
+        init_configs=init_configs,
+        connections_config=connections_config,
+        parameters_to_log=parameters_to_log,
+        recorder=VariableSizeRecorder,
+    )
+    stop_time = 2
+    step_size = 1e-3
+    steps = int(stop_time / step_size)
+    while (
+        simulator.step < steps
+    ):  # use steps instead of stop time to avoid floating point errors
+        simulator.recorder.record(simulator.time, simulator.step)
+        simulator.do_step(simulator.time, step_size)
+        simulator.set_systems_inputs()
+        simulator.time += step_size
+        simulator.step += 1
+    simulator.recorder.record(simulator.time, simulator.step)
+    simulator.conclude_simulation()
+    results = simulator.recorder.to_pandas()
+    assert simulator.get_units() == {
+        "DC_Motor.y": None,
+        "DC_Motor.MotorTorque.tau": "N.m",
+        "pid.u": None,
+    }
+    test_results = pd.read_csv(result_path)
+    test_results = test_results.to_numpy()
+    results = results.to_numpy()
+    assert np.isclose(results, test_results, atol=1e-6).all()
