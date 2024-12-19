@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import logging
-from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Literal, overload
 
@@ -13,70 +12,33 @@ import pandas as pd
 from tqdm import tqdm
 
 import sofirpy.common as co
+from sofirpy.simulation.components import Connection, System, SystemParameter
 from sofirpy.simulation.config import BaseSimulationConfig, ExtendedSimulationConfig
 from sofirpy.simulation.fmu import Fmu, FmuInitConfig
-from sofirpy.simulation.simulation_entity import SimulationEntity
-
-
-@dataclass(frozen=True)
-class System:
-    """System object representing a simulation entity.
-
-    Args:
-            simulation_entity (SimulationEntity): fmu or python model
-            name (str): name of the system
-    """
-
-    simulation_entity: SimulationEntity
-    name: str
-
-
-@dataclass(frozen=True)
-class SystemParameter:
-    """SystemParameter object representing a parameter in a system.
-
-    Args:
-            system (str): Name of the corresponding system
-            name (str): name of the parameter
-    """
-
-    system_name: str
-    name: str
-
-
-@dataclass(frozen=True)
-class Connection:
-    """Representing a connection between two systems.
-
-    Args:
-        input_point (SystemParameter): SystemParameter object that
-            represents an input of a system
-        output_point (SystemParameter): SystemParameter object that
-            represents an output of a system
-    """
-
-    input_point: SystemParameter
-    output_point: SystemParameter
+from sofirpy.simulation.recorder import (
+    BaseRecorder,
+    FixedSizedRecorder,
+    VariableSizeRecorder,
+)
 
 
 class BaseSimulator:
-    time: float
-    step: int
-    systems: dict[str, System]
-    connections: list[Connection]
-
     def __init__(
         self,
         fmu_paths: co.FmuPaths | None = None,
         model_classes: co.SimulationEntityMapping | None = None,
         connections_config: co.ConnectionsConfig | None = None,
         init_configs: co.InitConfigs | None = None,
+        parameters_to_log: co.ParametersToLog | None = None,
+        recorder: type[BaseRecorder] | None = None,
+        recorder_config: dict[str, Any] | None = None,
     ) -> None:
         config = BaseSimulationConfig(
             fmu_paths=fmu_paths or {},
             custom_model_classes=model_classes or {},
             connections=connections_config or {},
             init_configs=init_configs or {},
+            parameters_to_log=parameters_to_log or {},
         )
         config.init_configs, fmu_classes = _extract_fmu_init_configs(
             config.fmu_paths, config.init_configs
@@ -84,8 +46,11 @@ class BaseSimulator:
         simulation_entity_mapping = fmu_classes | config.custom_model_classes
         self.systems = init_systems(simulation_entity_mapping, config.init_configs)
         self.connections = init_connections(config.connections)
-        self.time = 0
-        self.step = 0
+        self.parameters_to_log = init_parameter_list(config.parameters_to_log or {})
+        _recorder = recorder or VariableSizeRecorder
+        self.recorder = _recorder(self.parameters_to_log, self.systems, recorder_config)
+        self.time: float = 0.0
+        self.step: int = 0
 
     def do_step(self, time: float, step_size: float) -> None:
         """Perform a calculation in all systems.
@@ -142,6 +107,23 @@ class BaseSimulator:
         for system in self.systems.values():
             system.simulation_entity.conclude_simulation()
 
+    def get_units(self) -> co.Units:
+        """Get a dictionary with units of all logged parameters.
+
+        Returns:
+            Units: keys: parameter name, values: unit. If the unit can
+            not be obtained it is set to None.
+        """
+        units = {}
+        for parameter in self.parameters_to_log:
+            system_name = parameter.system_name
+            system = self.systems[system_name]
+            parameter_name = parameter.name
+            unit = system.simulation_entity.get_unit(parameter_name)
+            units[f"{system.name}.{parameter_name}"] = unit
+
+        return units
+
 
 class Simulator(BaseSimulator):
     """Object that performs the simulation."""
@@ -157,19 +139,28 @@ class Simulator(BaseSimulator):
         init_configs: co.InitConfigs | None = None,
         parameters_to_log: co.ParametersToLog | None = None,
     ) -> None:
-        super().__init__(fmu_paths, model_classes, connections_config, init_configs)
         extended_simulation_config = ExtendedSimulationConfig(
-            system_names=set(self.systems),
             stop_time=stop_time,
             step_size=step_size,
             logging_step_size=logging_step_size or step_size,
-            parameters_to_log=parameters_to_log or {},
         )
-        self.parameters_to_log = init_parameter_list(parameters_to_log or {})
         self.stop_time = extended_simulation_config.stop_time
         self.step_size = extended_simulation_config.step_size
         self.logging_step_size = extended_simulation_config.logging_step_size
         self.start_time = extended_simulation_config.start_time
+        super().__init__(
+            fmu_paths,
+            model_classes,
+            connections_config,
+            init_configs,
+            parameters_to_log=parameters_to_log,
+            recorder=FixedSizedRecorder,
+            recorder_config={
+                "stop_time": self.stop_time,
+                "step_size": self.step_size,
+                "logging_step_size": self.logging_step_size,
+            },
+        )
 
     def simulate(
         self,
@@ -220,29 +211,20 @@ class Simulator(BaseSimulator):
         time_series = self.compute_time_array(
             self.stop_time, self.step_size, self.start_time
         )
-        number_log_steps = int(self.stop_time / self.logging_step_size) + 1
-        logging_multiple = round(self.logging_step_size / self.step_size)
-        dtypes = self.get_dtypes_of_logged_parameters()
-        # self.results is a structured numpy array
-        self.results = np.zeros(number_log_steps, dtype=dtypes)
-
         logging.info("Starting simulation.")
 
-        self.log_values(time=0, log_step=0)
-        log_step = 1
         for time_step, time in enumerate(tqdm(time_series[:-1])):
+            self.recorder.record(time=time, time_step=time_step)
             self.do_step(time, self.step_size)
             self.set_systems_inputs()
-            if ((time_step + 1) % logging_multiple) == 0:
-                self.log_values(time_series[time_step + 1], log_step)
-                log_step += 1
+        self.recorder.record(time_series[-1], time_step + 1)
 
         logging.info("Simulation done.")
         logging.info("Concluding simulation.")
         self.conclude_simulation()
         logging.info("Simulation concluded.")
 
-        return self.convert_to_data_frame(self.results)
+        return self.recorder.to_pandas()
 
     def compute_time_array(
         self,
@@ -264,66 +246,6 @@ class Simulator(BaseSimulator):
         if time_series[-1] > stop_time:
             return time_series[:-1]
         return time_series
-
-    def log_values(self, time: float, log_step: int) -> None:
-        """Log parameter values that are set to be logged.
-
-        Args:
-            time (float): current simulation time
-            log_step (int): current time step
-        """
-        self.results[log_step][0] = time
-
-        for i, parameter in enumerate(self.parameters_to_log, start=1):
-            system_name = parameter.system_name
-            system = self.systems[system_name]
-            parameter_name = parameter.name
-            value = system.simulation_entity.get_parameter_value(parameter_name)
-            self.results[log_step][i] = value
-
-    def convert_to_data_frame(self, results: npt.NDArray[np.void]) -> pd.DataFrame:
-        """Covert result numpy array to DataFrame.
-
-        Args:
-            results (npt.NDArray[np.void]): Results of the simulation.
-
-        Returns:
-            pd.DataFrame: Results as DataFrame. Columns are named as follows:
-            '<system_name>.<parameter_name>'.
-        """
-        return pd.DataFrame(results)
-
-    def get_units(self) -> co.Units:
-        """Get a dictionary with units of all logged parameters.
-
-        Returns:
-            Units: keys: parameter name, values: unit. If the unit can
-            not be obtained it is set to None.
-        """
-        units = {}
-        for parameter in self.parameters_to_log:
-            system_name = parameter.system_name
-            system = self.systems[system_name]
-            parameter_name = parameter.name
-            unit = system.simulation_entity.get_unit(parameter_name)
-            units[f"{system.name}.{parameter_name}"] = unit
-
-        return units
-
-    def get_dtypes_of_logged_parameters(self) -> npt.DTypeLike:
-        """Get the dtypes of the logged parameters.
-
-        Returns:
-            np.dtypes.VoidDType: dtypes of the logged parameters
-        """
-        dtypes: list[tuple[str, type]] = [("time", np.float64)]
-        for parameter in self.parameters_to_log:
-            system_name = parameter.system_name
-            system = self.systems[system_name]
-            parameter_name = parameter.name
-            dtype = system.simulation_entity.get_dtype_of_parameter(parameter_name)
-            dtypes.append((f"{system.name}.{parameter_name}", dtype))
-        return np.dtype(dtypes)
 
 
 @overload

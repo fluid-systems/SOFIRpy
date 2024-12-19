@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
+from typing import Any
 
 import sofirpy.common as co
 
@@ -64,7 +65,7 @@ class SimulationEntity(ABC):
         """Conclude the simulation."""
         return None
 
-    def get_dtype_of_parameter(self, parameter_name: str) -> type:
+    def get_dtype_of_parameter(self, parameter_name: str) -> type[Any]:
         """Return the data type of a parameter.
 
         Args:
