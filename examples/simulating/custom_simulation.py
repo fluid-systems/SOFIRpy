@@ -1,8 +1,12 @@
+import logging
 import os
 import sys
+from math import log
 from pathlib import Path
 
-from sofirpy import BaseSimulator
+import matplotlib.pyplot as plt
+
+from sofirpy import BaseSimulator, FixedSizedRecorder, plot_results
 from sofirpy.common import Connection
 
 sys.path.append(os.path.join(os.path.dirname(__file__), "../"))
@@ -57,20 +61,39 @@ parameters_to_log = {
     "DC_Motor": ["y", "MotorTorque.tau", "inertia.J", "dC_PermanentMagnet.Jr"],
     "pid": ["u"],
 }
-
+stop_time = 10
+step_size = 1e-3
+logging_step_size = 1e-1
 simulator = BaseSimulator(
     fmu_paths=fmu_paths,
     model_classes=model_classes,
     init_configs=init_configs,
     connections_config=connections_config,
     parameters_to_log=parameters_to_log,
+    recorder=FixedSizedRecorder,
+    recorder_config={
+        "stop_time": stop_time,
+        "step_size": step_size,
+        "logging_step_size": logging_step_size,
+    },
 )
 
-stop_time = 100
-step_size = 1
+
 while simulator.time < stop_time:
+    simulator.recorder.record(simulator.time, simulator.step)
     simulator.do_step(simulator.time, step_size)
     simulator.set_systems_inputs()
-    simulator.record()
     simulator.time += step_size
+    simulator.step += 1
+simulator.recorder.record(simulator.time, simulator.step)
 simulator.conclude_simulation()
+results = simulator.recorder.to_pandas()
+ax, fig = plot_results(
+    results,
+    "time",
+    "DC_Motor.y",
+    x_label="time in s",
+    y_label="speed in rad/s",
+    title="Speed over Time",
+)
+plt.show()
