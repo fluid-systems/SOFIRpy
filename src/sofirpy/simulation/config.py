@@ -79,7 +79,6 @@ class BaseSimulationConfig(pydantic.BaseModel):
 
 
 class ExtendedSimulationConfig(pydantic.BaseModel):
-    system_names: set[str]
     stop_time: float = pydantic.Field(ge=0.0)
     step_size: float = pydantic.Field(gt=0.0)
     logging_step_size: float = pydantic.Field(gt=0.0)

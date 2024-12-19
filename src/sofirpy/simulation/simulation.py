@@ -123,7 +123,6 @@ class Simulator(BaseSimulator):
         parameters_to_log: co.ParametersToLog | None = None,
     ) -> None:
         extended_simulation_config = ExtendedSimulationConfig(
-            system_names=set(self.systems),
             stop_time=stop_time,
             step_size=step_size,
             logging_step_size=logging_step_size or step_size,
@@ -197,11 +196,11 @@ class Simulator(BaseSimulator):
         )
         logging.info("Starting simulation.")
 
-        self.recorder.record(time=0, time_step=0)
         for time_step, time in enumerate(tqdm(time_series[:-1])):
+            self.recorder.record(time=time, time_step=time_step)
             self.do_step(time, self.step_size)
             self.set_systems_inputs()
-            self.recorder.record(time, time_step)
+        self.recorder.record(time_series[-1], time_step + 1)
 
         logging.info("Simulation done.")
         logging.info("Concluding simulation.")

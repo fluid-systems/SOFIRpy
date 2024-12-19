@@ -85,7 +85,7 @@ class VariableSizeRecorder(BaseRecorder):
             ] = []
         return log
 
-    def record(self, time: float, _: int = 0) -> None:
+    def record(self, time: float, time_step: int = 0) -> None:
         """Record specified parameters of the systems.
 
         Args:
@@ -152,7 +152,7 @@ class FixedSizedRecorder(BaseRecorder):
         return np.dtype(dtypes)
 
     def record(self, time: float, time_step: int) -> None:
-        if ((time_step + 1) % self.logging_multiple) != 0 and time_step != 0:
+        if (time_step % self.logging_multiple) != 0:
             return
         self.log[self.log_step][0] = time
         for i, parameter in enumerate(self.parameters_to_log, start=1):
