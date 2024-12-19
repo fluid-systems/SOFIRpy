@@ -107,6 +107,23 @@ class BaseSimulator:
         for system in self.systems.values():
             system.simulation_entity.conclude_simulation()
 
+    def get_units(self) -> co.Units:
+        """Get a dictionary with units of all logged parameters.
+
+        Returns:
+            Units: keys: parameter name, values: unit. If the unit can
+            not be obtained it is set to None.
+        """
+        units = {}
+        for parameter in self.parameters_to_log:
+            system_name = parameter.system_name
+            system = self.systems[system_name]
+            parameter_name = parameter.name
+            unit = system.simulation_entity.get_unit(parameter_name)
+            units[f"{system.name}.{parameter_name}"] = unit
+
+        return units
+
 
 class Simulator(BaseSimulator):
     """Object that performs the simulation."""
@@ -229,23 +246,6 @@ class Simulator(BaseSimulator):
         if time_series[-1] > stop_time:
             return time_series[:-1]
         return time_series
-
-    def get_units(self) -> co.Units:
-        """Get a dictionary with units of all logged parameters.
-
-        Returns:
-            Units: keys: parameter name, values: unit. If the unit can
-            not be obtained it is set to None.
-        """
-        units = {}
-        for parameter in self.parameters_to_log:
-            system_name = parameter.system_name
-            system = self.systems[system_name]
-            parameter_name = parameter.name
-            unit = system.simulation_entity.get_unit(parameter_name)
-            units[f"{system.name}.{parameter_name}"] = unit
-
-        return units
 
 
 @overload
