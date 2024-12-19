@@ -1,10 +1,6 @@
-import logging
 import os
 import sys
-from math import log
 from pathlib import Path
-
-import matplotlib.pyplot as plt
 
 from sofirpy import BaseSimulator, FixedSizedRecorder, plot_results
 from sofirpy.common import Connection
@@ -63,7 +59,7 @@ parameters_to_log = {
 }
 stop_time = 10
 step_size = 1e-3
-logging_step_size = 1e-1
+logging_step_size = 1e-2
 simulator = BaseSimulator(
     fmu_paths=fmu_paths,
     model_classes=model_classes,
@@ -96,4 +92,3 @@ ax, fig = plot_results(
     y_label="speed in rad/s",
     title="Speed over Time",
 )
-plt.show()
