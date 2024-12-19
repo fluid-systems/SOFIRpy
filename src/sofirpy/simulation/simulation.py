@@ -49,8 +49,8 @@ class BaseSimulator:
         self.parameters_to_log = init_parameter_list(config.parameters_to_log or {})
         _recorder = recorder or VariableSizeRecorder
         self.recorder = _recorder(self.parameters_to_log, self.systems, recorder_config)
-        self.time = 0
-        self.step = 0
+        self.time: float = 0.0
+        self.step: int = 0
 
     def do_step(self, time: float, step_size: float) -> None:
         """Perform a calculation in all systems.
