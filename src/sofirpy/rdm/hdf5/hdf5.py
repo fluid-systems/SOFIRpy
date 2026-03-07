@@ -24,7 +24,7 @@ class HDF5:
     """
 
     def __init__(self, hdf5_path: co.FilePath) -> None:
-        self.hdf5_path = hdf5_path  # type: ignore[assignment]
+        self.hdf5_path = hdf5_path
 
     @property
     def hdf5_path(self) -> Path:
