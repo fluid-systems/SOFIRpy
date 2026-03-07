@@ -67,8 +67,8 @@ def test_store_run_in_hdf5(run: Run, tmp_path: str) -> None:
 
 
 @pytest.mark.skipif(
-    sys.version_info >= (3, 11),
-    reason="Skip for snapshot test for python 3.11 or newer",
+    sys.version_info >= (3, 10),
+    reason="Skip for snapshot test for python 3.10 or newer",
 )
 def test_loaded_hdf5_run_is_identical_to_run_from_config(
     run: Run, run_snapshot: SnapshotAssertion
