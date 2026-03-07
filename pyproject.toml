@@ -38,7 +38,7 @@ test = [
     "pytest>=7.1.2",
     "pytest-cov>=3.0.0",
     "mypy==1.18.1",
-    "pandas-stubs>=1.4.3.220822",
+    "pandas-stubs>=1.4.3.220822,<3.0.0",
     "syrupy>=4.5.0",
     "types-setuptools>=68.2.0.0",
     "types-tqdm>=4.64.5",
