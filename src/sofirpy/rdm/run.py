@@ -47,16 +47,16 @@ class _RunMetaConfig(pydantic.BaseModel):
 
 class _ModelsConfig(pydantic.BaseModel):
     model_config = pydantic.ConfigDict(extra="forbid")
-    init_config: Optional[co.InitConfig] = None  # noqa: UP007
-    connections: Optional[co.Connections] = None  # noqa: UP007
-    parameters_to_log: Optional[list[str]] = None  # noqa: UP007
+    init_config: Optional[co.InitConfig] = None  # noqa: UP045
+    connections: Optional[co.Connections] = None  # noqa: UP045
+    parameters_to_log: Optional[list[str]] = None  # noqa: UP045
 
 
 class _SimulationConfig(pydantic.BaseModel):
     model_config = pydantic.ConfigDict(extra="forbid")
     stop_time: float
     step_size: float
-    logging_step_size: Optional[float] = None  # noqa: UP007
+    logging_step_size: Optional[float] = None  # noqa: UP045
 
 
 class ConfigDict(TypedDict):
@@ -1008,7 +1008,7 @@ class RunMeta:
 class SimulationConfig:
     stop_time: float
     step_size: float
-    logging_step_size: Optional[float] = None  # noqa: UP007
+    logging_step_size: Optional[float] = None  # noqa: UP045
 
     CONFIG_KEY: ClassVar[ConfigKeyType] = ConfigKeyType.SIMULATION_CONFIG
 
